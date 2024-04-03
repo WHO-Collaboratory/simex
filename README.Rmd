@@ -1,0 +1,194 @@
+*simex*: a disease modelling tool for decision makers
+---------------------------------------------------------------
+
+*simex* is an R package for simulating the spread of infectious diseases, as
+well as interventions such as social distancing measures, isolation and
+vaccination. It uses an age-structured SEIR compartmental model with
+country-specific age demographics and contact rates.
+
+Installation
+-------------
+
+To install the development version from github:
+
+```{r, eval = FALSE}
+remotes::install_github("finlaycampbell/simex")
+```
+
+Load the package using:
+
+```{r, eval = TRUE}
+library("simex")
+```
+
+Running *simex*
+-------------
+
+### Parameters and settings
+
+Most settings are specified via the `get_parameters` function. The arguments and
+their default values are given below:
+
+```{r, echo = FALSE, eval = TRUE}
+simex:::get_arg_table("get_parameters")
+```
+
+### Running default settings
+
+To run the model using default settings, specify a parameter object `par` and
+feed this into the `run_model` function.
+
+```{r, echo = TRUE, eval = TRUE}
+## set parameters using defaults
+pars <- get_parameters()
+
+## run model using default parameters
+output <- run_model(pars)
+
+## look at output
+print(output)
+```
+
+The `output` object is of class `simex` and is a list containing four items:
+
+* `prevalance` is an array with 3 dimensions: time (365 days) x age (16
+  categories) x state (12 compartments). The compartments are S (susceptible), E
+  (exposed, pre-symptomatic), C (symptomatic in community), H (sympomatic in
+  hospital), R (recovered), D (dead). Each comparment is split into unvaccinated
+  (with subscript _u) and vaccinated (with subscript _v). Each value in the
+  array represents the proportion of the population in that given age-disease
+  compartment on a given day.
+* `deltas` is an array with the same dimensions as `prevalence`. Each value
+  represents the change in a given age-disease compartment from the previous
+  day.
+* `incidence` is an array with the same dimensions as `prevalence`. Each value
+  represents the new additions to a given age-disease comparment on a given
+  day. For the exposed category E, this represents incidence of new infections,
+  for the hospitalised category H this represents new hospital admissions, and
+  for the dead category D this represents new deaths.
+* `pars` contains the parameter set initially fed into `run_model`.
+
+To visualise the results, use the generic `plot` function defined for the
+`simex` class. Below, we first visualise prevalence and then incidence,
+specified using the `what` argument.
+
+```{r, echo = TRUE, eval = TRUE, fig.align="center", fig.width = 8}
+## visualise prevalence
+plot(output, what = "prevalence")
+
+## visualise incidence
+plot(output, what = "incidence")
+```
+
+The outputs can be extracted in `tibble` form using the `extract` function, once
+again using the `what` argument to specify whether prevalence or incidence is
+extracted. 
+
+```{r, echo = TRUE, eval = TRUE, fig.align="center", fig.width = 8}
+## extract prevalence
+extract(output, what = "prevalence")
+```
+
+### Modelling a single intervention
+
+We use vaccination as a example intervention. Referencing the table above, we
+can see that vaccination rate is specified using the `vax_rate` argument. 
+
+```{r, echo = TRUE, eval = TRUE, fig.align="center", fig.width = 8}
+## define vaccination rate
+pars <- get_parameters(vax_rate = 0.005)
+
+## run model
+output <- run_model(pars)
+
+## visualise prevalence
+plot(output)
+```
+
+We can see that the daily increase in number of vaccinated individuals, as
+well as the impact on infection and disease severity.
+
+
+### Specifying an initial state
+
+The default initial state begins with an entirely susceptible, unvaccinated
+population and a single infection. We can also specify a custom initial state by
+passing a matrix specifying the number of individuals in each age-infection
+compartment. In the example below, we extract the initial state from the
+previous run, and modify the compartments so half the susceptible population is
+assigned to the vaccinated compartment.
+
+```{r, echo = TRUE, eval = TRUE, fig.align="center", fig.width = 8}
+## extract starting point from previous run
+state <- output$prevalence[1,,]
+
+## assign half of susceptibles to vaccinated
+state[,"S_u"] <- state[,"S_v"] <- state[,"S_u"]/2
+
+## run model
+output <- run_model(pars, init_state = state)
+
+## visualise prevalence
+plot(output)
+```
+
+We can see that the simulation now begins with a 50% vaccinated population,
+significantly reducing the size and impact of the pandemic.
+
+### Timed interventions, multiple interventions
+
+Sometime we only want to introduce interventions at a certain time, or we want
+to model multiple, successive interventions. We can do this easily by generating
+a named list of parameters, where the name gives the time that parameter set
+should be used from. In the example below, we introduce isolation measures with
+an adherence of 50% on the 125th day.
+
+```{r, echo = TRUE, eval = TRUE, fig.align="center", fig.width = 8}
+## introduce isolation on the 125th day
+parlist <- list(
+  "1" = get_parameters(),
+  "125" = get_parameters(isolation_adherence = 0.5)
+)
+
+## run model
+output <- run_model(parlist)
+
+## visualise prevalence
+plot(output)
+```
+
+Comparing this figure with the first model run with no interventions, we can see
+the proportion of deaths drops from about 0.7% to 0.4%; a reduction in deaths of
+more than 40%!
+
+### Comparing scenarios
+
+It is useful to directly compare different scenarios visually. The
+`vis_comarison` function does exactly this, and accepts a named list of `simex`
+objects. In the example below, we generate a named list of lists that compares
+the default scenario (no interventions) with the a scenario where isolation is
+introduced on the 125th day.
+	
+```{r, echo = TRUE, eval = TRUE, fig.align="center", fig.width = 8}
+## define two scenarios, one without intervention and one with isolation
+parlists <- list(
+  "No intervention" = get_parameters(),
+  "Isolation on day 125" = list(
+    "1" = get_parameters(),
+    "125" = get_parameters(isolation_adherence = 0.5)
+  )
+)
+
+## run model across set of parameter lists
+outputs <- lapply(parlists, run_model)
+
+## compare scenarios
+vis_comparison(outputs)
+```
+
+Contributors
+------------
+- [Finlay Campbell](https://github.com/finlaycampbell) (campbellf@who.int)
+- Prabasaj Paul (ppaul@who.int)
+
+**Maintainer:** Finlay Campbell

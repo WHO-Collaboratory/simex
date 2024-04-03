@@ -1,0 +1,33 @@
+Package: simex
+Title: Simulating epidemics and interventions
+Version: 0.0.0.9000
+Authors@R: c(FC = person("Finlay", "Campbell",
+                  email = "campellf@who.int",
+                  role = c("aut", "cre"))
+            )
+Maintainer: Finlay Campbell <campbellf@who.int>	    
+Description: Simulate epidemics and interventions using country-specific contact rates and age demographics.
+License: GPL-3
+Encoding: UTF-8
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 7.2.3
+Depends: 
+    R (>= 2.10)
+LazyData: true
+Suggests:
+    countrycode,
+    readxl,
+    usethis,
+    gbRd,
+    gt,
+    usethis
+Imports: 
+    dplyr,
+    ggplot2,
+    magrittr,
+    purrr,
+    abind,
+    forcats,
+    scales,
+    stats,
+    stringr
