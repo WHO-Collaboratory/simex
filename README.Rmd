@@ -12,7 +12,7 @@ Installation
 To install the development version from github:
 
 ```{r, eval = FALSE}
-remotes::install_github("finlaycampbell/simex")
+remotes::install_github("finlaycampbell/simex", dependencies = TRUE, force = TRUE)
 ```
 
 Load the package using:
@@ -91,8 +91,9 @@ extract(output, what = "prevalence")
 
 ### Modelling a single intervention
 
-We use vaccination as a example intervention. Referencing the table above, we
-can see that vaccination rate is specified using the `vax_rate` argument. 
+We use vaccination as an example intervention. Referencing the table above, we
+can see that vaccination rate is specified using the `vax_rate` argument and
+set it to 0.5% of the population per day.
 
 ```{r, echo = TRUE, eval = TRUE, fig.align="center", fig.width = 8}
 ## define vaccination rate

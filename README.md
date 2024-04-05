@@ -13,7 +13,7 @@ To install the development version from github:
 
 
 ```r
-remotes::install_github("finlaycampbell/simex")
+remotes::install_github("finlaycampbell/simex", dependencies = TRUE, force = TRUE)
 ```
 
 Load the package using:
@@ -31,23 +31,23 @@ Running *simex*
 Most settings are specified via the `get_parameters` function. The arguments and
 their default values are given below:
 
-<!--html_preserve--><div id="fhnxygvbzq" style="padding-left:0px;padding-right:0px;padding-top:10px;padding-bottom:10px;overflow-x:auto;overflow-y:auto;width:auto;height:auto;">
-<style>#fhnxygvbzq table {
+<!--html_preserve--><div id="hjroqxjeku" style="padding-left:0px;padding-right:0px;padding-top:10px;padding-bottom:10px;overflow-x:auto;overflow-y:auto;width:auto;height:auto;">
+<style>#hjroqxjeku table {
   font-family: system-ui, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-#fhnxygvbzq thead, #fhnxygvbzq tbody, #fhnxygvbzq tfoot, #fhnxygvbzq tr, #fhnxygvbzq td, #fhnxygvbzq th {
+#hjroqxjeku thead, #hjroqxjeku tbody, #hjroqxjeku tfoot, #hjroqxjeku tr, #hjroqxjeku td, #hjroqxjeku th {
   border-style: none;
 }
 
-#fhnxygvbzq p {
+#hjroqxjeku p {
   margin: 0;
   padding: 0;
 }
 
-#fhnxygvbzq .gt_table {
+#hjroqxjeku .gt_table {
   display: table;
   border-collapse: collapse;
   line-height: normal;
@@ -73,12 +73,12 @@ their default values are given below:
   border-left-color: #D3D3D3;
 }
 
-#fhnxygvbzq .gt_caption {
+#hjroqxjeku .gt_caption {
   padding-top: 4px;
   padding-bottom: 4px;
 }
 
-#fhnxygvbzq .gt_title {
+#hjroqxjeku .gt_title {
   color: #333333;
   font-size: 125%;
   font-weight: initial;
@@ -90,7 +90,7 @@ their default values are given below:
   border-bottom-width: 0;
 }
 
-#fhnxygvbzq .gt_subtitle {
+#hjroqxjeku .gt_subtitle {
   color: #333333;
   font-size: 85%;
   font-weight: initial;
@@ -102,7 +102,7 @@ their default values are given below:
   border-top-width: 0;
 }
 
-#fhnxygvbzq .gt_heading {
+#hjroqxjeku .gt_heading {
   background-color: #FFFFFF;
   text-align: center;
   border-bottom-color: #FFFFFF;
@@ -114,13 +114,13 @@ their default values are given below:
   border-right-color: #D3D3D3;
 }
 
-#fhnxygvbzq .gt_bottom_border {
+#hjroqxjeku .gt_bottom_border {
   border-bottom-style: solid;
   border-bottom-width: 2px;
   border-bottom-color: #D3D3D3;
 }
 
-#fhnxygvbzq .gt_col_headings {
+#hjroqxjeku .gt_col_headings {
   border-top-style: solid;
   border-top-width: 2px;
   border-top-color: #D3D3D3;
@@ -135,7 +135,7 @@ their default values are given below:
   border-right-color: #D3D3D3;
 }
 
-#fhnxygvbzq .gt_col_heading {
+#hjroqxjeku .gt_col_heading {
   color: #333333;
   background-color: #FFFFFF;
   font-size: 100%;
@@ -155,7 +155,7 @@ their default values are given below:
   overflow-x: hidden;
 }
 
-#fhnxygvbzq .gt_column_spanner_outer {
+#hjroqxjeku .gt_column_spanner_outer {
   color: #333333;
   background-color: #FFFFFF;
   font-size: 100%;
@@ -167,15 +167,15 @@ their default values are given below:
   padding-right: 4px;
 }
 
-#fhnxygvbzq .gt_column_spanner_outer:first-child {
+#hjroqxjeku .gt_column_spanner_outer:first-child {
   padding-left: 0;
 }
 
-#fhnxygvbzq .gt_column_spanner_outer:last-child {
+#hjroqxjeku .gt_column_spanner_outer:last-child {
   padding-right: 0;
 }
 
-#fhnxygvbzq .gt_column_spanner {
+#hjroqxjeku .gt_column_spanner {
   border-bottom-style: solid;
   border-bottom-width: 2px;
   border-bottom-color: #D3D3D3;
@@ -187,11 +187,11 @@ their default values are given below:
   width: 100%;
 }
 
-#fhnxygvbzq .gt_spanner_row {
+#hjroqxjeku .gt_spanner_row {
   border-bottom-style: hidden;
 }
 
-#fhnxygvbzq .gt_group_heading {
+#hjroqxjeku .gt_group_heading {
   padding-top: 8px;
   padding-bottom: 8px;
   padding-left: 5px;
@@ -217,7 +217,7 @@ their default values are given below:
   text-align: left;
 }
 
-#fhnxygvbzq .gt_empty_group_heading {
+#hjroqxjeku .gt_empty_group_heading {
   padding: 0.5px;
   color: #333333;
   background-color: #FFFFFF;
@@ -232,15 +232,15 @@ their default values are given below:
   vertical-align: middle;
 }
 
-#fhnxygvbzq .gt_from_md > :first-child {
+#hjroqxjeku .gt_from_md > :first-child {
   margin-top: 0;
 }
 
-#fhnxygvbzq .gt_from_md > :last-child {
+#hjroqxjeku .gt_from_md > :last-child {
   margin-bottom: 0;
 }
 
-#fhnxygvbzq .gt_row {
+#hjroqxjeku .gt_row {
   padding-top: 8px;
   padding-bottom: 8px;
   padding-left: 5px;
@@ -259,7 +259,7 @@ their default values are given below:
   overflow-x: hidden;
 }
 
-#fhnxygvbzq .gt_stub {
+#hjroqxjeku .gt_stub {
   color: #333333;
   background-color: #FFFFFF;
   font-size: 100%;
@@ -272,7 +272,7 @@ their default values are given below:
   padding-right: 5px;
 }
 
-#fhnxygvbzq .gt_stub_row_group {
+#hjroqxjeku .gt_stub_row_group {
   color: #333333;
   background-color: #FFFFFF;
   font-size: 100%;
@@ -286,15 +286,15 @@ their default values are given below:
   vertical-align: top;
 }
 
-#fhnxygvbzq .gt_row_group_first td {
+#hjroqxjeku .gt_row_group_first td {
   border-top-width: 2px;
 }
 
-#fhnxygvbzq .gt_row_group_first th {
+#hjroqxjeku .gt_row_group_first th {
   border-top-width: 2px;
 }
 
-#fhnxygvbzq .gt_summary_row {
+#hjroqxjeku .gt_summary_row {
   color: #333333;
   background-color: #FFFFFF;
   text-transform: inherit;
@@ -304,16 +304,16 @@ their default values are given below:
   padding-right: 5px;
 }
 
-#fhnxygvbzq .gt_first_summary_row {
+#hjroqxjeku .gt_first_summary_row {
   border-top-style: solid;
   border-top-color: #D3D3D3;
 }
 
-#fhnxygvbzq .gt_first_summary_row.thick {
+#hjroqxjeku .gt_first_summary_row.thick {
   border-top-width: 2px;
 }
 
-#fhnxygvbzq .gt_last_summary_row {
+#hjroqxjeku .gt_last_summary_row {
   padding-top: 8px;
   padding-bottom: 8px;
   padding-left: 5px;
@@ -323,7 +323,7 @@ their default values are given below:
   border-bottom-color: #D3D3D3;
 }
 
-#fhnxygvbzq .gt_grand_summary_row {
+#hjroqxjeku .gt_grand_summary_row {
   color: #333333;
   background-color: #FFFFFF;
   text-transform: inherit;
@@ -333,7 +333,7 @@ their default values are given below:
   padding-right: 5px;
 }
 
-#fhnxygvbzq .gt_first_grand_summary_row {
+#hjroqxjeku .gt_first_grand_summary_row {
   padding-top: 8px;
   padding-bottom: 8px;
   padding-left: 5px;
@@ -343,7 +343,7 @@ their default values are given below:
   border-top-color: #D3D3D3;
 }
 
-#fhnxygvbzq .gt_last_grand_summary_row_top {
+#hjroqxjeku .gt_last_grand_summary_row_top {
   padding-top: 8px;
   padding-bottom: 8px;
   padding-left: 5px;
@@ -353,11 +353,11 @@ their default values are given below:
   border-bottom-color: #D3D3D3;
 }
 
-#fhnxygvbzq .gt_striped {
+#hjroqxjeku .gt_striped {
   background-color: rgba(128, 128, 128, 0.05);
 }
 
-#fhnxygvbzq .gt_table_body {
+#hjroqxjeku .gt_table_body {
   border-top-style: solid;
   border-top-width: 2px;
   border-top-color: #D3D3D3;
@@ -366,7 +366,7 @@ their default values are given below:
   border-bottom-color: #D3D3D3;
 }
 
-#fhnxygvbzq .gt_footnotes {
+#hjroqxjeku .gt_footnotes {
   color: #333333;
   background-color: #FFFFFF;
   border-bottom-style: none;
@@ -380,7 +380,7 @@ their default values are given below:
   border-right-color: #D3D3D3;
 }
 
-#fhnxygvbzq .gt_footnote {
+#hjroqxjeku .gt_footnote {
   margin: 0px;
   font-size: 90%;
   padding-top: 4px;
@@ -389,7 +389,7 @@ their default values are given below:
   padding-right: 5px;
 }
 
-#fhnxygvbzq .gt_sourcenotes {
+#hjroqxjeku .gt_sourcenotes {
   color: #333333;
   background-color: #FFFFFF;
   border-bottom-style: none;
@@ -403,7 +403,7 @@ their default values are given below:
   border-right-color: #D3D3D3;
 }
 
-#fhnxygvbzq .gt_sourcenote {
+#hjroqxjeku .gt_sourcenote {
   font-size: 90%;
   padding-top: 4px;
   padding-bottom: 4px;
@@ -411,63 +411,63 @@ their default values are given below:
   padding-right: 5px;
 }
 
-#fhnxygvbzq .gt_left {
+#hjroqxjeku .gt_left {
   text-align: left;
 }
 
-#fhnxygvbzq .gt_center {
+#hjroqxjeku .gt_center {
   text-align: center;
 }
 
-#fhnxygvbzq .gt_right {
+#hjroqxjeku .gt_right {
   text-align: right;
   font-variant-numeric: tabular-nums;
 }
 
-#fhnxygvbzq .gt_font_normal {
+#hjroqxjeku .gt_font_normal {
   font-weight: normal;
 }
 
-#fhnxygvbzq .gt_font_bold {
+#hjroqxjeku .gt_font_bold {
   font-weight: bold;
 }
 
-#fhnxygvbzq .gt_font_italic {
+#hjroqxjeku .gt_font_italic {
   font-style: italic;
 }
 
-#fhnxygvbzq .gt_super {
+#hjroqxjeku .gt_super {
   font-size: 65%;
 }
 
-#fhnxygvbzq .gt_footnote_marks {
+#hjroqxjeku .gt_footnote_marks {
   font-size: 75%;
   vertical-align: 0.4em;
   position: initial;
 }
 
-#fhnxygvbzq .gt_asterisk {
+#hjroqxjeku .gt_asterisk {
   font-size: 100%;
   vertical-align: 0;
 }
 
-#fhnxygvbzq .gt_indent_1 {
+#hjroqxjeku .gt_indent_1 {
   text-indent: 5px;
 }
 
-#fhnxygvbzq .gt_indent_2 {
+#hjroqxjeku .gt_indent_2 {
   text-indent: 10px;
 }
 
-#fhnxygvbzq .gt_indent_3 {
+#hjroqxjeku .gt_indent_3 {
   text-indent: 15px;
 }
 
-#fhnxygvbzq .gt_indent_4 {
+#hjroqxjeku .gt_indent_4 {
   text-indent: 20px;
 }
 
-#fhnxygvbzq .gt_indent_5 {
+#hjroqxjeku .gt_indent_5 {
   text-indent: 25px;
 }
 </style>
@@ -654,8 +654,9 @@ extract(output, what = "prevalence")
 
 ### Modelling a single intervention
 
-We use vaccination as a example intervention. Referencing the table above, we
-can see that vaccination rate is specified using the `vax_rate` argument. 
+We use vaccination as an example intervention. Referencing the table above, we
+can see that vaccination rate is specified using the `vax_rate` argument and
+set it to 0.5% of the population per day.
 
 
 ```r
