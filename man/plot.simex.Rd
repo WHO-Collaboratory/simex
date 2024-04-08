@@ -8,7 +8,8 @@
   simex,
   what = c("prevalence", "deltas", "incidence"),
   log = FALSE,
-  freescales = TRUE
+  freescales = TRUE,
+  show_hosp_capacity = FALSE
 )
 }
 \arguments{
@@ -22,6 +23,9 @@ day), "deltas" (change in prevalence from one day to the next) and
 
 \item{freescales}{Logical indicating whether the different comparments should
 use different y-axes.}
+
+\item{show_hosp_capacity}{Logical indicating whether hospital capacity should be
+displayed in the "H" compartment (only possible when what = "prevalence").}
 }
 \description{
 Plot timeline of prevalence or incidence.

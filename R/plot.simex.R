@@ -11,6 +11,9 @@
 #' @param freescales Logical indicating whether the different comparments should
 #'   use different y-axes.
 #'
+#' @param show_hosp_capacity Logical indicating whether hospital capacity should be
+#'   displayed in the "H" compartment (only possible when what = "prevalence").
+#'
 #' @author Finlay Campbell
 #'
 #' @export
@@ -18,10 +21,39 @@
 plot.simex <- function(simex,
                        what = c("prevalence", "deltas", "incidence"),
                        log = FALSE,
-                       freescales = TRUE) {
+                       freescales = TRUE,
+                       show_hosp_capacity = FALSE) {
 
-  extract(simex, what) %>%
+  ## check what argument
+  what <- match.arg(what)
+
+  ## get hospital capacity
+  multi_par <- length(simex$pars) != length(get_parameters())
+  hosp_capacity <- if(multi_par) simex$pars[[1]]$hosp_capacity
+                   else simex$pars$hosp_capacity
+
+  ## extract relevant data
+  df <- extract(simex, what)
+
+  ## define horizontal line for hospital capacity if needed
+  hline <-
+    if(what == "prevalence" & show_hosp_capacity)
+      geom_hline(
+        data = tibble(
+          compartment = factor("H", levels(df$compartment)),
+          y = hosp_capacity
+        ),
+        aes(yintercept = y),
+        color = "firebrick",
+        linewidth = 1.5,
+        linetype = 5
+      )
+    else NULL
+
+  ## plot
+  df %>%
     ggplot(aes(day, value, linetype = vax)) +
+    hline +
     geom_line(linewidth = 1.5) +
     facet_wrap(~ compartment, scales = ifelse(freescales, "free_y", "fixed")) +
     scale_y_continuous(
@@ -29,7 +61,6 @@ plot.simex <- function(simex,
       trans = ifelse(log, "log10", "identity"),
       labels = percent
     ) +
-    ## scale_color_brewer(palette = "Dark2") +
     scale_linetype(name = "Vaccinated") +
     labs(x = "Day", y = "Proportion of population", color = "Category") +
     theme_minimal() +

@@ -6,7 +6,7 @@
 \alias{simex-package}
 \title{simex: Simulating epidemics and interventions}
 \description{
-Simulate epidemics using country-specific contact rates.
+Simulate epidemics and interventions using country-specific contact rates and age demographics.
 }
 \author{
 \strong{Maintainer}: Finlay Campbell \email{campellf@who.int}
