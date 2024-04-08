@@ -7,7 +7,7 @@ vaccination. It uses an age-structured SEIR compartmental model with
 country-specific age demographics and contact rates.
 
 ```{r, echo = FALSE} 
-opts_chunk$set(fig.cap="")
+knitr::opts_chunk$set(fig.cap="", fig.align = "center", dpi = 300)
 ``` 
 
 Installation

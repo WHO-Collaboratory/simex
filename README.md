@@ -7,9 +7,6 @@ vaccination. It uses an age-structured SEIR compartmental model with
 country-specific age demographics and contact rates.
 
 
-```
-## Error in eval(expr, envir, enclos): object 'opts_chunk' not found
-```
 
 Installation
 -------------
@@ -100,20 +97,14 @@ specified using the `what` argument.
 plot(output, what = "prevalence")
 ```
 
-<div class="figure" style="text-align: center">
-<img src="figure/unnamed-chunk-6-1.png" alt="plot of chunk unnamed-chunk-6"  />
-<p class="caption">plot of chunk unnamed-chunk-6</p>
-</div>
+<img src="figure/unnamed-chunk-6-1.png" style="display: block; margin: auto;" />
 
 ```r
 ## visualise incidence
 plot(output, what = "incidence")
 ```
 
-<div class="figure" style="text-align: center">
-<img src="figure/unnamed-chunk-6-2.png" alt="plot of chunk unnamed-chunk-6"  />
-<p class="caption">plot of chunk unnamed-chunk-6</p>
-</div>
+<img src="figure/unnamed-chunk-6-2.png" style="display: block; margin: auto;" />
 
 Hospital capacity can be displayed by toggling the `show_hosp_capacity`
 argument.
@@ -124,10 +115,7 @@ argument.
 plot(output, what = "prevalence", show_hosp_capacity = TRUE)
 ```
 
-<div class="figure" style="text-align: center">
-<img src="figure/unnamed-chunk-7-1.png" alt="plot of chunk unnamed-chunk-7"  />
-<p class="caption">plot of chunk unnamed-chunk-7</p>
-</div>
+<img src="figure/unnamed-chunk-7-1.png" style="display: block; margin: auto;" />
 
 ### Accessing outputs
 
@@ -271,10 +259,7 @@ output <- run_model(pars)
 plot(output)
 ```
 
-<div class="figure" style="text-align: center">
-<img src="figure/unnamed-chunk-12-1.png" alt="plot of chunk unnamed-chunk-12"  />
-<p class="caption">plot of chunk unnamed-chunk-12</p>
-</div>
+<img src="figure/unnamed-chunk-12-1.png" style="display: block; margin: auto;" />
 
 We can see that the daily increase in number of vaccinated individuals, as
 well as the impact on infection and disease severity.
@@ -304,10 +289,7 @@ output <- run_model(pars, init_state = state)
 plot(output)
 ```
 
-<div class="figure" style="text-align: center">
-<img src="figure/unnamed-chunk-13-1.png" alt="plot of chunk unnamed-chunk-13"  />
-<p class="caption">plot of chunk unnamed-chunk-13</p>
-</div>
+<img src="figure/unnamed-chunk-13-1.png" style="display: block; margin: auto;" />
 
 We can see that the simulation now begins with a 50% vaccinated population,
 significantly reducing the size and impact of the pandemic.
@@ -335,10 +317,7 @@ output <- run_model(parlist)
 plot(output)
 ```
 
-<div class="figure" style="text-align: center">
-<img src="figure/unnamed-chunk-14-1.png" alt="plot of chunk unnamed-chunk-14"  />
-<p class="caption">plot of chunk unnamed-chunk-14</p>
-</div>
+<img src="figure/unnamed-chunk-14-1.png" style="display: block; margin: auto;" />
 
 Comparing this figure with the first model run with no interventions, we can see
 the proportion of deaths drops from about 0.7% to 0.4%; a reduction in deaths of
@@ -370,10 +349,7 @@ outputs <- lapply(parlists, run_model)
 vis_comparison(outputs)
 ```
 
-<div class="figure" style="text-align: center">
-<img src="figure/unnamed-chunk-15-1.png" alt="plot of chunk unnamed-chunk-15"  />
-<p class="caption">plot of chunk unnamed-chunk-15</p>
-</div>
+<img src="figure/unnamed-chunk-15-1.png" style="display: block; margin: auto;" />
 
 Contributors
 ------------
