@@ -228,7 +228,7 @@ objects. In the example below, we generate a named list of lists that compares
 the default scenario (no interventions) with the a scenario where isolation is
 introduced on the 125th day.
 	
-```{r, echo = TRUE, eval = TRUE, fig.align="center", fig.width = 8}
+```{r, echo = TRUE, eval = TRUE, imgcenter = TRUE}
 ## define two scenarios, one without intervention and one with isolation
 parlists <- list(
   "No intervention" = get_parameters(),
