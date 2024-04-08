@@ -97,14 +97,14 @@ specified using the `what` argument.
 plot(output, what = "prevalence")
 ```
 
-<img src="figure/unnamed-chunk-6-1.png" style="display: block; margin: auto;" />
+<img src="figure/unnamed-chunk-6-1.png" width="75%" style="display: block; margin: auto;" />
 
 ```r
 ## visualise incidence
 plot(output, what = "incidence")
 ```
 
-<img src="figure/unnamed-chunk-6-2.png" style="display: block; margin: auto;" />
+<img src="figure/unnamed-chunk-6-2.png" width="75%" style="display: block; margin: auto;" />
 
 Hospital capacity can be displayed by toggling the `show_hosp_capacity`
 argument.
@@ -115,7 +115,7 @@ argument.
 plot(output, what = "prevalence", show_hosp_capacity = TRUE)
 ```
 
-<img src="figure/unnamed-chunk-7-1.png" style="display: block; margin: auto;" />
+<img src="figure/unnamed-chunk-7-1.png" width="75%" style="display: block; margin: auto;" />
 
 ### Accessing outputs
 
@@ -259,7 +259,7 @@ output <- run_model(pars)
 plot(output)
 ```
 
-<img src="figure/unnamed-chunk-12-1.png" style="display: block; margin: auto;" />
+<img src="figure/unnamed-chunk-12-1.png" width="75%" style="display: block; margin: auto;" />
 
 We can see that the daily increase in number of vaccinated individuals, as
 well as the impact on infection and disease severity.
@@ -289,7 +289,7 @@ output <- run_model(pars, init_state = state)
 plot(output)
 ```
 
-<img src="figure/unnamed-chunk-13-1.png" style="display: block; margin: auto;" />
+<img src="figure/unnamed-chunk-13-1.png" width="75%" style="display: block; margin: auto;" />
 
 We can see that the simulation now begins with a 50% vaccinated population,
 significantly reducing the size and impact of the pandemic.
@@ -317,7 +317,7 @@ output <- run_model(parlist)
 plot(output)
 ```
 
-<img src="figure/unnamed-chunk-14-1.png" style="display: block; margin: auto;" />
+<img src="figure/unnamed-chunk-14-1.png" width="75%" style="display: block; margin: auto;" />
 
 Comparing this figure with the first model run with no interventions, we can see
 the proportion of deaths drops from about 0.7% to 0.4%; a reduction in deaths of
@@ -349,7 +349,7 @@ outputs <- lapply(parlists, run_model)
 vis_comparison(outputs)
 ```
 
-<img src="figure/unnamed-chunk-15-1.png" style="display: block; margin: auto;" />
+<img src="figure/unnamed-chunk-15-1.png" width="75%" style="display: block; margin: auto;" />
 
 Contributors
 ------------
