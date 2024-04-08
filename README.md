@@ -13,17 +13,23 @@ Installation
 
 To install the development version from github:
 
+<p align='center'>
 
 ```r
 remotes::install_github("finlaycampbell/simex", dependencies = TRUE, force = TRUE)
 ```
 
+</p>
+
 Load the package using:
 
+<p align='center'>
 
 ```r
 library("simex")
 ```
+
+</p>
 
 Running *simex*
 -------------
@@ -33,6 +39,7 @@ Running *simex*
 Most settings are specified via the `get_parameters` function. The arguments and
 their default values are given below:
 
+<p align='center'>
 
 |Argument                |Description                                                                                                                                                                                                                   |Default value                                |
 |:-----------------------|:-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|:--------------------------------------------|
@@ -60,11 +67,14 @@ their default values are given below:
 |vax_prioritised         |A logical indicating whether older age groups are vaccinated first.                                                                                                                                                           |TRUE                                         |
 |hosp_prioritised        |A logical indicating whether older age groups are hospitalised first when hospital capacity is exceeded.                                                                                                                      |TRUE                                         |
 
+</p>
+
 ### Running default settings
 
 To run the model using default settings, specify a parameter object `par` and
 feed this into the `run_model` function.
 
+<p align='center'>
 
 ```r
 ## set parameters using defaults
@@ -85,12 +95,15 @@ print(output)
 ##  - Compartments: S_u | E_u | C_u | H_u | R_u | D_u | S_v | E_v | C_v | H_v | R_v | D_v
 ```
 
+</p>
+
 ### Visualising outputs
 
 To visualise the results, use the generic `plot` function defined for the
 `simex` class. Below, we first visualise prevalence and then incidence,
 specified using the `what` argument.
 
+<p align='center'>
 
 ```r
 ## visualise prevalence
@@ -104,18 +117,19 @@ plot(output, what = "prevalence")
 plot(output, what = "incidence")
 ```
 
-<img src="figure/unnamed-chunk-6-2.png" width="75%" style="display: block; margin: auto;" />
+<img src="figure/unnamed-chunk-6-2.png" width="75%" style="display: block; margin: auto;" /></p>
 
 Hospital capacity can be displayed by toggling the `show_hosp_capacity`
 argument.
 
+<p align='center'>
 
 ```r
 ## visualise prevalence with hospital capaciy
 plot(output, what = "prevalence", show_hosp_capacity = TRUE)
 ```
 
-<img src="figure/unnamed-chunk-7-1.png" width="75%" style="display: block; margin: auto;" />
+<img src="figure/unnamed-chunk-7-1.png" width="75%" style="display: block; margin: auto;" /></p>
 
 ### Accessing outputs
 
@@ -142,6 +156,7 @@ Accessing the data is easiest using array indexing. Remember, the dimensions are
 time, age and compartment. For example, accessing the prevalence on the 250th
 day is done by:
 
+<p align='center'>
 
 ```r
 ## extract prevalence in percent on day 250
@@ -169,9 +184,12 @@ round(100*output$prevalence[250,,], 1)
 ##   age_16 5.6   0   0   0 1.7 0.2   0   0   0   0   0   0
 ```
 
+</p>
+
 Accessing the prevalence of the 1st age compartment (0-4) and 1st infectious
 compartment (unvaccinated susceptible) for days 30 to 35 is done by:
 
+<p align='center'>
 
 ```r
 ## extract in percent on day 130-135
@@ -183,10 +201,13 @@ round(100*output$prevalence[130:135,1,1], 1)
 ##     5.1     5.1     5.1     5.0     5.0     4.9
 ```
 
+</p>
+
 The outputs can also be extracted in `tibble` form using the `extract` function,
 once again using the `what` argument to specify whether prevalence or incidence
 is extracted.
 
+<p align='center'>
 
 ```r
 ## extract prevalence
@@ -209,9 +230,12 @@ extract(output, what = "prevalence")
 ## 10     1 H           TRUE  0           
 ## # ℹ 4,370 more rows
 ```
+
+</p>
 If we want to filter this list for a sequence of days, we can then do basic
 data.frame manipulation:
 
+<p align='center'>
 
 ```r
 ## define start and end days
@@ -241,12 +265,15 @@ df
 ## # ℹ 122 more rows
 ```
 
+</p>
+
 ### Modelling a single intervention
 
 We use vaccination as an example intervention. Referencing the table above, we
 can see that vaccination rate is specified using the `vax_rate` argument and
 set it to 0.5% of the population per day.
 
+<p align='center'>
 
 ```r
 ## define vaccination rate
@@ -259,7 +286,7 @@ output <- run_model(pars)
 plot(output)
 ```
 
-<img src="figure/unnamed-chunk-12-1.png" width="75%" style="display: block; margin: auto;" />
+<img src="figure/unnamed-chunk-12-1.png" width="75%" style="display: block; margin: auto;" /></p>
 
 We can see that the daily increase in number of vaccinated individuals, as
 well as the impact on infection and disease severity.
@@ -274,6 +301,7 @@ compartment. In the example below, we extract the initial state from the
 previous run, and modify the compartments so half the susceptible population is
 assigned to the vaccinated compartment.
 
+<p align='center'>
 
 ```r
 ## extract starting point from previous run
@@ -289,7 +317,7 @@ output <- run_model(pars, init_state = state)
 plot(output)
 ```
 
-<img src="figure/unnamed-chunk-13-1.png" width="75%" style="display: block; margin: auto;" />
+<img src="figure/unnamed-chunk-13-1.png" width="75%" style="display: block; margin: auto;" /></p>
 
 We can see that the simulation now begins with a 50% vaccinated population,
 significantly reducing the size and impact of the pandemic.
@@ -302,6 +330,7 @@ a named list of parameters, where the name gives the time that parameter set
 should be used from. In the example below, we introduce isolation measures with
 an adherence of 50% on the 125th day.
 
+<p align='center'>
 
 ```r
 ## introduce isolation on the 125th day
@@ -317,7 +346,7 @@ output <- run_model(parlist)
 plot(output)
 ```
 
-<img src="figure/unnamed-chunk-14-1.png" width="75%" style="display: block; margin: auto;" />
+<img src="figure/unnamed-chunk-14-1.png" width="75%" style="display: block; margin: auto;" /></p>
 
 Comparing this figure with the first model run with no interventions, we can see
 the proportion of deaths drops from about 0.7% to 0.4%; a reduction in deaths of
@@ -331,6 +360,7 @@ objects. In the example below, we generate a named list of lists that compares
 the default scenario (no interventions) with the a scenario where isolation is
 introduced on the 125th day.
 	
+<p align='center'>
 
 ```r
 ## define two scenarios, one without intervention and one with isolation
@@ -349,7 +379,7 @@ outputs <- lapply(parlists, run_model)
 vis_comparison(outputs)
 ```
 
-<img src="figure/unnamed-chunk-15-1.png" width="75%" style="display: block; margin: auto;" />
+<img src="figure/unnamed-chunk-15-1.png" width="75%" style="display: block; margin: auto;" /></p>
 
 Contributors
 ------------

@@ -7,11 +7,19 @@ vaccination. It uses an age-structured SEIR compartmental model with
 country-specific age demographics and contact rates.
 
 ```{r, echo = FALSE} 
+knitr::knit_hooks$set(imgcenter = function(before, options, envir){
+  if (before) {
+    htmltools::HTML("<p align='center'>")
+  } else {
+    htmltools::HTML("</p>")
+  }
+})
+
 knitr::opts_chunk$set(fig.cap="",
                       fig.align = "center",
                       dpi = 300,
                       out.width = "75%",
-                      fig.pos = "p")
+                      imgcenter = TRUE)
 ``` 
 
 Installation
