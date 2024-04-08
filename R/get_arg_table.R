@@ -4,16 +4,20 @@
 #'   into the namespace.
 #'
 #' @importFrom gt gt
+#' @importFrom knitr kable
 #'
-get_arg_table <- function(fn_name) {
+get_arg_table <- function(fn_name, type = c("gt", "kable")) {
+
+  type <- match.arg(type)
 
   arg <- formals(get(fn_name))
-  tibble(
+  df <- tibble(
     "Argument" = names(arg),
     "Description" = map_chr(names(arg), ~ get_description(fn_name, .x)),
     "Default value" = map_chr(arg, get_default)
-  ) %>%
-    gt::gt()
+  )
+
+  if(type == "gt") gt(df) else knitr::kable(df)
 
 }
 

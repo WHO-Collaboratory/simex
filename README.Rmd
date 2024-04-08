@@ -6,6 +6,10 @@ well as interventions such as social distancing measures, isolation and
 vaccination. It uses an age-structured SEIR compartmental model with
 country-specific age demographics and contact rates.
 
+```{r, echo = FALSE} 
+opts_chunk$set(fig.cap="")
+``` 
+
 Installation
 -------------
 
@@ -30,7 +34,7 @@ Most settings are specified via the `get_parameters` function. The arguments and
 their default values are given below:
 
 ```{r, echo = FALSE, eval = TRUE}
-simex:::get_arg_table("get_parameters")
+simex:::get_arg_table("get_parameters", type = "kable")
 ```
 
 ### Running default settings

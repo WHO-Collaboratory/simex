@@ -4,7 +4,7 @@
 \alias{get_arg_table}
 \title{Generate table describing function arguments and their defauts.}
 \usage{
-get_arg_table(fn_name)
+get_arg_table(fn_name, type = c("gt", "kable"))
 }
 \arguments{
 \item{fn_name}{A string describing the function name. This must be loaded

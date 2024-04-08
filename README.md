@@ -6,6 +6,11 @@ well as interventions such as social distancing measures, isolation and
 vaccination. It uses an age-structured SEIR compartmental model with
 country-specific age demographics and contact rates.
 
+
+```
+## Error in eval(expr, envir, enclos): object 'opts_chunk' not found
+```
+
 Installation
 -------------
 
@@ -31,530 +36,32 @@ Running *simex*
 Most settings are specified via the `get_parameters` function. The arguments and
 their default values are given below:
 
-<!--html_preserve--><div id="qelfcdmefp" style="padding-left:0px;padding-right:0px;padding-top:10px;padding-bottom:10px;overflow-x:auto;overflow-y:auto;width:auto;height:auto;">
-<style>#qelfcdmefp table {
-  font-family: system-ui, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-}
 
-#qelfcdmefp thead, #qelfcdmefp tbody, #qelfcdmefp tfoot, #qelfcdmefp tr, #qelfcdmefp td, #qelfcdmefp th {
-  border-style: none;
-}
-
-#qelfcdmefp p {
-  margin: 0;
-  padding: 0;
-}
-
-#qelfcdmefp .gt_table {
-  display: table;
-  border-collapse: collapse;
-  line-height: normal;
-  margin-left: auto;
-  margin-right: auto;
-  color: #333333;
-  font-size: 16px;
-  font-weight: normal;
-  font-style: normal;
-  background-color: #FFFFFF;
-  width: auto;
-  border-top-style: solid;
-  border-top-width: 2px;
-  border-top-color: #A8A8A8;
-  border-right-style: none;
-  border-right-width: 2px;
-  border-right-color: #D3D3D3;
-  border-bottom-style: solid;
-  border-bottom-width: 2px;
-  border-bottom-color: #A8A8A8;
-  border-left-style: none;
-  border-left-width: 2px;
-  border-left-color: #D3D3D3;
-}
-
-#qelfcdmefp .gt_caption {
-  padding-top: 4px;
-  padding-bottom: 4px;
-}
-
-#qelfcdmefp .gt_title {
-  color: #333333;
-  font-size: 125%;
-  font-weight: initial;
-  padding-top: 4px;
-  padding-bottom: 4px;
-  padding-left: 5px;
-  padding-right: 5px;
-  border-bottom-color: #FFFFFF;
-  border-bottom-width: 0;
-}
-
-#qelfcdmefp .gt_subtitle {
-  color: #333333;
-  font-size: 85%;
-  font-weight: initial;
-  padding-top: 3px;
-  padding-bottom: 5px;
-  padding-left: 5px;
-  padding-right: 5px;
-  border-top-color: #FFFFFF;
-  border-top-width: 0;
-}
-
-#qelfcdmefp .gt_heading {
-  background-color: #FFFFFF;
-  text-align: center;
-  border-bottom-color: #FFFFFF;
-  border-left-style: none;
-  border-left-width: 1px;
-  border-left-color: #D3D3D3;
-  border-right-style: none;
-  border-right-width: 1px;
-  border-right-color: #D3D3D3;
-}
-
-#qelfcdmefp .gt_bottom_border {
-  border-bottom-style: solid;
-  border-bottom-width: 2px;
-  border-bottom-color: #D3D3D3;
-}
-
-#qelfcdmefp .gt_col_headings {
-  border-top-style: solid;
-  border-top-width: 2px;
-  border-top-color: #D3D3D3;
-  border-bottom-style: solid;
-  border-bottom-width: 2px;
-  border-bottom-color: #D3D3D3;
-  border-left-style: none;
-  border-left-width: 1px;
-  border-left-color: #D3D3D3;
-  border-right-style: none;
-  border-right-width: 1px;
-  border-right-color: #D3D3D3;
-}
-
-#qelfcdmefp .gt_col_heading {
-  color: #333333;
-  background-color: #FFFFFF;
-  font-size: 100%;
-  font-weight: normal;
-  text-transform: inherit;
-  border-left-style: none;
-  border-left-width: 1px;
-  border-left-color: #D3D3D3;
-  border-right-style: none;
-  border-right-width: 1px;
-  border-right-color: #D3D3D3;
-  vertical-align: bottom;
-  padding-top: 5px;
-  padding-bottom: 6px;
-  padding-left: 5px;
-  padding-right: 5px;
-  overflow-x: hidden;
-}
-
-#qelfcdmefp .gt_column_spanner_outer {
-  color: #333333;
-  background-color: #FFFFFF;
-  font-size: 100%;
-  font-weight: normal;
-  text-transform: inherit;
-  padding-top: 0;
-  padding-bottom: 0;
-  padding-left: 4px;
-  padding-right: 4px;
-}
-
-#qelfcdmefp .gt_column_spanner_outer:first-child {
-  padding-left: 0;
-}
-
-#qelfcdmefp .gt_column_spanner_outer:last-child {
-  padding-right: 0;
-}
-
-#qelfcdmefp .gt_column_spanner {
-  border-bottom-style: solid;
-  border-bottom-width: 2px;
-  border-bottom-color: #D3D3D3;
-  vertical-align: bottom;
-  padding-top: 5px;
-  padding-bottom: 5px;
-  overflow-x: hidden;
-  display: inline-block;
-  width: 100%;
-}
-
-#qelfcdmefp .gt_spanner_row {
-  border-bottom-style: hidden;
-}
-
-#qelfcdmefp .gt_group_heading {
-  padding-top: 8px;
-  padding-bottom: 8px;
-  padding-left: 5px;
-  padding-right: 5px;
-  color: #333333;
-  background-color: #FFFFFF;
-  font-size: 100%;
-  font-weight: initial;
-  text-transform: inherit;
-  border-top-style: solid;
-  border-top-width: 2px;
-  border-top-color: #D3D3D3;
-  border-bottom-style: solid;
-  border-bottom-width: 2px;
-  border-bottom-color: #D3D3D3;
-  border-left-style: none;
-  border-left-width: 1px;
-  border-left-color: #D3D3D3;
-  border-right-style: none;
-  border-right-width: 1px;
-  border-right-color: #D3D3D3;
-  vertical-align: middle;
-  text-align: left;
-}
-
-#qelfcdmefp .gt_empty_group_heading {
-  padding: 0.5px;
-  color: #333333;
-  background-color: #FFFFFF;
-  font-size: 100%;
-  font-weight: initial;
-  border-top-style: solid;
-  border-top-width: 2px;
-  border-top-color: #D3D3D3;
-  border-bottom-style: solid;
-  border-bottom-width: 2px;
-  border-bottom-color: #D3D3D3;
-  vertical-align: middle;
-}
-
-#qelfcdmefp .gt_from_md > :first-child {
-  margin-top: 0;
-}
-
-#qelfcdmefp .gt_from_md > :last-child {
-  margin-bottom: 0;
-}
-
-#qelfcdmefp .gt_row {
-  padding-top: 8px;
-  padding-bottom: 8px;
-  padding-left: 5px;
-  padding-right: 5px;
-  margin: 10px;
-  border-top-style: solid;
-  border-top-width: 1px;
-  border-top-color: #D3D3D3;
-  border-left-style: none;
-  border-left-width: 1px;
-  border-left-color: #D3D3D3;
-  border-right-style: none;
-  border-right-width: 1px;
-  border-right-color: #D3D3D3;
-  vertical-align: middle;
-  overflow-x: hidden;
-}
-
-#qelfcdmefp .gt_stub {
-  color: #333333;
-  background-color: #FFFFFF;
-  font-size: 100%;
-  font-weight: initial;
-  text-transform: inherit;
-  border-right-style: solid;
-  border-right-width: 2px;
-  border-right-color: #D3D3D3;
-  padding-left: 5px;
-  padding-right: 5px;
-}
-
-#qelfcdmefp .gt_stub_row_group {
-  color: #333333;
-  background-color: #FFFFFF;
-  font-size: 100%;
-  font-weight: initial;
-  text-transform: inherit;
-  border-right-style: solid;
-  border-right-width: 2px;
-  border-right-color: #D3D3D3;
-  padding-left: 5px;
-  padding-right: 5px;
-  vertical-align: top;
-}
-
-#qelfcdmefp .gt_row_group_first td {
-  border-top-width: 2px;
-}
-
-#qelfcdmefp .gt_row_group_first th {
-  border-top-width: 2px;
-}
-
-#qelfcdmefp .gt_summary_row {
-  color: #333333;
-  background-color: #FFFFFF;
-  text-transform: inherit;
-  padding-top: 8px;
-  padding-bottom: 8px;
-  padding-left: 5px;
-  padding-right: 5px;
-}
-
-#qelfcdmefp .gt_first_summary_row {
-  border-top-style: solid;
-  border-top-color: #D3D3D3;
-}
-
-#qelfcdmefp .gt_first_summary_row.thick {
-  border-top-width: 2px;
-}
-
-#qelfcdmefp .gt_last_summary_row {
-  padding-top: 8px;
-  padding-bottom: 8px;
-  padding-left: 5px;
-  padding-right: 5px;
-  border-bottom-style: solid;
-  border-bottom-width: 2px;
-  border-bottom-color: #D3D3D3;
-}
-
-#qelfcdmefp .gt_grand_summary_row {
-  color: #333333;
-  background-color: #FFFFFF;
-  text-transform: inherit;
-  padding-top: 8px;
-  padding-bottom: 8px;
-  padding-left: 5px;
-  padding-right: 5px;
-}
-
-#qelfcdmefp .gt_first_grand_summary_row {
-  padding-top: 8px;
-  padding-bottom: 8px;
-  padding-left: 5px;
-  padding-right: 5px;
-  border-top-style: double;
-  border-top-width: 6px;
-  border-top-color: #D3D3D3;
-}
-
-#qelfcdmefp .gt_last_grand_summary_row_top {
-  padding-top: 8px;
-  padding-bottom: 8px;
-  padding-left: 5px;
-  padding-right: 5px;
-  border-bottom-style: double;
-  border-bottom-width: 6px;
-  border-bottom-color: #D3D3D3;
-}
-
-#qelfcdmefp .gt_striped {
-  background-color: rgba(128, 128, 128, 0.05);
-}
-
-#qelfcdmefp .gt_table_body {
-  border-top-style: solid;
-  border-top-width: 2px;
-  border-top-color: #D3D3D3;
-  border-bottom-style: solid;
-  border-bottom-width: 2px;
-  border-bottom-color: #D3D3D3;
-}
-
-#qelfcdmefp .gt_footnotes {
-  color: #333333;
-  background-color: #FFFFFF;
-  border-bottom-style: none;
-  border-bottom-width: 2px;
-  border-bottom-color: #D3D3D3;
-  border-left-style: none;
-  border-left-width: 2px;
-  border-left-color: #D3D3D3;
-  border-right-style: none;
-  border-right-width: 2px;
-  border-right-color: #D3D3D3;
-}
-
-#qelfcdmefp .gt_footnote {
-  margin: 0px;
-  font-size: 90%;
-  padding-top: 4px;
-  padding-bottom: 4px;
-  padding-left: 5px;
-  padding-right: 5px;
-}
-
-#qelfcdmefp .gt_sourcenotes {
-  color: #333333;
-  background-color: #FFFFFF;
-  border-bottom-style: none;
-  border-bottom-width: 2px;
-  border-bottom-color: #D3D3D3;
-  border-left-style: none;
-  border-left-width: 2px;
-  border-left-color: #D3D3D3;
-  border-right-style: none;
-  border-right-width: 2px;
-  border-right-color: #D3D3D3;
-}
-
-#qelfcdmefp .gt_sourcenote {
-  font-size: 90%;
-  padding-top: 4px;
-  padding-bottom: 4px;
-  padding-left: 5px;
-  padding-right: 5px;
-}
-
-#qelfcdmefp .gt_left {
-  text-align: left;
-}
-
-#qelfcdmefp .gt_center {
-  text-align: center;
-}
-
-#qelfcdmefp .gt_right {
-  text-align: right;
-  font-variant-numeric: tabular-nums;
-}
-
-#qelfcdmefp .gt_font_normal {
-  font-weight: normal;
-}
-
-#qelfcdmefp .gt_font_bold {
-  font-weight: bold;
-}
-
-#qelfcdmefp .gt_font_italic {
-  font-style: italic;
-}
-
-#qelfcdmefp .gt_super {
-  font-size: 65%;
-}
-
-#qelfcdmefp .gt_footnote_marks {
-  font-size: 75%;
-  vertical-align: 0.4em;
-  position: initial;
-}
-
-#qelfcdmefp .gt_asterisk {
-  font-size: 100%;
-  vertical-align: 0;
-}
-
-#qelfcdmefp .gt_indent_1 {
-  text-indent: 5px;
-}
-
-#qelfcdmefp .gt_indent_2 {
-  text-indent: 10px;
-}
-
-#qelfcdmefp .gt_indent_3 {
-  text-indent: 15px;
-}
-
-#qelfcdmefp .gt_indent_4 {
-  text-indent: 20px;
-}
-
-#qelfcdmefp .gt_indent_5 {
-  text-indent: 25px;
-}
-</style>
-<table class="gt_table" data-quarto-disable-processing="false" data-quarto-bootstrap="false">
-  <thead>
-    
-    <tr class="gt_col_headings">
-      <th class="gt_col_heading gt_columns_bottom_border gt_left" rowspan="1" colspan="1" scope="col" id="Argument">Argument</th>
-      <th class="gt_col_heading gt_columns_bottom_border gt_left" rowspan="1" colspan="1" scope="col" id="Description">Description</th>
-      <th class="gt_col_heading gt_columns_bottom_border gt_left" rowspan="1" colspan="1" scope="col" id="Default value">Default value</th>
-    </tr>
-  </thead>
-  <tbody class="gt_table_body">
-    <tr><td headers="Argument" class="gt_row gt_left">iso3</td>
-<td headers="Description" class="gt_row gt_left">The ISO3 code of the country used to draw age-distributions and contact rates from.</td>
-<td headers="Default value" class="gt_row gt_left">"USA"</td></tr>
-    <tr><td headers="Argument" class="gt_row gt_left">R0</td>
-<td headers="Description" class="gt_row gt_left">The basic reproduction number.</td>
-<td headers="Default value" class="gt_row gt_left">2.5</td></tr>
-    <tr><td headers="Argument" class="gt_row gt_left">generation_time</td>
-<td headers="Description" class="gt_row gt_left">The mean generation time in days.</td>
-<td headers="Default value" class="gt_row gt_left">7</td></tr>
-    <tr><td headers="Argument" class="gt_row gt_left">incubation_period</td>
-<td headers="Description" class="gt_row gt_left">The mean incubation period in days.</td>
-<td headers="Default value" class="gt_row gt_left">3</td></tr>
-    <tr><td headers="Argument" class="gt_row gt_left">infectiousness_presymp</td>
-<td headers="Description" class="gt_row gt_left">Relative infectiousness of presymptomatic cases to symptomatic cases.</td>
-<td headers="Default value" class="gt_row gt_left">0.25</td></tr>
-    <tr><td headers="Argument" class="gt_row gt_left">frac_symp</td>
-<td headers="Description" class="gt_row gt_left">The proportion of cases that eventually develop symptoms.</td>
-<td headers="Default value" class="gt_row gt_left">0.8</td></tr>
-    <tr><td headers="Argument" class="gt_row gt_left">ifr</td>
-<td headers="Description" class="gt_row gt_left">Infection fatality rate provided either as a single value or as a vector of the same length as the number of age categories. Use the function 'age_to_ifr' to calculate a COVID-like IFR from a vector of ages.</td>
-<td headers="Default value" class="gt_row gt_left">age_to_ifr(get_age_median())</td></tr>
-    <tr><td headers="Argument" class="gt_row gt_left">hosp_mortality</td>
-<td headers="Description" class="gt_row gt_left">The probability of death given a case is admitted to hospital, either as a single value or as a vector of the same length as the number of age categories. The inverse of the number of cases admitted to hospital per death.</td>
-<td headers="Default value" class="gt_row gt_left">1/seq(20, 5, length = 16)</td></tr>
-    <tr><td headers="Argument" class="gt_row gt_left">hosp_protection_death</td>
-<td headers="Description" class="gt_row gt_left">Given a case requires hospitalisation, the proportion of deaths admission to hospital averts.</td>
-<td headers="Default value" class="gt_row gt_left">0.75</td></tr>
-    <tr><td headers="Argument" class="gt_row gt_left">hosp_duration</td>
-<td headers="Description" class="gt_row gt_left">The mean duration of stay in the hospital in days, either as a single value or as a vector of the same length as the number of age categories.</td>
-<td headers="Default value" class="gt_row gt_left">seq(7, 21, length = 16)</td></tr>
-    <tr><td headers="Argument" class="gt_row gt_left">hosp_capacity</td>
-<td headers="Description" class="gt_row gt_left">Total hospital bed capacity given as a proportion of the population.</td>
-<td headers="Default value" class="gt_row gt_left">0.0025</td></tr>
-    <tr><td headers="Argument" class="gt_row gt_left">comm_mortality</td>
-<td headers="Description" class="gt_row gt_left">The probability of death of cases that remain in the community, either as a single value or as a vector of the same length as the number of age categories.</td>
-<td headers="Default value" class="gt_row gt_left">0</td></tr>
-    <tr><td headers="Argument" class="gt_row gt_left">vax_rate</td>
-<td headers="Description" class="gt_row gt_left">The daily rate of vaccination as a proportion of the population.</td>
-<td headers="Default value" class="gt_row gt_left">0</td></tr>
-    <tr><td headers="Argument" class="gt_row gt_left">vax_infectiousness</td>
-<td headers="Description" class="gt_row gt_left">The reduction (as a proportion) in infectioussness of an individual due to vaccination.</td>
-<td headers="Default value" class="gt_row gt_left">0.3</td></tr>
-    <tr><td headers="Argument" class="gt_row gt_left">vax_infection</td>
-<td headers="Description" class="gt_row gt_left">The protection (as a proportion) against infection provided by vaccination.</td>
-<td headers="Default value" class="gt_row gt_left">0.5</td></tr>
-    <tr><td headers="Argument" class="gt_row gt_left">vax_hosp</td>
-<td headers="Description" class="gt_row gt_left">The protection (as a proportion) against hospitalisation provided by vaccination, given infection.</td>
-<td headers="Default value" class="gt_row gt_left">0.5</td></tr>
-    <tr><td headers="Argument" class="gt_row gt_left">vax_death</td>
-<td headers="Description" class="gt_row gt_left">The protection (as a proportion) against death provided by vaccination, given hospitalisation.</td>
-<td headers="Default value" class="gt_row gt_left">0.8</td></tr>
-    <tr><td headers="Argument" class="gt_row gt_left">isolation_adherence</td>
-<td headers="Description" class="gt_row gt_left">The proportion of symptomatic individuals that adhere to isolation measures.</td>
-<td headers="Default value" class="gt_row gt_left">0</td></tr>
-    <tr><td headers="Argument" class="gt_row gt_left">isolation_effectiveness</td>
-<td headers="Description" class="gt_row gt_left">The reduction in daily transmission potential of a given individual due to adherence to isolation measures.</td>
-<td headers="Default value" class="gt_row gt_left">0.8</td></tr>
-    <tr><td headers="Argument" class="gt_row gt_left">isolation_delay</td>
-<td headers="Description" class="gt_row gt_left">The mean delay from symptom onset to isolation in days.</td>
-<td headers="Default value" class="gt_row gt_left">3</td></tr>
-    <tr><td headers="Argument" class="gt_row gt_left">social_distancing</td>
-<td headers="Description" class="gt_row gt_left">A named vector of length 4 containing the proportion reduction in contacts due to social distancing of 'home', 'school', 'work' and 'other'.</td>
-<td headers="Default value" class="gt_row gt_left">c(home = 0, school = 0, work = 0, other = 0)</td></tr>
-    <tr><td headers="Argument" class="gt_row gt_left">vax_prioritised</td>
-<td headers="Description" class="gt_row gt_left">A logical indicating whether older age groups are vaccinated first.</td>
-<td headers="Default value" class="gt_row gt_left">TRUE</td></tr>
-    <tr><td headers="Argument" class="gt_row gt_left">hosp_prioritised</td>
-<td headers="Description" class="gt_row gt_left">A logical indicating whether older age groups are hospitalised first when hospital capacity is exceeded.</td>
-<td headers="Default value" class="gt_row gt_left">TRUE</td></tr>
-  </tbody>
-  
-  
-</table>
-</div><!--/html_preserve-->
+|Argument                |Description                                                                                                                                                                                                                   |Default value                                |
+|:-----------------------|:-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|:--------------------------------------------|
+|iso3                    |The ISO3 code of the country used to draw age-distributions and contact rates from.                                                                                                                                           |"USA"                                        |
+|R0                      |The basic reproduction number.                                                                                                                                                                                                |2.5                                          |
+|generation_time         |The mean generation time in days.                                                                                                                                                                                             |7                                            |
+|incubation_period       |The mean incubation period in days.                                                                                                                                                                                           |3                                            |
+|infectiousness_presymp  |Relative infectiousness of presymptomatic cases to symptomatic cases.                                                                                                                                                         |0.25                                         |
+|frac_symp               |The proportion of cases that eventually develop symptoms.                                                                                                                                                                     |0.8                                          |
+|ifr                     |Infection fatality rate provided either as a single value or as a vector of the same length as the number of age categories. Use the function 'age_to_ifr' to calculate a COVID-like IFR from a vector of ages.               |age_to_ifr(get_age_median())                 |
+|hosp_mortality          |The probability of death given a case is admitted to hospital, either as a single value or as a vector of the same length as the number of age categories. The inverse of the number of cases admitted to hospital per death. |1/seq(20, 5, length = 16)                    |
+|hosp_protection_death   |Given a case requires hospitalisation, the proportion of deaths admission to hospital averts.                                                                                                                                 |0.75                                         |
+|hosp_duration           |The mean duration of stay in the hospital in days, either as a single value or as a vector of the same length as the number of age categories.                                                                                |seq(7, 21, length = 16)                      |
+|hosp_capacity           |Total hospital bed capacity given as a proportion of the population.                                                                                                                                                          |0.0025                                       |
+|comm_mortality          |The probability of death of cases that remain in the community, either as a single value or as a vector of the same length as the number of age categories.                                                                   |0                                            |
+|vax_rate                |The daily rate of vaccination as a proportion of the population.                                                                                                                                                              |0                                            |
+|vax_infectiousness      |The reduction (as a proportion) in infectioussness of an individual due to vaccination.                                                                                                                                       |0.3                                          |
+|vax_infection           |The protection (as a proportion) against infection provided by vaccination.                                                                                                                                                   |0.5                                          |
+|vax_hosp                |The protection (as a proportion) against hospitalisation provided by vaccination, given infection.                                                                                                                            |0.5                                          |
+|vax_death               |The protection (as a proportion) against death provided by vaccination, given hospitalisation.                                                                                                                                |0.8                                          |
+|isolation_adherence     |The proportion of symptomatic individuals that adhere to isolation measures.                                                                                                                                                  |0                                            |
+|isolation_effectiveness |The reduction in daily transmission potential of a given individual due to adherence to isolation measures.                                                                                                                   |0.8                                          |
+|isolation_delay         |The mean delay from symptom onset to isolation in days.                                                                                                                                                                       |3                                            |
+|social_distancing       |A named vector of length 4 containing the proportion reduction in contacts due to social distancing of 'home', 'school', 'work' and 'other'.                                                                                  |c(home = 0, school = 0, work = 0, other = 0) |
+|vax_prioritised         |A logical indicating whether older age groups are vaccinated first.                                                                                                                                                           |TRUE                                         |
+|hosp_prioritised        |A logical indicating whether older age groups are hospitalised first when hospital capacity is exceeded.                                                                                                                      |TRUE                                         |
 
 ### Running default settings
 
@@ -594,8 +101,8 @@ plot(output, what = "prevalence")
 ```
 
 <div class="figure" style="text-align: center">
-<img src="figure/unnamed-chunk-5-1.png" alt="plot of chunk unnamed-chunk-5"  />
-<p class="caption">plot of chunk unnamed-chunk-5</p>
+<img src="figure/unnamed-chunk-6-1.png" alt="plot of chunk unnamed-chunk-6"  />
+<p class="caption">plot of chunk unnamed-chunk-6</p>
 </div>
 
 ```r
@@ -604,8 +111,8 @@ plot(output, what = "incidence")
 ```
 
 <div class="figure" style="text-align: center">
-<img src="figure/unnamed-chunk-5-2.png" alt="plot of chunk unnamed-chunk-5"  />
-<p class="caption">plot of chunk unnamed-chunk-5</p>
+<img src="figure/unnamed-chunk-6-2.png" alt="plot of chunk unnamed-chunk-6"  />
+<p class="caption">plot of chunk unnamed-chunk-6</p>
 </div>
 
 Hospital capacity can be displayed by toggling the `show_hosp_capacity`
@@ -618,8 +125,8 @@ plot(output, what = "prevalence", show_hosp_capacity = TRUE)
 ```
 
 <div class="figure" style="text-align: center">
-<img src="figure/unnamed-chunk-6-1.png" alt="plot of chunk unnamed-chunk-6"  />
-<p class="caption">plot of chunk unnamed-chunk-6</p>
+<img src="figure/unnamed-chunk-7-1.png" alt="plot of chunk unnamed-chunk-7"  />
+<p class="caption">plot of chunk unnamed-chunk-7</p>
 </div>
 
 ### Accessing outputs
@@ -765,8 +272,8 @@ plot(output)
 ```
 
 <div class="figure" style="text-align: center">
-<img src="figure/unnamed-chunk-11-1.png" alt="plot of chunk unnamed-chunk-11"  />
-<p class="caption">plot of chunk unnamed-chunk-11</p>
+<img src="figure/unnamed-chunk-12-1.png" alt="plot of chunk unnamed-chunk-12"  />
+<p class="caption">plot of chunk unnamed-chunk-12</p>
 </div>
 
 We can see that the daily increase in number of vaccinated individuals, as
@@ -798,8 +305,8 @@ plot(output)
 ```
 
 <div class="figure" style="text-align: center">
-<img src="figure/unnamed-chunk-12-1.png" alt="plot of chunk unnamed-chunk-12"  />
-<p class="caption">plot of chunk unnamed-chunk-12</p>
+<img src="figure/unnamed-chunk-13-1.png" alt="plot of chunk unnamed-chunk-13"  />
+<p class="caption">plot of chunk unnamed-chunk-13</p>
 </div>
 
 We can see that the simulation now begins with a 50% vaccinated population,
@@ -829,8 +336,8 @@ plot(output)
 ```
 
 <div class="figure" style="text-align: center">
-<img src="figure/unnamed-chunk-13-1.png" alt="plot of chunk unnamed-chunk-13"  />
-<p class="caption">plot of chunk unnamed-chunk-13</p>
+<img src="figure/unnamed-chunk-14-1.png" alt="plot of chunk unnamed-chunk-14"  />
+<p class="caption">plot of chunk unnamed-chunk-14</p>
 </div>
 
 Comparing this figure with the first model run with no interventions, we can see
@@ -864,8 +371,8 @@ vis_comparison(outputs)
 ```
 
 <div class="figure" style="text-align: center">
-<img src="figure/unnamed-chunk-14-1.png" alt="plot of chunk unnamed-chunk-14"  />
-<p class="caption">plot of chunk unnamed-chunk-14</p>
+<img src="figure/unnamed-chunk-15-1.png" alt="plot of chunk unnamed-chunk-15"  />
+<p class="caption">plot of chunk unnamed-chunk-15</p>
 </div>
 
 Contributors

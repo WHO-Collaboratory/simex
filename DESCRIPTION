@@ -20,7 +20,8 @@ Suggests:
     usethis,
     gbRd,
     gt,
-    usethis
+    usethis,
+    knitr
 Imports: 
     dplyr,
     ggplot2,
