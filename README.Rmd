@@ -17,7 +17,7 @@ knitr::knit_hooks$set(imgcenter = function(before, options, envir){
 
 knitr::opts_chunk$set(fig.cap="",
                       fig.align = "center",
-                      dpi = 300,
+                      dpi = 200,
                       out.width = "75%",
                       imgcenter = TRUE)
 ``` 
@@ -112,17 +112,25 @@ Accessing the data is easiest using array indexing. Remember, the dimensions are
 time, age and compartment. For example, accessing the prevalence on the 250th
 day is done by:
 
-```{r, echo = TRUE, eval = TRUE}
+```{r, echo = FALSE, eval = TRUE}
 ## extract prevalence in percent on day 250
 round(100*output$prevalence[250,,], 1)
+```
+```{r, echo = TRUE, eval = FALSE}
+## extract prevalence in percent on day 250
+output$prevalence[250,,]
 ```
 
 Accessing the prevalence of the 1st age compartment (0-4) and 1st infectious
 compartment (unvaccinated susceptible) for days 30 to 35 is done by:
 
-```{r, echo = TRUE, eval = TRUE}
+```{r, echo = FALSE, eval = TRUE}
 ## extract in percent on day 130-135
 round(100*output$prevalence[130:135,1,1], 1)
+```
+```{r, echo = TRUE, eval = FALSE}
+## extract in percent on day 130-135
+output$prevalence[130:135,1,1]
 ```
 
 The outputs can also be extracted in `tibble` form using the `extract` function,
@@ -228,7 +236,7 @@ objects. In the example below, we generate a named list of lists that compares
 the default scenario (no interventions) with the a scenario where isolation is
 introduced on the 125th day.
 	
-```{r, echo = TRUE, eval = TRUE, imgcenter = TRUE}
+```{r, echo = TRUE, eval = TRUE}
 ## define two scenarios, one without intervention and one with isolation
 parlists <- list(
   "No intervention" = get_parameters(),

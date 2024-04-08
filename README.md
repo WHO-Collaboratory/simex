@@ -158,11 +158,6 @@ day is done by:
 
 <p align='center'>
 
-```r
-## extract prevalence in percent on day 250
-round(100*output$prevalence[250,,], 1)
-```
-
 ```
 ##         state
 ## age      S_u E_u C_u H_u R_u D_u S_v E_v C_v H_v R_v D_v
@@ -185,20 +180,31 @@ round(100*output$prevalence[250,,], 1)
 ```
 
 </p>
+<p align='center'>
+
+```r
+## extract prevalence in percent on day 250
+output$prevalence[250,,]
+```
+
+</p>
 
 Accessing the prevalence of the 1st age compartment (0-4) and 1st infectious
 compartment (unvaccinated susceptible) for days 30 to 35 is done by:
 
 <p align='center'>
 
-```r
-## extract in percent on day 130-135
-round(100*output$prevalence[130:135,1,1], 1)
-```
-
 ```
 ## day_130 day_131 day_132 day_133 day_134 day_135 
 ##     5.1     5.1     5.1     5.0     5.0     4.9
+```
+
+</p>
+<p align='center'>
+
+```r
+## extract in percent on day 130-135
+output$prevalence[130:135,1,1]
 ```
 
 </p>
@@ -286,7 +292,7 @@ output <- run_model(pars)
 plot(output)
 ```
 
-<img src="figure/unnamed-chunk-12-1.png" width="75%" style="display: block; margin: auto;" /></p>
+<img src="figure/unnamed-chunk-14-1.png" width="75%" style="display: block; margin: auto;" /></p>
 
 We can see that the daily increase in number of vaccinated individuals, as
 well as the impact on infection and disease severity.
@@ -317,7 +323,7 @@ output <- run_model(pars, init_state = state)
 plot(output)
 ```
 
-<img src="figure/unnamed-chunk-13-1.png" width="75%" style="display: block; margin: auto;" /></p>
+<img src="figure/unnamed-chunk-15-1.png" width="75%" style="display: block; margin: auto;" /></p>
 
 We can see that the simulation now begins with a 50% vaccinated population,
 significantly reducing the size and impact of the pandemic.
@@ -346,7 +352,7 @@ output <- run_model(parlist)
 plot(output)
 ```
 
-<img src="figure/unnamed-chunk-14-1.png" width="75%" style="display: block; margin: auto;" /></p>
+<img src="figure/unnamed-chunk-16-1.png" width="75%" style="display: block; margin: auto;" /></p>
 
 Comparing this figure with the first model run with no interventions, we can see
 the proportion of deaths drops from about 0.7% to 0.4%; a reduction in deaths of
@@ -379,7 +385,7 @@ outputs <- lapply(parlists, run_model)
 vis_comparison(outputs)
 ```
 
-<img src="figure/unnamed-chunk-15-1.png" width="75%" style="display: block; margin: auto;" /></p>
+<img src="figure/unnamed-chunk-17-1.png" width="75%" style="display: block; margin: auto;" /></p>
 
 Contributors
 ------------
