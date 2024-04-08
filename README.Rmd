@@ -110,27 +110,20 @@ The `output` object is of class `simex` and is a list containing four items:
 
 Accessing the data is easiest using array indexing. Remember, the dimensions are
 time, age and compartment. For example, accessing the prevalence on the 250th
-day is done by:
+day is done with `output$prevalence[250,,]`:
 
 ```{r, echo = FALSE, eval = TRUE}
 ## extract prevalence in percent on day 250
 round(100*output$prevalence[250,,], 1)
 ```
-```{r, echo = TRUE, eval = FALSE}
-## extract prevalence in percent on day 250
-output$prevalence[250,,]
-```
 
 Accessing the prevalence of the 1st age compartment (0-4) and 1st infectious
-compartment (unvaccinated susceptible) for days 30 to 35 is done by:
+compartment (unvaccinated susceptible) for days 30 to 35 is done with
+`output$prevalence[130:135,1,1]`:
 
 ```{r, echo = FALSE, eval = TRUE}
 ## extract in percent on day 130-135
 round(100*output$prevalence[130:135,1,1], 1)
-```
-```{r, echo = TRUE, eval = FALSE}
-## extract in percent on day 130-135
-output$prevalence[130:135,1,1]
 ```
 
 The outputs can also be extracted in `tibble` form using the `extract` function,
