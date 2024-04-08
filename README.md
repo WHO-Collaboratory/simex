@@ -31,23 +31,23 @@ Running *simex*
 Most settings are specified via the `get_parameters` function. The arguments and
 their default values are given below:
 
-<!--html_preserve--><div id="hjroqxjeku" style="padding-left:0px;padding-right:0px;padding-top:10px;padding-bottom:10px;overflow-x:auto;overflow-y:auto;width:auto;height:auto;">
-<style>#hjroqxjeku table {
+<!--html_preserve--><div id="qelfcdmefp" style="padding-left:0px;padding-right:0px;padding-top:10px;padding-bottom:10px;overflow-x:auto;overflow-y:auto;width:auto;height:auto;">
+<style>#qelfcdmefp table {
   font-family: system-ui, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-#hjroqxjeku thead, #hjroqxjeku tbody, #hjroqxjeku tfoot, #hjroqxjeku tr, #hjroqxjeku td, #hjroqxjeku th {
+#qelfcdmefp thead, #qelfcdmefp tbody, #qelfcdmefp tfoot, #qelfcdmefp tr, #qelfcdmefp td, #qelfcdmefp th {
   border-style: none;
 }
 
-#hjroqxjeku p {
+#qelfcdmefp p {
   margin: 0;
   padding: 0;
 }
 
-#hjroqxjeku .gt_table {
+#qelfcdmefp .gt_table {
   display: table;
   border-collapse: collapse;
   line-height: normal;
@@ -73,12 +73,12 @@ their default values are given below:
   border-left-color: #D3D3D3;
 }
 
-#hjroqxjeku .gt_caption {
+#qelfcdmefp .gt_caption {
   padding-top: 4px;
   padding-bottom: 4px;
 }
 
-#hjroqxjeku .gt_title {
+#qelfcdmefp .gt_title {
   color: #333333;
   font-size: 125%;
   font-weight: initial;
@@ -90,7 +90,7 @@ their default values are given below:
   border-bottom-width: 0;
 }
 
-#hjroqxjeku .gt_subtitle {
+#qelfcdmefp .gt_subtitle {
   color: #333333;
   font-size: 85%;
   font-weight: initial;
@@ -102,7 +102,7 @@ their default values are given below:
   border-top-width: 0;
 }
 
-#hjroqxjeku .gt_heading {
+#qelfcdmefp .gt_heading {
   background-color: #FFFFFF;
   text-align: center;
   border-bottom-color: #FFFFFF;
@@ -114,13 +114,13 @@ their default values are given below:
   border-right-color: #D3D3D3;
 }
 
-#hjroqxjeku .gt_bottom_border {
+#qelfcdmefp .gt_bottom_border {
   border-bottom-style: solid;
   border-bottom-width: 2px;
   border-bottom-color: #D3D3D3;
 }
 
-#hjroqxjeku .gt_col_headings {
+#qelfcdmefp .gt_col_headings {
   border-top-style: solid;
   border-top-width: 2px;
   border-top-color: #D3D3D3;
@@ -135,7 +135,7 @@ their default values are given below:
   border-right-color: #D3D3D3;
 }
 
-#hjroqxjeku .gt_col_heading {
+#qelfcdmefp .gt_col_heading {
   color: #333333;
   background-color: #FFFFFF;
   font-size: 100%;
@@ -155,7 +155,7 @@ their default values are given below:
   overflow-x: hidden;
 }
 
-#hjroqxjeku .gt_column_spanner_outer {
+#qelfcdmefp .gt_column_spanner_outer {
   color: #333333;
   background-color: #FFFFFF;
   font-size: 100%;
@@ -167,15 +167,15 @@ their default values are given below:
   padding-right: 4px;
 }
 
-#hjroqxjeku .gt_column_spanner_outer:first-child {
+#qelfcdmefp .gt_column_spanner_outer:first-child {
   padding-left: 0;
 }
 
-#hjroqxjeku .gt_column_spanner_outer:last-child {
+#qelfcdmefp .gt_column_spanner_outer:last-child {
   padding-right: 0;
 }
 
-#hjroqxjeku .gt_column_spanner {
+#qelfcdmefp .gt_column_spanner {
   border-bottom-style: solid;
   border-bottom-width: 2px;
   border-bottom-color: #D3D3D3;
@@ -187,11 +187,11 @@ their default values are given below:
   width: 100%;
 }
 
-#hjroqxjeku .gt_spanner_row {
+#qelfcdmefp .gt_spanner_row {
   border-bottom-style: hidden;
 }
 
-#hjroqxjeku .gt_group_heading {
+#qelfcdmefp .gt_group_heading {
   padding-top: 8px;
   padding-bottom: 8px;
   padding-left: 5px;
@@ -217,7 +217,7 @@ their default values are given below:
   text-align: left;
 }
 
-#hjroqxjeku .gt_empty_group_heading {
+#qelfcdmefp .gt_empty_group_heading {
   padding: 0.5px;
   color: #333333;
   background-color: #FFFFFF;
@@ -232,15 +232,15 @@ their default values are given below:
   vertical-align: middle;
 }
 
-#hjroqxjeku .gt_from_md > :first-child {
+#qelfcdmefp .gt_from_md > :first-child {
   margin-top: 0;
 }
 
-#hjroqxjeku .gt_from_md > :last-child {
+#qelfcdmefp .gt_from_md > :last-child {
   margin-bottom: 0;
 }
 
-#hjroqxjeku .gt_row {
+#qelfcdmefp .gt_row {
   padding-top: 8px;
   padding-bottom: 8px;
   padding-left: 5px;
@@ -259,7 +259,7 @@ their default values are given below:
   overflow-x: hidden;
 }
 
-#hjroqxjeku .gt_stub {
+#qelfcdmefp .gt_stub {
   color: #333333;
   background-color: #FFFFFF;
   font-size: 100%;
@@ -272,7 +272,7 @@ their default values are given below:
   padding-right: 5px;
 }
 
-#hjroqxjeku .gt_stub_row_group {
+#qelfcdmefp .gt_stub_row_group {
   color: #333333;
   background-color: #FFFFFF;
   font-size: 100%;
@@ -286,15 +286,15 @@ their default values are given below:
   vertical-align: top;
 }
 
-#hjroqxjeku .gt_row_group_first td {
+#qelfcdmefp .gt_row_group_first td {
   border-top-width: 2px;
 }
 
-#hjroqxjeku .gt_row_group_first th {
+#qelfcdmefp .gt_row_group_first th {
   border-top-width: 2px;
 }
 
-#hjroqxjeku .gt_summary_row {
+#qelfcdmefp .gt_summary_row {
   color: #333333;
   background-color: #FFFFFF;
   text-transform: inherit;
@@ -304,16 +304,16 @@ their default values are given below:
   padding-right: 5px;
 }
 
-#hjroqxjeku .gt_first_summary_row {
+#qelfcdmefp .gt_first_summary_row {
   border-top-style: solid;
   border-top-color: #D3D3D3;
 }
 
-#hjroqxjeku .gt_first_summary_row.thick {
+#qelfcdmefp .gt_first_summary_row.thick {
   border-top-width: 2px;
 }
 
-#hjroqxjeku .gt_last_summary_row {
+#qelfcdmefp .gt_last_summary_row {
   padding-top: 8px;
   padding-bottom: 8px;
   padding-left: 5px;
@@ -323,7 +323,7 @@ their default values are given below:
   border-bottom-color: #D3D3D3;
 }
 
-#hjroqxjeku .gt_grand_summary_row {
+#qelfcdmefp .gt_grand_summary_row {
   color: #333333;
   background-color: #FFFFFF;
   text-transform: inherit;
@@ -333,7 +333,7 @@ their default values are given below:
   padding-right: 5px;
 }
 
-#hjroqxjeku .gt_first_grand_summary_row {
+#qelfcdmefp .gt_first_grand_summary_row {
   padding-top: 8px;
   padding-bottom: 8px;
   padding-left: 5px;
@@ -343,7 +343,7 @@ their default values are given below:
   border-top-color: #D3D3D3;
 }
 
-#hjroqxjeku .gt_last_grand_summary_row_top {
+#qelfcdmefp .gt_last_grand_summary_row_top {
   padding-top: 8px;
   padding-bottom: 8px;
   padding-left: 5px;
@@ -353,11 +353,11 @@ their default values are given below:
   border-bottom-color: #D3D3D3;
 }
 
-#hjroqxjeku .gt_striped {
+#qelfcdmefp .gt_striped {
   background-color: rgba(128, 128, 128, 0.05);
 }
 
-#hjroqxjeku .gt_table_body {
+#qelfcdmefp .gt_table_body {
   border-top-style: solid;
   border-top-width: 2px;
   border-top-color: #D3D3D3;
@@ -366,7 +366,7 @@ their default values are given below:
   border-bottom-color: #D3D3D3;
 }
 
-#hjroqxjeku .gt_footnotes {
+#qelfcdmefp .gt_footnotes {
   color: #333333;
   background-color: #FFFFFF;
   border-bottom-style: none;
@@ -380,7 +380,7 @@ their default values are given below:
   border-right-color: #D3D3D3;
 }
 
-#hjroqxjeku .gt_footnote {
+#qelfcdmefp .gt_footnote {
   margin: 0px;
   font-size: 90%;
   padding-top: 4px;
@@ -389,7 +389,7 @@ their default values are given below:
   padding-right: 5px;
 }
 
-#hjroqxjeku .gt_sourcenotes {
+#qelfcdmefp .gt_sourcenotes {
   color: #333333;
   background-color: #FFFFFF;
   border-bottom-style: none;
@@ -403,7 +403,7 @@ their default values are given below:
   border-right-color: #D3D3D3;
 }
 
-#hjroqxjeku .gt_sourcenote {
+#qelfcdmefp .gt_sourcenote {
   font-size: 90%;
   padding-top: 4px;
   padding-bottom: 4px;
@@ -411,63 +411,63 @@ their default values are given below:
   padding-right: 5px;
 }
 
-#hjroqxjeku .gt_left {
+#qelfcdmefp .gt_left {
   text-align: left;
 }
 
-#hjroqxjeku .gt_center {
+#qelfcdmefp .gt_center {
   text-align: center;
 }
 
-#hjroqxjeku .gt_right {
+#qelfcdmefp .gt_right {
   text-align: right;
   font-variant-numeric: tabular-nums;
 }
 
-#hjroqxjeku .gt_font_normal {
+#qelfcdmefp .gt_font_normal {
   font-weight: normal;
 }
 
-#hjroqxjeku .gt_font_bold {
+#qelfcdmefp .gt_font_bold {
   font-weight: bold;
 }
 
-#hjroqxjeku .gt_font_italic {
+#qelfcdmefp .gt_font_italic {
   font-style: italic;
 }
 
-#hjroqxjeku .gt_super {
+#qelfcdmefp .gt_super {
   font-size: 65%;
 }
 
-#hjroqxjeku .gt_footnote_marks {
+#qelfcdmefp .gt_footnote_marks {
   font-size: 75%;
   vertical-align: 0.4em;
   position: initial;
 }
 
-#hjroqxjeku .gt_asterisk {
+#qelfcdmefp .gt_asterisk {
   font-size: 100%;
   vertical-align: 0;
 }
 
-#hjroqxjeku .gt_indent_1 {
+#qelfcdmefp .gt_indent_1 {
   text-indent: 5px;
 }
 
-#hjroqxjeku .gt_indent_2 {
+#qelfcdmefp .gt_indent_2 {
   text-indent: 10px;
 }
 
-#hjroqxjeku .gt_indent_3 {
+#qelfcdmefp .gt_indent_3 {
   text-indent: 15px;
 }
 
-#hjroqxjeku .gt_indent_4 {
+#qelfcdmefp .gt_indent_4 {
   text-indent: 20px;
 }
 
-#hjroqxjeku .gt_indent_5 {
+#qelfcdmefp .gt_indent_5 {
   text-indent: 25px;
 }
 </style>
@@ -581,24 +581,7 @@ print(output)
 ##  - Compartments: S_u | E_u | C_u | H_u | R_u | D_u | S_v | E_v | C_v | H_v | R_v | D_v
 ```
 
-The `output` object is of class `simex` and is a list containing four items:
-
-* `prevalance` is an array with 3 dimensions: time (365 days) x age (16
-  categories) x state (12 compartments). The compartments are S (susceptible), E
-  (exposed, pre-symptomatic), C (symptomatic in community), H (sympomatic in
-  hospital), R (recovered), D (dead). Each comparment is split into unvaccinated
-  (with subscript _u) and vaccinated (with subscript _v). Each value in the
-  array represents the proportion of the population in that given age-disease
-  compartment on a given day.
-* `deltas` is an array with the same dimensions as `prevalence`. Each value
-  represents the change in a given age-disease compartment from the previous
-  day.
-* `incidence` is an array with the same dimensions as `prevalence`. Each value
-  represents the new additions to a given age-disease comparment on a given
-  day. For the exposed category E, this represents incidence of new infections,
-  for the hospitalised category H this represents new hospital admissions, and
-  for the dead category D this represents new deaths.
-* `pars` contains the parameter set initially fed into `run_model`.
+### Visualising outputs
 
 To visualise the results, use the generic `plot` function defined for the
 `simex` class. Below, we first visualise prevalence and then incidence,
@@ -625,9 +608,89 @@ plot(output, what = "incidence")
 <p class="caption">plot of chunk unnamed-chunk-5</p>
 </div>
 
-The outputs can be extracted in `tibble` form using the `extract` function, once
-again using the `what` argument to specify whether prevalence or incidence is
-extracted. 
+Hospital capacity can be displayed by toggling the `show_hosp_capacity`
+argument.
+
+
+```r
+## visualise prevalence with hospital capaciy
+plot(output, what = "prevalence", show_hosp_capacity = TRUE)
+```
+
+<div class="figure" style="text-align: center">
+<img src="figure/unnamed-chunk-6-1.png" alt="plot of chunk unnamed-chunk-6"  />
+<p class="caption">plot of chunk unnamed-chunk-6</p>
+</div>
+
+### Accessing outputs
+
+The `output` object is of class `simex` and is a list containing four items:
+
+* `prevalance` is an array with 3 dimensions: time (365 days) x age (16
+  categories) x state (12 compartments). The compartments are S (susceptible), E
+  (exposed, pre-symptomatic), C (symptomatic in community), H (sympomatic in
+  hospital), R (recovered), D (dead). Each comparment is split into unvaccinated
+  (with subscript _u) and vaccinated (with subscript _v). Each value in the
+  array represents the proportion of the population in that given age-disease
+  compartment on a given day.
+* `deltas` is an array with the same dimensions as `prevalence`. Each value
+  represents the change in a given age-disease compartment from the previous
+  day.
+* `incidence` is an array with the same dimensions as `prevalence`. Each value
+  represents the new additions to a given age-disease comparment on a given
+  day. For the exposed category E, this represents incidence of new infections,
+  for the hospitalised category H this represents new hospital admissions, and
+  for the dead category D this represents new deaths.
+* `pars` contains the parameter set initially fed into `run_model`.
+
+Accessing the data is easiest using array indexing. Remember, the dimensions are
+time, age and compartment. For example, accessing the prevalence on the 250th
+day is done by:
+
+
+```r
+## extract prevalence in percent on day 250
+round(100*output$prevalence[250,,], 1)
+```
+
+```
+##         state
+## age      S_u E_u C_u H_u R_u D_u S_v E_v C_v H_v R_v D_v
+##   age_1  1.7   0   0   0 3.8 0.0   0   0   0   0   0   0
+##   age_2  0.9   0   0   0 5.0 0.0   0   0   0   0   0   0
+##   age_3  0.5   0   0   0 5.6 0.0   0   0   0   0   0   0
+##   age_4  0.3   0   0   0 6.3 0.0   0   0   0   0   0   0
+##   age_5  0.9   0   0   0 5.7 0.0   0   0   0   0   0   0
+##   age_6  0.9   0   0   0 5.7 0.0   0   0   0   0   0   0
+##   age_7  1.1   0   0   0 5.9 0.0   0   0   0   0   0   0
+##   age_8  0.9   0   0   0 5.8 0.0   0   0   0   0   0   0
+##   age_9  0.9   0   0   0 5.6 0.0   0   0   0   0   0   0
+##   age_10 1.0   0   0   0 5.0 0.0   0   0   0   0   0   0
+##   age_11 1.1   0   0   0 5.0 0.1   0   0   0   0   0   0
+##   age_12 1.7   0   0   0 4.3 0.1   0   0   0   0   0   0
+##   age_13 3.0   0   0   0 3.1 0.1   0   0   0   0   0   0
+##   age_14 3.5   0   0   0 2.1 0.1   0   0   0   0   0   0
+##   age_15 3.0   0   0   0 1.4 0.1   0   0   0   0   0   0
+##   age_16 5.6   0   0   0 1.7 0.2   0   0   0   0   0   0
+```
+
+Accessing the prevalence of the 1st age compartment (0-4) and 1st infectious
+compartment (unvaccinated susceptible) for days 30 to 35 is done by:
+
+
+```r
+## extract in percent on day 130-135
+round(100*output$prevalence[130:135,1,1], 1)
+```
+
+```
+## day_130 day_131 day_132 day_133 day_134 day_135 
+##     5.1     5.1     5.1     5.0     5.0     4.9
+```
+
+The outputs can also be extracted in `tibble` form using the `extract` function,
+once again using the `what` argument to specify whether prevalence or incidence
+is extracted.
 
 
 ```r
@@ -651,6 +714,37 @@ extract(output, what = "prevalence")
 ## 10     1 H           TRUE  0           
 ## # ℹ 4,370 more rows
 ```
+If we want to filter this list for a sequence of days, we can then do basic
+data.frame manipulation:
+
+
+```r
+## define start and end days
+days_from <- 10
+days_to <- 20
+
+## extract prevalence
+df <- extract(output, what = "prevalence")
+df <- df[df$day %in% seq(days_from, days_to),]
+df
+```
+
+```
+## # A tibble: 132 × 4
+##      day compartment vax      value
+##    <dbl> <fct>       <lgl>    <dbl>
+##  1    10 S           FALSE 1.00e+ 0
+##  2    10 E           FALSE 4.30e- 8
+##  3    10 C           FALSE 6.82e- 8
+##  4    10 H           FALSE 1.33e- 9
+##  5    10 R           FALSE 5.26e- 8
+##  6    10 D           FALSE 4.17e-11
+##  7    10 S           TRUE  0       
+##  8    10 E           TRUE  0       
+##  9    10 C           TRUE  0       
+## 10    10 H           TRUE  0       
+## # ℹ 122 more rows
+```
 
 ### Modelling a single intervention
 
@@ -671,8 +765,8 @@ plot(output)
 ```
 
 <div class="figure" style="text-align: center">
-<img src="figure/unnamed-chunk-7-1.png" alt="plot of chunk unnamed-chunk-7"  />
-<p class="caption">plot of chunk unnamed-chunk-7</p>
+<img src="figure/unnamed-chunk-11-1.png" alt="plot of chunk unnamed-chunk-11"  />
+<p class="caption">plot of chunk unnamed-chunk-11</p>
 </div>
 
 We can see that the daily increase in number of vaccinated individuals, as
@@ -704,8 +798,8 @@ plot(output)
 ```
 
 <div class="figure" style="text-align: center">
-<img src="figure/unnamed-chunk-8-1.png" alt="plot of chunk unnamed-chunk-8"  />
-<p class="caption">plot of chunk unnamed-chunk-8</p>
+<img src="figure/unnamed-chunk-12-1.png" alt="plot of chunk unnamed-chunk-12"  />
+<p class="caption">plot of chunk unnamed-chunk-12</p>
 </div>
 
 We can see that the simulation now begins with a 50% vaccinated population,
@@ -735,8 +829,8 @@ plot(output)
 ```
 
 <div class="figure" style="text-align: center">
-<img src="figure/unnamed-chunk-9-1.png" alt="plot of chunk unnamed-chunk-9"  />
-<p class="caption">plot of chunk unnamed-chunk-9</p>
+<img src="figure/unnamed-chunk-13-1.png" alt="plot of chunk unnamed-chunk-13"  />
+<p class="caption">plot of chunk unnamed-chunk-13</p>
 </div>
 
 Comparing this figure with the first model run with no interventions, we can see
@@ -770,8 +864,8 @@ vis_comparison(outputs)
 ```
 
 <div class="figure" style="text-align: center">
-<img src="figure/unnamed-chunk-10-1.png" alt="plot of chunk unnamed-chunk-10"  />
-<p class="caption">plot of chunk unnamed-chunk-10</p>
+<img src="figure/unnamed-chunk-14-1.png" alt="plot of chunk unnamed-chunk-14"  />
+<p class="caption">plot of chunk unnamed-chunk-14</p>
 </div>
 
 Contributors
