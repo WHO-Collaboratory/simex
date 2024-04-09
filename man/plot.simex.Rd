@@ -9,7 +9,9 @@
   what = c("prevalence", "deltas", "incidence"),
   log = FALSE,
   freescales = TRUE,
-  show_hosp_capacity = FALSE
+  show_hosp_capacity = FALSE,
+  use_absolute_numbers = FALSE,
+  base_size = 11
 )
 }
 \arguments{
@@ -26,6 +28,12 @@ use different y-axes.}
 
 \item{show_hosp_capacity}{Logical indicating whether hospital capacity should be
 displayed in the "H" compartment (only possible when what = "prevalence").}
+
+\item{use_absolute_numbers}{Logical indicating whether absolute absolute
+numbers (in terms of individuals) should be shown or relative to population
+size.}
+
+\item{base_size}{Base size passed to theme_*}
 }
 \description{
 Plot timeline of prevalence or incidence.

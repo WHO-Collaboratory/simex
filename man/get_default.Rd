@@ -4,7 +4,7 @@
 \alias{get_default}
 \title{Extract default value call as string from formal.}
 \usage{
-get_default(arg)
+get_default(arg, what = c("text", "value"))
 }
 \arguments{
 \item{arg}{An argument returned by \code{formals}.}

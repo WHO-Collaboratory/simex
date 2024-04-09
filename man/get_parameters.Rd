@@ -16,7 +16,7 @@ get_parameters(
   hosp_protection_death = 0.75,
   hosp_duration = seq(7, 21, length = 16),
   hosp_capacity = 0.0025,
-  comm_mortality = 0,
+  comm_mortality = rep(0, 16),
   vax_rate = 0,
   vax_infectiousness = 0.3,
   vax_infection = 0.5,

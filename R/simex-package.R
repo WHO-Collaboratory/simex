@@ -5,6 +5,7 @@
 #' @import ggplot2
 #' @import tidyr
 #' @import dplyr
+#' @import shiny
 
 ## usethis namespace: start
 #' @importFrom magrittr %>% %<>% divide_by

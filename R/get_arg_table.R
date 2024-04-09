@@ -6,7 +6,7 @@
 #' @importFrom gt gt
 #' @importFrom knitr kable
 #'
-get_arg_table <- function(fn_name, type = c("gt", "kable")) {
+get_arg_table <- function(fn_name, type = c("gt", "kable", "tibble")) {
 
   type <- match.arg(type)
 
@@ -17,7 +17,7 @@ get_arg_table <- function(fn_name, type = c("gt", "kable")) {
     "Default value" = map_chr(arg, get_default)
   )
 
-  if(type == "gt") gt(df) else knitr::kable(df)
+  if(type == "gt") gt(df) else if(type == "kable") knitr::kable(df) else df
 
 }
 
@@ -32,7 +32,7 @@ get_arg_table <- function(fn_name, type = c("gt", "kable")) {
 #' @importFrom gbRd Rdo_args2txt
 #'
 get_description <- function(fn_name, arg_name) {
-  txt <- strsplit(gbRd::Rdo_args2txt(fn_name, arg_name), ":")[[1]][2]
+  txt <- strsplit(Rdo_args2txt(fn_name, arg_name), ":")[[1]][2]
   txt <- gsub("^ *|(?<= ) | *$", "", txt, perl = TRUE)
   txt <- gsub("[\r\n]", "", txt)
   return(txt)
@@ -43,8 +43,13 @@ get_description <- function(fn_name, arg_name) {
 #'
 #' @param arg An argument returned by \code{formals}.
 #'
-get_default <- function(arg) {
-  txt <- paste0(deparse(arg), collapse = " ")
-  txt <- gsub("^ *|(?<= ) | *$", "", txt, perl = TRUE)
-  return(txt)
+get_default <- function(arg, what = c("text", "value")) {
+  what <- match.arg(what)
+  if(what == "text") {
+    out <- paste0(deparse(arg), collapse = " ")
+    out <- gsub("^ *|(?<= ) | *$", "", out, perl = TRUE)
+  } else {
+    out <- eval(arg)
+  }
+  return(out)
 }

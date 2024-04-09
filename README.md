@@ -13,23 +13,17 @@ Installation
 
 To install the development version from github:
 
-<p align='center'>
 
 ```r
 remotes::install_github("finlaycampbell/simex", dependencies = TRUE, force = TRUE)
 ```
 
-</p>
-
 Load the package using:
 
-<p align='center'>
 
 ```r
 library("simex")
 ```
-
-</p>
 
 Running *simex*
 -------------
@@ -39,7 +33,6 @@ Running *simex*
 Most settings are specified via the `get_parameters` function. The arguments and
 their default values are given below:
 
-<p align='center'>
 
 |Argument                |Description                                                                                                                                                                                                                   |Default value                                |
 |:-----------------------|:-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|:--------------------------------------------|
@@ -54,7 +47,7 @@ their default values are given below:
 |hosp_protection_death   |Given a case requires hospitalisation, the proportion of deaths admission to hospital averts.                                                                                                                                 |0.75                                         |
 |hosp_duration           |The mean duration of stay in the hospital in days, either as a single value or as a vector of the same length as the number of age categories.                                                                                |seq(7, 21, length = 16)                      |
 |hosp_capacity           |Total hospital bed capacity given as a proportion of the population.                                                                                                                                                          |0.0025                                       |
-|comm_mortality          |The probability of death of cases that remain in the community, either as a single value or as a vector of the same length as the number of age categories.                                                                   |0                                            |
+|comm_mortality          |The probability of death of cases that remain in the community, either as a single value or as a vector of the same length as the number of age categories.                                                                   |rep(0, 16)                                   |
 |vax_rate                |The daily rate of vaccination as a proportion of the population.                                                                                                                                                              |0                                            |
 |vax_infectiousness      |The reduction (as a proportion) in infectioussness of an individual due to vaccination.                                                                                                                                       |0.3                                          |
 |vax_infection           |The protection (as a proportion) against infection provided by vaccination.                                                                                                                                                   |0.5                                          |
@@ -67,14 +60,11 @@ their default values are given below:
 |vax_prioritised         |A logical indicating whether older age groups are vaccinated first.                                                                                                                                                           |TRUE                                         |
 |hosp_prioritised        |A logical indicating whether older age groups are hospitalised first when hospital capacity is exceeded.                                                                                                                      |TRUE                                         |
 
-</p>
-
 ### Running default settings
 
 To run the model using default settings, specify a parameter object `par` and
 feed this into the `run_model` function.
 
-<p align='center'>
 
 ```r
 ## set parameters using defaults
@@ -95,15 +85,12 @@ print(output)
 ##  - Compartments: S_u | E_u | C_u | H_u | R_u | D_u | S_v | E_v | C_v | H_v | R_v | D_v
 ```
 
-</p>
-
 ### Visualising outputs
 
 To visualise the results, use the generic `plot` function defined for the
 `simex` class. Below, we first visualise prevalence and then incidence,
 specified using the `what` argument.
 
-<p align='center'>
 
 ```r
 ## visualise prevalence
@@ -117,25 +104,55 @@ plot(output, what = "prevalence")
 plot(output, what = "incidence")
 ```
 
-<img src="figure/unnamed-chunk-6-2.png" width="75%" style="display: block; margin: auto;" /></p>
+<img src="figure/unnamed-chunk-6-2.png" width="75%" style="display: block; margin: auto;" />
 
 Hospital capacity can be displayed by toggling the `show_hosp_capacity`
 argument.
 
-<p align='center'>
 
 ```r
 ## visualise prevalence with hospital capaciy
 plot(output, what = "prevalence", show_hosp_capacity = TRUE)
 ```
 
-<img src="figure/unnamed-chunk-7-1.png" width="75%" style="display: block; margin: auto;" /></p>
+<img src="figure/unnamed-chunk-7-1.png" width="75%" style="display: block; margin: auto;" />
+
+### Summarising outputs
+
+To get a summary of the model state at a given point in time, use the `summary`
+function with the optional `day` argument. In the example below, we display the
+summary statistics for day 150:
+
+
+```r
+## get summary at day 150
+summary(output, day = 150)
+```
+
+```
+## # A tibble: 13 × 2
+##    statistic                            value    
+##    <chr>                                <chr>    
+##  1 incidence_last_7                     40716054 
+##  2 incidence_cumulative                 138832526
+##  3 incidence_weekly_change              8%       
+##  4 death_last_7                         71172    
+##  5 death_cumulative                     162438   
+##  6 death_weekly_change                  61%      
+##  7 hosp_admission_last_7                1027356  
+##  8 hosp_admission_cumulative            2740023  
+##  9 hosp_admission_weekly_change         35%      
+## 10 hospital_occupancy                   181%     
+## 11 proportion_cases_hospitalised_last_7 2.5%     
+## 12 ifr_last_7                           0.175%   
+## 13 ifr_cumulative                       0.117%
+```
 
 ### Accessing outputs
 
 The `output` object is of class `simex` and is a list containing four items:
 
-* `prevalance` is an array with 3 dimensions: time (365 days) x age (16
+* `prevalence` is an array with 3 dimensions: time (365 days) x age (16
   categories) x state (12 compartments). The compartments are S (susceptible), E
   (exposed, pre-symptomatic), C (symptomatic in community), H (sympomatic in
   hospital), R (recovered), D (dead). Each comparment is split into unvaccinated
@@ -156,7 +173,6 @@ Accessing the data is easiest using array indexing. Remember, the dimensions are
 time, age and compartment. For example, accessing the prevalence on the 250th
 day is done with `output$prevalence[250,,]`:
 
-<p align='center'>
 
 ```
 ##         state
@@ -179,26 +195,20 @@ day is done with `output$prevalence[250,,]`:
 ##   age_16 5.6   0   0   0 1.7 0.2   0   0   0   0   0   0
 ```
 
-</p>
-
 Accessing the prevalence of the 1st age compartment (0-4) and 1st infectious
-compartment (unvaccinated susceptible) for days 30 to 35 is done with
+compartment (unvaccinated susceptible) for days 130 to 135 is done with
 `output$prevalence[130:135,1,1]`:
 
-<p align='center'>
 
 ```
 ## day_130 day_131 day_132 day_133 day_134 day_135 
 ##     5.1     5.1     5.1     5.0     5.0     4.9
 ```
 
-</p>
-
 The outputs can also be extracted in `tibble` form using the `extract` function,
 once again using the `what` argument to specify whether prevalence or incidence
 is extracted.
 
-<p align='center'>
 
 ```r
 ## extract prevalence
@@ -221,12 +231,9 @@ extract(output, what = "prevalence")
 ## 10     1 H           TRUE  0           
 ## # ℹ 4,370 more rows
 ```
-
-</p>
 If we want to filter this list for a sequence of days, we can then do basic
-data.frame manipulation:
+dataframe manipulation:
 
-<p align='center'>
 
 ```r
 ## define start and end days
@@ -256,15 +263,12 @@ df
 ## # ℹ 122 more rows
 ```
 
-</p>
-
 ### Modelling a single intervention
 
 We use vaccination as an example intervention. Referencing the table above, we
 can see that vaccination rate is specified using the `vax_rate` argument and
 set it to 0.5% of the population per day.
 
-<p align='center'>
 
 ```r
 ## define vaccination rate
@@ -277,7 +281,7 @@ output <- run_model(pars)
 plot(output)
 ```
 
-<img src="figure/unnamed-chunk-12-1.png" width="75%" style="display: block; margin: auto;" /></p>
+<img src="figure/unnamed-chunk-13-1.png" width="75%" style="display: block; margin: auto;" />
 
 We can see that the daily increase in number of vaccinated individuals, as
 well as the impact on infection and disease severity.
@@ -292,23 +296,34 @@ compartment. In the example below, we extract the initial state from the
 previous run, and modify the compartments so half the susceptible population is
 assigned to the vaccinated compartment.
 
-<p align='center'>
 
 ```r
 ## extract starting point from previous run
-state <- output$prevalence[1,,]
+state <- unname(output$prevalence[1,,])
 
 ## assign half of susceptibles to vaccinated
 state[,"S_u"] <- state[,"S_v"] <- state[,"S_u"]/2
+```
 
+```
+## Error in state[, "S_u"]: no 'dimnames' attribute for array
+```
+
+```r
 ## run model
 output <- run_model(pars, init_state = state)
+```
 
+```
+## Error in run_model(pars, init_state = state): object 'x' not found
+```
+
+```r
 ## visualise prevalence
 plot(output)
 ```
 
-<img src="figure/unnamed-chunk-13-1.png" width="75%" style="display: block; margin: auto;" /></p>
+<img src="figure/unnamed-chunk-14-1.png" width="75%" style="display: block; margin: auto;" />
 
 We can see that the simulation now begins with a 50% vaccinated population,
 significantly reducing the size and impact of the pandemic.
@@ -321,7 +336,6 @@ a named list of parameters, where the name gives the time that parameter set
 should be used from. In the example below, we introduce isolation measures with
 an adherence of 50% on the 125th day.
 
-<p align='center'>
 
 ```r
 ## introduce isolation on the 125th day
@@ -337,7 +351,7 @@ output <- run_model(parlist)
 plot(output)
 ```
 
-<img src="figure/unnamed-chunk-14-1.png" width="75%" style="display: block; margin: auto;" /></p>
+<img src="figure/unnamed-chunk-15-1.png" width="75%" style="display: block; margin: auto;" />
 
 Comparing this figure with the first model run with no interventions, we can see
 the proportion of deaths drops from about 0.7% to 0.4%; a reduction in deaths of
@@ -351,7 +365,6 @@ objects. In the example below, we generate a named list of lists that compares
 the default scenario (no interventions) with the a scenario where isolation is
 introduced on the 125th day.
 	
-<p align='center'>
 
 ```r
 ## define two scenarios, one without intervention and one with isolation
@@ -370,7 +383,7 @@ outputs <- lapply(parlists, run_model)
 vis_comparison(outputs)
 ```
 
-<img src="figure/unnamed-chunk-15-1.png" width="75%" style="display: block; margin: auto;" /></p>
+<img src="figure/unnamed-chunk-16-1.png" width="75%" style="display: block; margin: auto;" />
 
 Contributors
 ------------

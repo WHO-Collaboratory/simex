@@ -47,6 +47,8 @@ run_model <- function(pars,
       stop(paste("init_state must have dimensions:",
                  paste0(dim(state_naive), collapse = ", ")))
     init_state %<>% divide_by(sum(.))
+    colnames(init_state) <- nms
+    rownames(x) <- paste0("age_", seq_len(nrow(x)))
   }
 
   ## if only a single parameter set is provided

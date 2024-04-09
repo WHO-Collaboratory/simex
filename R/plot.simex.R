@@ -14,6 +14,12 @@
 #' @param show_hosp_capacity Logical indicating whether hospital capacity should be
 #'   displayed in the "H" compartment (only possible when what = "prevalence").
 #'
+#' @param use_absolute_numbers Logical indicating whether absolute absolute
+#'   numbers (in terms of individuals) should be shown or relative to population
+#'   size.
+#'
+#' @param base_size Base size passed to theme_*
+#'
 #' @author Finlay Campbell
 #'
 #' @export
@@ -22,10 +28,15 @@ plot.simex <- function(simex,
                        what = c("prevalence", "deltas", "incidence"),
                        log = FALSE,
                        freescales = TRUE,
-                       show_hosp_capacity = FALSE) {
+                       show_hosp_capacity = FALSE,
+                       use_absolute_numbers = FALSE,
+                       base_size = 11) {
 
   ## check what argument
   what <- match.arg(what)
+
+  ## get population
+  pop <- sum(simex$pars$population)
 
   ## get hospital capacity
   multi_par <- length(simex$pars) != length(get_parameters())
@@ -52,18 +63,23 @@ plot.simex <- function(simex,
 
   ## plot
   df %>%
-    ggplot(aes(day, value, linetype = vax)) +
+    ggplot(aes(day, if(use_absolute_numbers) value*pop else value, linetype = vax)) +
     hline +
     geom_line(linewidth = 1.5) +
     facet_wrap(~ compartment, scales = ifelse(freescales, "free_y", "fixed")) +
     scale_y_continuous(
       expand = expansion(mult = c(0.01, 0.05)),
       trans = ifelse(log, "log10", "identity"),
-      labels = percent
+      labels = if(use_absolute_numbers) waiver() else percent
     ) +
     scale_linetype(name = "Vaccinated") +
-    labs(x = "Day", y = "Proportion of population", color = "Category") +
-    theme_minimal() +
+    labs(
+      x = "Day",
+      y = if(use_absolute_numbers) "Number of individuals"
+          else "Proportion of population",
+      color = "Category"
+    ) +
+    theme_minimal(base_size = base_size) +
     theme(legend.position = 'bottom')
 
 }

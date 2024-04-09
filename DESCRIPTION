@@ -31,4 +31,5 @@ Imports:
     forcats,
     scales,
     stats,
-    stringr
+    stringr,
+    shinyMatrix
