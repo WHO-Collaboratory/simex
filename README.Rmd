@@ -84,7 +84,7 @@ To get a summary of the model state at a given point in time, use the `summary`
 function with the optional `day` argument. In the example below, we display the
 summary statistics for day 150:
 
-```{r, echo = TRUE}
+```{r, eval = FALSE}
 ## get summary at day 150
 summary(output, day = 150)
 ```

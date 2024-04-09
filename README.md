@@ -129,25 +129,6 @@ summary statistics for day 150:
 summary(output, day = 150)
 ```
 
-```
-## # A tibble: 13 × 2
-##    statistic                            value    
-##    <chr>                                <chr>    
-##  1 incidence_last_7                     40716054 
-##  2 incidence_cumulative                 138832526
-##  3 incidence_weekly_change              8%       
-##  4 death_last_7                         71172    
-##  5 death_cumulative                     162438   
-##  6 death_weekly_change                  61%      
-##  7 hosp_admission_last_7                1027356  
-##  8 hosp_admission_cumulative            2740023  
-##  9 hosp_admission_weekly_change         35%      
-## 10 hospital_occupancy                   181%     
-## 11 proportion_cases_hospitalised_last_7 2.5%     
-## 12 ifr_last_7                           0.175%   
-## 13 ifr_cumulative                       0.117%
-```
-
 |statistic                            |value     |
 |:------------------------------------|:---------|
 |incidence_last_7                     |40716054  |
