@@ -148,9 +148,21 @@ summary(output, day = 150)
 ## 13 ifr_cumulative                       0.117%
 ```
 
-```
-## Error in kable(summary(output, day = 150)): could not find function "kable"
-```
+|statistic                            |value     |
+|:------------------------------------|:---------|
+|incidence_last_7                     |40716054  |
+|incidence_cumulative                 |138832526 |
+|incidence_weekly_change              |8%        |
+|death_last_7                         |71172     |
+|death_cumulative                     |162438    |
+|death_weekly_change                  |61%       |
+|hosp_admission_last_7                |1027356   |
+|hosp_admission_cumulative            |2740023   |
+|hosp_admission_weekly_change         |35%       |
+|hospital_occupancy                   |181%      |
+|proportion_cases_hospitalised_last_7 |2.5%      |
+|ifr_last_7                           |0.175%    |
+|ifr_cumulative                       |0.117%    |
 
 
 

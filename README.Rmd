@@ -90,7 +90,7 @@ summary(output, day = 150)
 ```
 ```{r, echo = FALSE}
 ## kable for Rmd
-kable(summary(output, day = 150))
+knitr::kable(summary(output, day = 150))
 ```
 
 
