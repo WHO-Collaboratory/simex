@@ -88,6 +88,12 @@ summary statistics for day 150:
 ## get summary at day 150
 summary(output, day = 150)
 ```
+```{r, echo = FALSE}
+## kable for Rmd
+kable(summary(output, day = 150))
+```
+
+
 
 ### Accessing outputs
 

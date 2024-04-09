@@ -148,6 +148,12 @@ summary(output, day = 150)
 ## 13 ifr_cumulative                       0.117%
 ```
 
+```
+## Error in kable(summary(output, day = 150)): could not find function "kable"
+```
+
+
+
 ### Accessing outputs
 
 The `output` object is of class `simex` and is a list containing four items:
@@ -281,7 +287,7 @@ output <- run_model(pars)
 plot(output)
 ```
 
-<img src="figure/unnamed-chunk-13-1.png" width="75%" style="display: block; margin: auto;" />
+<img src="figure/unnamed-chunk-14-1.png" width="75%" style="display: block; margin: auto;" />
 
 We can see that the daily increase in number of vaccinated individuals, as
 well as the impact on infection and disease severity.
@@ -323,7 +329,7 @@ output <- run_model(pars, init_state = state)
 plot(output)
 ```
 
-<img src="figure/unnamed-chunk-14-1.png" width="75%" style="display: block; margin: auto;" />
+<img src="figure/unnamed-chunk-15-1.png" width="75%" style="display: block; margin: auto;" />
 
 We can see that the simulation now begins with a 50% vaccinated population,
 significantly reducing the size and impact of the pandemic.
@@ -351,7 +357,7 @@ output <- run_model(parlist)
 plot(output)
 ```
 
-<img src="figure/unnamed-chunk-15-1.png" width="75%" style="display: block; margin: auto;" />
+<img src="figure/unnamed-chunk-16-1.png" width="75%" style="display: block; margin: auto;" />
 
 Comparing this figure with the first model run with no interventions, we can see
 the proportion of deaths drops from about 0.7% to 0.4%; a reduction in deaths of
@@ -383,7 +389,7 @@ outputs <- lapply(parlists, run_model)
 vis_comparison(outputs)
 ```
 
-<img src="figure/unnamed-chunk-16-1.png" width="75%" style="display: block; margin: auto;" />
+<img src="figure/unnamed-chunk-17-1.png" width="75%" style="display: block; margin: auto;" />
 
 Contributors
 ------------

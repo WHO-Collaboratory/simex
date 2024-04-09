@@ -17,7 +17,7 @@ get_arg_table <- function(fn_name, type = c("gt", "kable", "tibble")) {
     "Default value" = map_chr(arg, get_default)
   )
 
-  if(type == "gt") gt(df) else if(type == "kable") knitr::kable(df) else df
+  if(type == "gt") gt(df) else if(type == "kable") kable(df) else df
 
 }
 
