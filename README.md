@@ -37,9 +37,9 @@ their default values are given below:
 |Argument                |Description                                                                                                                                                                                                                   |Default value                                |
 |:-----------------------|:-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|:--------------------------------------------|
 |iso3                    |The ISO3 code of the country used to draw age-distributions and contact rates from.                                                                                                                                           |"USA"                                        |
-|R0                      |The basic reproduction number.                                                                                                                                                                                                |2.5                                          |
-|generation_time         |The mean generation time in days.                                                                                                                                                                                             |7                                            |
-|incubation_period       |The mean incubation period in days.                                                                                                                                                                                           |3                                            |
+|R0                      |The basic reproduction number.                                                                                                                                                                                                |3                                            |
+|generation_time         |The mean generation time in days.                                                                                                                                                                                             |10                                           |
+|incubation_period       |The mean incubation period in days.                                                                                                                                                                                           |6                                            |
 |infectiousness_presymp  |Relative infectiousness of presymptomatic cases to symptomatic cases.                                                                                                                                                         |0.25                                         |
 |frac_symp               |The proportion of cases that eventually develop symptoms.                                                                                                                                                                     |0.8                                          |
 |ifr                     |Infection fatality rate provided either as a single value or as a vector of the same length as the number of age categories. Use the function 'age_to_ifr' to calculate a COVID-like IFR from a vector of ages.               |age_to_ifr(get_age_median())                 |
@@ -131,19 +131,19 @@ summary(output, day = 150)
 
 |statistic                            |value     |
 |:------------------------------------|:---------|
-|incidence_last_7                     |40716054  |
-|incidence_cumulative                 |138832526 |
-|incidence_weekly_change              |8%        |
-|death_last_7                         |71172     |
-|death_cumulative                     |162438    |
-|death_weekly_change                  |61%       |
-|hosp_admission_last_7                |1027356   |
-|hosp_admission_cumulative            |2740023   |
-|hosp_admission_weekly_change         |35%       |
-|hospital_occupancy                   |181%      |
-|proportion_cases_hospitalised_last_7 |2.5%      |
-|ifr_last_7                           |0.175%    |
-|ifr_cumulative                       |0.117%    |
+|incidence_last_7                     |37913546  |
+|incidence_cumulative                 |100239417 |
+|incidence_weekly_change              |38%       |
+|death_last_7                         |37413     |
+|death_cumulative                     |78425     |
+|death_weekly_change                  |82%       |
+|hosp_admission_last_7                |653121    |
+|hosp_admission_cumulative            |1467098   |
+|hosp_admission_weekly_change         |66%       |
+|hospital_occupancy                   |102%      |
+|proportion_cases_hospitalised_last_7 |1.7%      |
+|ifr_last_7                           |0.099%    |
+|ifr_cumulative                       |0.078%    |
 
 
 
@@ -176,22 +176,22 @@ day is done with `output$prevalence[250,,]`:
 ```
 ##         state
 ## age      S_u E_u C_u H_u R_u D_u S_v E_v C_v H_v R_v D_v
-##   age_1  1.7   0   0   0 3.8 0.0   0   0   0   0   0   0
-##   age_2  0.9   0   0   0 5.0 0.0   0   0   0   0   0   0
-##   age_3  0.5   0   0   0 5.6 0.0   0   0   0   0   0   0
-##   age_4  0.3   0   0   0 6.3 0.0   0   0   0   0   0   0
-##   age_5  0.9   0   0   0 5.7 0.0   0   0   0   0   0   0
-##   age_6  0.9   0   0   0 5.7 0.0   0   0   0   0   0   0
-##   age_7  1.1   0   0   0 5.9 0.0   0   0   0   0   0   0
-##   age_8  0.9   0   0   0 5.8 0.0   0   0   0   0   0   0
-##   age_9  0.9   0   0   0 5.6 0.0   0   0   0   0   0   0
-##   age_10 1.0   0   0   0 5.0 0.0   0   0   0   0   0   0
-##   age_11 1.1   0   0   0 5.0 0.1   0   0   0   0   0   0
-##   age_12 1.7   0   0   0 4.3 0.1   0   0   0   0   0   0
-##   age_13 3.0   0   0   0 3.1 0.1   0   0   0   0   0   0
-##   age_14 3.5   0   0   0 2.1 0.1   0   0   0   0   0   0
-##   age_15 3.0   0   0   0 1.4 0.1   0   0   0   0   0   0
-##   age_16 5.6   0   0   0 1.7 0.2   0   0   0   0   0   0
+##   age_1  1.2   0   0 0.0 4.3 0.0   0   0   0   0   0   0
+##   age_2  0.5   0   0 0.0 5.3 0.0   0   0   0   0   0   0
+##   age_3  0.3   0   0 0.0 5.9 0.0   0   0   0   0   0   0
+##   age_4  0.1   0   0 0.0 6.5 0.0   0   0   0   0   0   0
+##   age_5  0.5   0   0 0.0 6.0 0.0   0   0   0   0   0   0
+##   age_6  0.5   0   0 0.0 6.0 0.0   0   0   0   0   0   0
+##   age_7  0.6   0   0 0.0 6.4 0.0   0   0   0   0   0   0
+##   age_8  0.5   0   0 0.0 6.2 0.0   0   0   0   0   0   0
+##   age_9  0.5   0   0 0.0 6.0 0.0   0   0   0   0   0   0
+##   age_10 0.6   0   0 0.0 5.4 0.0   0   0   0   0   0   0
+##   age_11 0.7   0   0 0.0 5.4 0.1   0   0   0   0   0   0
+##   age_12 1.2   0   0 0.0 4.8 0.1   0   0   0   0   0   0
+##   age_13 2.4   0   0 0.0 3.7 0.1   0   0   0   0   0   0
+##   age_14 2.9   0   0 0.0 2.6 0.2   0   0   0   0   0   0
+##   age_15 2.7   0   0 0.0 1.7 0.2   0   0   0   0   0   0
+##   age_16 5.1   0   0 0.1 2.1 0.2   0   0   0   0   0   0
 ```
 
 Accessing the prevalence of the 1st age compartment (0-4) and 1st infectious
@@ -201,7 +201,7 @@ compartment (unvaccinated susceptible) for days 130 to 135 is done with
 
 ```
 ## day_130 day_131 day_132 day_133 day_134 day_135 
-##     5.1     5.1     5.1     5.0     5.0     4.9
+##     5.3     5.3     5.3     5.2     5.2     5.2
 ```
 
 The outputs can also be extracted in `tibble` form using the `extract` function,
@@ -250,11 +250,11 @@ df
 ##      day compartment vax      value
 ##    <dbl> <fct>       <lgl>    <dbl>
 ##  1    10 S           FALSE 1.00e+ 0
-##  2    10 E           FALSE 4.30e- 8
-##  3    10 C           FALSE 6.82e- 8
-##  4    10 H           FALSE 1.33e- 9
-##  5    10 R           FALSE 5.26e- 8
-##  6    10 D           FALSE 4.17e-11
+##  2    10 E           FALSE 5.69e- 8
+##  3    10 C           FALSE 5.28e- 8
+##  4    10 H           FALSE 8.70e-10
+##  5    10 R           FALSE 3.95e- 8
+##  6    10 D           FALSE 2.36e-11
 ##  7    10 S           TRUE  0       
 ##  8    10 E           TRUE  0       
 ##  9    10 C           TRUE  0       
@@ -311,13 +311,7 @@ state[,"S_u"] <- state[,"S_v"] <- state[,"S_u"]/2
 ```r
 ## run model
 output <- run_model(pars, init_state = state)
-```
 
-```
-## Error in run_model(pars, init_state = state): object 'x' not found
-```
-
-```r
 ## visualise prevalence
 plot(output)
 ```
