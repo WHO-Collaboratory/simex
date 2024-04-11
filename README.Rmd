@@ -188,7 +188,7 @@ assigned to the vaccinated compartment.
 
 ```{r, echo = TRUE}
 ## extract starting point from previous run
-state <- unname(output$prevalence[1,,])
+state <- output$prevalence[1,,]
 
 ## assign half of susceptibles to vaccinated
 state[,"S_u"] <- state[,"S_v"] <- state[,"S_u"]/2

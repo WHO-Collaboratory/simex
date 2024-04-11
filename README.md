@@ -298,17 +298,11 @@ assigned to the vaccinated compartment.
 
 ```r
 ## extract starting point from previous run
-state <- unname(output$prevalence[1,,])
+state <- output$prevalence[1,,]
 
 ## assign half of susceptibles to vaccinated
 state[,"S_u"] <- state[,"S_v"] <- state[,"S_u"]/2
-```
 
-```
-## Error in state[, "S_u"]: no 'dimnames' attribute for array
-```
-
-```r
 ## run model
 output <- run_model(pars, init_state = state)
 
