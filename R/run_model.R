@@ -48,7 +48,7 @@ run_model <- function(pars,
                  paste0(dim(state_naive), collapse = ", ")))
     init_state %<>% divide_by(sum(.))
     colnames(init_state) <- nms
-    rownames(x) <- paste0("age_", seq_len(nrow(x)))
+    rownames(init_state) <- paste0("age_", seq_len(nrow(init_state)))
   }
 
   ## if only a single parameter set is provided
