@@ -28,7 +28,7 @@ plot.simex <- function(simex,
                        what = c("prevalence", "deltas", "incidence"),
                        log = FALSE,
                        freescales = TRUE,
-                       show_hosp_capacity = FALSE,
+                       show_hosp_capacity = TRUE,
                        use_absolute_numbers = FALSE,
                        base_size = 11) {
 
@@ -36,15 +36,18 @@ plot.simex <- function(simex,
   what <- match.arg(what)
 
   ## get population
-  pop <- sum(simex$pars$population)
+  pop <- sum(simex$pars[[1]]$population)
 
   ## get hospital capacity
-  multi_par <- length(simex$pars) != length(get_parameters())
-  hosp_capacity <- if(multi_par) simex$pars[[1]]$hosp_capacity
-                   else simex$pars$hosp_capacity
+  hosp_capacity <- simex$pars[[1]]$hosp_capacity
+  if(use_absolute_numbers) hosp_capacity <- hosp_capacity * pop
 
   ## extract relevant data
   df <- extract(simex, what)
+
+  ## category labels
+  cat <- c(S = "Susceptible", E = "Exposed", C = "Community Infection",
+           H = "Hospital Infection", R = "Recovered", D = "Dead")
 
   ## define horizontal line for hospital capacity if needed
   hline <-
@@ -55,9 +58,8 @@ plot.simex <- function(simex,
           y = hosp_capacity
         ),
         aes(yintercept = y),
-        color = "firebrick",
-        linewidth = 1.5,
-        linetype = 5
+        color = "grey",
+        linewidth = 1.5
       )
     else NULL
 
@@ -66,7 +68,11 @@ plot.simex <- function(simex,
     ggplot(aes(day, if(use_absolute_numbers) value*pop else value, linetype = vax)) +
     hline +
     geom_line(linewidth = 1.5) +
-    facet_wrap(~ compartment, scales = ifelse(freescales, "free_y", "fixed")) +
+    facet_wrap(
+      ~ compartment,
+      scales = ifelse(freescales, "free_y", "fixed"),
+      labeller = labeller(compartment = cat)
+    ) +
     scale_y_continuous(
       expand = expansion(mult = c(0.01, 0.05)),
       trans = ifelse(log, "log10", "identity"),
@@ -80,6 +86,9 @@ plot.simex <- function(simex,
       color = "Category"
     ) +
     theme_minimal(base_size = base_size) +
-    theme(legend.position = 'bottom')
+    theme(
+      legend.position = 'bottom',
+      plot.background = element_rect(fill = "white")
+    )
 
 }

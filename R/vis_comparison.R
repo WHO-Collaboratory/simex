@@ -22,7 +22,12 @@ vis_comparison <- function(simexl,
                            log = FALSE,
                            freescales = TRUE) {
 
+  ## match what argument
   what <- match.arg(what)
+
+  ## category labels
+  cat <- c(S = "Susceptible", E = "Exposed", C = "Community Infection",
+           H = "Hospital Infection", R = "Recovered", D = "Dead")
 
   imap_dfr(simexl, ~ mutate(extract(.x, what), scenario = .y)) %>%
     mutate(scenario = fct_inorder(scenario)) %>%
@@ -31,14 +36,18 @@ vis_comparison <- function(simexl,
     ungroup() %>%
     ggplot(aes(day, value, color = scenario)) +
     geom_line(linewidth = 1.5) +
-    facet_wrap(~ compartment, scales = ifelse(freescales, "free_y", "fixed")) +
+    facet_wrap(
+      ~ compartment,
+      scales = ifelse(freescales, "free_y", "fixed"),
+      labeller = labeller(compartment = cat)
+    ) +
     scale_y_continuous(
       limits = if(!log) c(0, NA) else waiver(),
       expand = expansion(mult = c(0.01, 0.05)),
       trans = ifelse(log, "log10", "identity"),
       labels = percent
     ) +
-    scale_color_brewer(name = "Scenario", palette = "Dark2") +
+    scale_color_brewer(name = "Scenario", palette = "Set1") +
     labs(x = "Day", y = "Proportion of population", color = "Category") +
     theme_minimal() +
     theme(

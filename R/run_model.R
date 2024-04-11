@@ -76,7 +76,7 @@ run_model <- function(pars,
   }
 
   ## add parameter states
-  out$pars <- pars
+  out$pars <- if(multi_par) pars else list("1" = pars)
 
   ## define as simex object class
   class(out) <- "simex"
