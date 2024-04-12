@@ -7,8 +7,12 @@
 vis_comparison(
   simexl,
   what = c("prevalence", "deltas", "incidence"),
+  format = c("timeline", "endpoint"),
   log = FALSE,
-  freescales = TRUE
+  use_absolute_numbers = FALSE,
+  show_compartment = c("D", "S", "E", "C", "H", "R"),
+  freescales = TRUE,
+  base_size = 11
 )
 }
 \arguments{
@@ -18,10 +22,22 @@ vis_comparison(
 day), "deltas" (change in prevalence from one day to the next) and
 "incidence" (new additions to that compartment per day).}
 
+\item{format}{One of "timeline" (shows a timeline stratified by compartment
+and vaccination status) or "endpoint" (shows the final value stratified by
+age category).}
+
 \item{log}{Logical indicating whether a log scale should be used.}
+
+\item{use_absolute_numbers}{Logical indicating whether absolute absolute
+numbers (in terms of individuals) should be shown or relative to population
+size.}
+
+\item{show_compartment}{The compartment to show when using \code{format = "endpoint"}.}
 
 \item{freescales}{Logical indicating whether the different comparments should
 use different y-axes.}
+
+\item{base_size}{Base size passed to theme_*}
 }
 \description{
 Compare different runs.

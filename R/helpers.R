@@ -3,6 +3,7 @@
 get_age_cat <- function() {
   x <- map_chr(cdat[[1]]$pop$age_floor, ~ paste0(.x, "-", .x+4))
   x[length(x)] <- "75+"
+  x <- setNames(x, paste0("age_", seq_along(x)))
   return(x)
 }
 

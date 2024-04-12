@@ -7,10 +7,12 @@
 \method{plot}{simex}(
   simex,
   what = c("prevalence", "deltas", "incidence"),
+  format = c("timeline", "endpoint"),
   log = FALSE,
   freescales = TRUE,
-  show_hosp_capacity = FALSE,
+  show_hosp_capacity = TRUE,
   use_absolute_numbers = FALSE,
+  show_compartment = c("D", "S", "E", "C", "H", "R"),
   base_size = 11
 )
 }
@@ -20,6 +22,10 @@
 \item{what}{What to plot: one of "prevalence" (number in each category per
 day), "deltas" (change in prevalence from one day to the next) and
 "incidence" (new additions to that compartment per day).}
+
+\item{format}{One of "timeline" (shows a timeline stratified by compartment
+and vaccination status) or "endpoint" (shows the final value stratified by
+age category).}
 
 \item{log}{Logical indicating whether a log scale should be used.}
 
@@ -32,6 +38,8 @@ displayed in the "H" compartment (only possible when what = "prevalence").}
 \item{use_absolute_numbers}{Logical indicating whether absolute absolute
 numbers (in terms of individuals) should be shown or relative to population
 size.}
+
+\item{show_compartment}{The compartment to show when using \code{format = "endpoint"}.}
 
 \item{base_size}{Base size passed to theme_*}
 }

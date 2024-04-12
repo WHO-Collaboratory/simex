@@ -4,7 +4,11 @@
 \alias{extract.simex}
 \title{Extract formatted dataframes from simex object.}
 \usage{
-\method{extract}{simex}(simex, what = c("prevalence", "deltas", "incidence"))
+\method{extract}{simex}(
+  simex,
+  what = c("prevalence", "deltas", "incidence"),
+  stratify_by = c("day", "vax", "compartment")
+)
 }
 \arguments{
 \item{simex}{A simex object returned by \code{run_model}.}
@@ -12,6 +16,9 @@
 \item{what}{What to plot: one of "prevalence" (number in each category per
 day), "deltas" (change in prevalence from one day to the next) and
 "incidence" (new additions to that compartment per day).}
+
+\item{stratify_by}{Variables to stratify output but, must be one or more of
+"day", "age", "compartment", "vax".}
 }
 \description{
 Extract formatted dataframes from simex object.

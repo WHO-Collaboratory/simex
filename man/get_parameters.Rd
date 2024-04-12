@@ -6,9 +6,9 @@
 \usage{
 get_parameters(
   iso3 = "USA",
-  R0 = 2.5,
-  generation_time = 7,
-  incubation_period = 3,
+  R0 = 3,
+  generation_time = 10,
+  incubation_period = 6,
   infectiousness_presymp = 0.25,
   frac_symp = 0.8,
   ifr = age_to_ifr(get_age_median()),
