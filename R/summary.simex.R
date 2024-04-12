@@ -29,27 +29,26 @@ summary.simex <- function(simex, day = dim(simex$prevalence)[1]) {
   lst <- list(
     incidence_last_7 = daymean(simex$incidence[week_ind,,e_ind]),
     incidence_cumulative = daysum(simex$incidence[1:day,,e_ind]),
-    incidence_weekly_change = percent(daymean(simex$incidence[week_ind,,e_ind])/
-                                      daymean(simex$incidence[prev_week_ind,,e_ind]) - 1),
+    incidence_weekly_change = daymean(simex$incidence[week_ind,,e_ind])/
+      daymean(simex$incidence[prev_week_ind,,e_ind]) - 1,
     death_last_7 = daymean(simex$incidence[week_ind,,d_ind]),
     death_cumulative = daysum(simex$incidence[1:day,,d_ind]),
-    death_weekly_change = percent(daymean(simex$incidence[week_ind,,d_ind])/
-                                  daymean(simex$incidence[prev_week_ind,,d_ind]) - 1),
+    death_weekly_change = daymean(simex$incidence[week_ind,,d_ind])/
+      daymean(simex$incidence[prev_week_ind,,d_ind]) - 1,
     hosp_admission_last_7 = daymean(simex$incidence[week_ind,,h_ind]),
     hosp_admission_cumulative = daysum(simex$incidence[1:day,,h_ind]),
-    hosp_admission_weekly_change = percent(daymean(simex$incidence[week_ind,,h_ind])/
-                                           daymean(simex$incidence[prev_week_ind,,h_ind]) - 1),
-    hospital_occupancy = percent(daysum(simex$prevalence[day,,h_ind])/
-                                 hosp_capacity, 0.1),
+    hosp_admission_weekly_change = daymean(simex$incidence[week_ind,,h_ind])/
+      daymean(simex$incidence[prev_week_ind,,h_ind]) - 1,
+    hospital_occupancy = daysum(simex$prevalence[day,,h_ind])/
+      hosp_capacity,
     proportion_cases_hospitalised_last_7 =
-      percent(daysum(simex$incidence[week_ind,,h_ind])/
-              daysum(simex$incidence[week_ind,,c(e_ind, h_ind)]), 0.1),
-    ifr_last_7 = percent(daysum(simex$incidence[week_ind,,d_ind])/
-                         daysum(simex$incidence[week_ind,,e_ind]), 0.001),
-    ifr_cumulative = percent(daysum(simex$incidence[1:day,,d_ind])/
-                             daysum(simex$incidence[1:day,,e_ind]), 0.001)
-  ) %>%
-    modify_if(is.numeric, round)
+      daysum(simex$incidence[week_ind,,h_ind])/
+      daysum(simex$incidence[week_ind,,c(e_ind, h_ind)]),
+    ifr_last_7 = daysum(simex$incidence[week_ind,,d_ind])/
+      daysum(simex$incidence[week_ind,,e_ind]),
+    ifr_cumulative = daysum(simex$incidence[1:day,,d_ind])/
+      daysum(simex$incidence[1:day,,e_ind])
+  )
 
   tibble(statistic = names(lst), value = unlist(lst))
 
