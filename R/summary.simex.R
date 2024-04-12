@@ -27,16 +27,16 @@ summary.simex <- function(simex, day = dim(simex$prevalence)[1]) {
   daysum <- function(x) sum(apply(x, 1, sum))
 
   lst <- list(
-    incidence_last_7 = daymean(simex$incidence[week_ind,,e_ind])*pop,
-    incidence_cumulative = daysum(simex$incidence[1:day,,e_ind])*pop,
+    incidence_last_7 = daymean(simex$incidence[week_ind,,e_ind]),
+    incidence_cumulative = daysum(simex$incidence[1:day,,e_ind]),
     incidence_weekly_change = percent(daymean(simex$incidence[week_ind,,e_ind])/
                                       daymean(simex$incidence[prev_week_ind,,e_ind]) - 1),
-    death_last_7 = daymean(simex$incidence[week_ind,,d_ind])*pop,
-    death_cumulative = daysum(simex$incidence[1:day,,d_ind])*pop,
+    death_last_7 = daymean(simex$incidence[week_ind,,d_ind]),
+    death_cumulative = daysum(simex$incidence[1:day,,d_ind]),
     death_weekly_change = percent(daymean(simex$incidence[week_ind,,d_ind])/
                                   daymean(simex$incidence[prev_week_ind,,d_ind]) - 1),
-    hosp_admission_last_7 = daymean(simex$incidence[week_ind,,h_ind])*pop,
-    hosp_admission_cumulative = daysum(simex$incidence[1:day,,h_ind])*pop,
+    hosp_admission_last_7 = daymean(simex$incidence[week_ind,,h_ind]),
+    hosp_admission_cumulative = daysum(simex$incidence[1:day,,h_ind]),
     hosp_admission_weekly_change = percent(daymean(simex$incidence[week_ind,,h_ind])/
                                            daymean(simex$incidence[prev_week_ind,,h_ind]) - 1),
     hospital_occupancy = percent(daysum(simex$prevalence[day,,h_ind])/
