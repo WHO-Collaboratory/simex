@@ -28,6 +28,8 @@
 #'
 #' @author Finlay Campbell
 #'
+#' @importFrom stringr str_to_title
+#'
 #' @export
 #'
 plot.simex <- function(simex,

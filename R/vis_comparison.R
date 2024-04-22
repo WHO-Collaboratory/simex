@@ -38,6 +38,9 @@ vis_comparison <- function(simexl,
                            freescales = TRUE,
                            base_size = 11) {
 
+  ## catch NULLs for shiny app
+  if(is.null(simexl)) return(NULL)
+
   ## match what argument
   what <- match.arg(what)
   format <- match.arg(format)
@@ -58,7 +61,7 @@ vis_comparison <- function(simexl,
       summarise(value = sum(value)) %>%
       ungroup() %>%
       ggplot(aes(day, if(use_absolute_numbers) value*pop else value, color = scenario)) +
-      geom_line(linewidth = 1.25) +
+      geom_line(linewidth = 1.5) +
       facet_wrap(
         ~ compartment,
         scales = ifelse(freescales, "free_y", "fixed"),
@@ -72,7 +75,7 @@ vis_comparison <- function(simexl,
       ) +
       scale_color_brewer(name = "Scenario", palette = "Dark2") +
       labs(x = "Day", y = str_to_title(what), color = "Category") +
-      theme_minimal() +
+      theme_minimal(base_size = base_size) +
       theme(
         legend.position = 'bottom',
         plot.background = element_rect(fill = "white")
@@ -80,14 +83,14 @@ vis_comparison <- function(simexl,
 
   } else {
 
-    ## define age groupings
-    groupings <- list(
-      "0-14" = paste0("age_", 1:3),
-      "15-34" = paste0("age_", 4:7),
-      "35-64" = paste0("age_", 8:13),
-      "65+" = paste0("age_", 14:16)
-    )
-    groupings <- unlist(unname(imap(groupings, ~ setNames(rep(.y, length(.x)), .x))))
+    ## ## define age groupings
+    ## groupings <- list(
+    ##   "0-14" = paste0("age_", 1:3),
+    ##   "15-34" = paste0("age_", 4:7),
+    ##   "35-64" = paste0("age_", 8:13),
+    ##   "65+" = paste0("age_", 14:16)
+    ## )
+    ## groupings <- unlist(unname(imap(groupings, ~ setNames(rep(.y, length(.x)), .x))))
 
     ## extract relevant data
     get_agestrat <- function(simex) {
@@ -95,10 +98,8 @@ vis_comparison <- function(simexl,
       extract(simex, what, stratify_by = c("day", "compartment", "age")) %>%
         filter(day == max(day) & compartment == show_compartment) %>%
         arrange(age) %>%
-        mutate(
-          age_frac = simex$pars[[1]]$age_frac[age],
-          age = fct_inorder(groupings[as.character(age)])
-        ) %>%
+        mutate(age_frac = simex$pars[[1]]$age_frac[age]) %>%
+        ## age = fct_inorder(groupings[as.character(age)])
         group_by(age) %>%
         summarise(
           value = if(use_absolute_numbers) sum(value)*pop else sum(value)/sum(age_frac)
@@ -110,7 +111,7 @@ vis_comparison <- function(simexl,
       mutate(scenario = fct_inorder(scenario)) %>%
       ggplot(aes(age, value, fill = scenario)) +
       geom_col(position = "dodge") +
-      scale_x_discrete(drop = FALSE) +
+      scale_x_discrete(drop = FALSE, labels = get_age_cat()) +
       scale_y_continuous(
         expand = expansion(mult = c(0.01, 0.05)),
         labels = if(use_absolute_numbers) waiver() else function(x) percent(x, 0.001)
@@ -122,7 +123,8 @@ vis_comparison <- function(simexl,
       ) +
       labs(
         x = "Age category",
-        y = glue("Final {what} of individuals in compartment: {cat[show_compartment]}"),
+        y = paste0("Final ", what, " of individuals in compartment: ",
+                   cat[show_compartment]),
         fill = "Scenario"
       ) +
       theme_minimal(base_size = base_size) +

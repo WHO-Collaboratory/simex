@@ -32,6 +32,9 @@ Imports:
     scales,
     stats,
     stringr,
-    shinyMatrix,
     tidyr,
-    deSolve
+    deSolve,
+    shiny,
+    shinyjs,
+    shinyMatrix,
+    shinyWidgets

@@ -19,9 +19,9 @@ run_model <- function(pars,
                       ) {
 
   ## check if multiple parameter sets used or not
-  multi_par <- length(pars) != length(get_parameters())
-  age_frac <- if(multi_par) pars[[1]]$age_frac else pars$age_frac
-  population <- if(multi_par) pars[[1]]$population else pars$population
+  if(length(pars) == length(get_parameters())) pars <- list("1" = pars)
+  age_frac <- pars[[1]]$age_frac
+  population <- pars[[1]]$population
 
   ## compartment names
   nms <- c("S_u", "E_u", "C_u", "H_u", "R_u", "D_u",
@@ -52,8 +52,8 @@ run_model <- function(pars,
   }
 
   ## if only a single parameter set is provided
-  if(!multi_par) {
-    out <- solve_ode(pars, days = seq(1, max_day), state = init_state)
+  if(length(pars) == 1) {
+    out <- solve_ode(pars[[1]], days = seq(1, max_day), state = init_state)
   } else {
     times <- c(as.numeric(names(pars)), max_day)
     ## solve first run from init state
@@ -76,7 +76,7 @@ run_model <- function(pars,
   }
 
   ## add parameter states
-  out$pars <- if(multi_par) pars else list("1" = pars)
+  out$pars <- pars
 
   ## define as simex object class
   class(out) <- "simex"
