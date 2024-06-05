@@ -3,9 +3,6 @@
 #' @param fn_name A string describing the function name. This must be loaded
 #'   into the namespace.
 #'
-#' @importFrom gt gt
-#' @importFrom knitr kable
-#'
 get_arg_table <- function(fn_name, type = c("gt", "kable", "tibble")) {
 
   type <- match.arg(type)
@@ -17,7 +14,7 @@ get_arg_table <- function(fn_name, type = c("gt", "kable", "tibble")) {
     "Default value" = map_chr(arg, get_default)
   )
 
-  if(type == "gt") gt(df) else if(type == "kable") kable(df) else df
+  if(type == "gt") gt::gt(df) else if(type == "kable") knitr::kable(df) else df
 
 }
 

@@ -18,7 +18,6 @@ Suggests:
     countrycode,
     readxl,
     usethis,
-    gbRd,
     gt,
     usethis,
     knitr
@@ -37,4 +36,5 @@ Imports:
     shiny,
     shinyjs,
     shinyMatrix,
-    shinyWidgets
+    shinyWidgets,
+    gbRd

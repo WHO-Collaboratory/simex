@@ -1,9 +1,5 @@
 #' Add country data to package from raw data
 #'
-#' @importFrom countrycode countrycode
-#' @importFrom readxl excel_sheets read_excel
-#' @importFrom usethis use_data
-#'
 add_cdat <- function() {
 
   ## read population data
@@ -26,7 +22,7 @@ add_cdat <- function() {
       full.names = TRUE
     ),
     place = sub("_.*", "", sub('.*MUestimates_', '', file)),
-    country = map(file, excel_sheets)
+    country = map(file, readxl::excel_sheets)
   ) %>%
     unnest(country) %>%
     transmute(
@@ -35,16 +31,16 @@ add_cdat <- function() {
       matrix = map2(
         file, country,
         function(file, country) {
-          dat <- suppressMessages(read_excel(file, country, col_names = T))
+          dat <- suppressMessages(readxl::read_excel(file, country, col_names = T))
           ## catch missing column names
           if(nrow(dat) == 15)
-            dat <- suppressMessages(read_excel(file, country, col_names = F))
+            dat <- suppressMessages(readxl::read_excel(file, country, col_names = F))
           as.matrix(dat)
         }
       )
     ) %>%
     nest(contacts = -country) %>%
-    mutate(iso3 = countrycode(country, "country.name", "iso3c")) %>%
+    mutate(iso3 = countrycode::countrycode(country, "country.name", "iso3c")) %>%
     ## join population data
     left_join(pop, by = "iso3") %>%
     transmute(
