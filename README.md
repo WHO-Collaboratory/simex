@@ -384,7 +384,7 @@ vis_comparison(outputs)
 
 ### Licensing
 
-The simex software is made available under an [MIT license](LICENSE.md) ([citation file](CITATION.cff)).
+The simex software is made available by Collaboratory (2024) under an [MIT license](LICENSE.md) ([citation file](CITATION.cff)).
 
 The demographic data used in this software is made available by United Nations (2024) under a [Creative Commons license CC BY 3.0 IGO](http://creativecommons.org/licenses/by/3.0/igo/). Source:
 > United Nations, Department of Economic and Social Affairs, Population Division (2024). [World Population Prospects 2024, Online Edition](https://population.un.org/wpp/).
