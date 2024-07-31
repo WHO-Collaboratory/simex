@@ -1,6 +1,8 @@
 *simex*: a disease modelling tool for decision makers
 ---------------------------------------------------------------
 
+[![MIT license](https://img.shields.io/badge/License-MIT-blue.svg)](https://github.com/epiforecasts/EpiNow2/blob/main/LICENSE.md/)
+
 *simex* is an R package for simulating the spread of infectious diseases, as
 well as interventions such as social distancing measures, isolation and
 vaccination. It uses an age-structured SEIR compartmental model with
@@ -129,21 +131,21 @@ summary statistics for day 150:
 summary(output, day = 150)
 ```
 
-|statistic                            |value     |
-|:------------------------------------|:---------|
-|incidence_last_7                     |37913546  |
-|incidence_cumulative                 |100239417 |
-|incidence_weekly_change              |38%       |
-|death_last_7                         |37413     |
-|death_cumulative                     |78425     |
-|death_weekly_change                  |82%       |
-|hosp_admission_last_7                |653121    |
-|hosp_admission_cumulative            |1467098   |
-|hosp_admission_weekly_change         |66%       |
-|hospital_occupancy                   |102%      |
-|proportion_cases_hospitalised_last_7 |1.7%      |
-|ifr_last_7                           |0.099%    |
-|ifr_cumulative                       |0.078%    |
+|statistic                            |     value|
+|:------------------------------------|---------:|
+|incidence_last_7                     | 0.0158874|
+|incidence_cumulative                 | 0.2940323|
+|incidence_weekly_change              | 0.3805793|
+|death_last_7                         | 0.0000157|
+|death_cumulative                     | 0.0002300|
+|death_weekly_change                  | 0.8238843|
+|hosp_admission_last_7                | 0.0002737|
+|hosp_admission_cumulative            | 0.0043034|
+|hosp_admission_weekly_change         | 0.6649767|
+|hospital_occupancy                   | 1.0189239|
+|proportion_cases_hospitalised_last_7 | 0.0169349|
+|ifr_last_7                           | 0.0009868|
+|ifr_cumulative                       | 0.0007824|
 
 
 
@@ -216,18 +218,18 @@ extract(output, what = "prevalence")
 
 ```
 ## # A tibble: 4,380 × 4
-##      day compartment vax          value
-##    <dbl> <fct>       <lgl>        <dbl>
-##  1     1 S           FALSE 1.00        
-##  2     1 E           FALSE 0           
-##  3     1 C           FALSE 0.0000000469
-##  4     1 H           FALSE 0           
-##  5     1 R           FALSE 0           
-##  6     1 D           FALSE 0           
-##  7     1 S           TRUE  0           
-##  8     1 E           TRUE  0           
-##  9     1 C           TRUE  0           
-## 10     1 H           TRUE  0           
+##      day vax   compartment        value
+##    <int> <lgl> <fct>              <dbl>
+##  1     1 FALSE S           1.00        
+##  2     1 FALSE E           0           
+##  3     1 FALSE C           0.0000000469
+##  4     1 FALSE H           0           
+##  5     1 FALSE R           0           
+##  6     1 FALSE D           0           
+##  7     1 TRUE  S           0           
+##  8     1 TRUE  E           0           
+##  9     1 TRUE  C           0           
+## 10     1 TRUE  H           0           
 ## # ℹ 4,370 more rows
 ```
 If we want to filter this list for a sequence of days, we can then do basic
@@ -247,18 +249,18 @@ df
 
 ```
 ## # A tibble: 132 × 4
-##      day compartment vax      value
-##    <dbl> <fct>       <lgl>    <dbl>
-##  1    10 S           FALSE 1.00e+ 0
-##  2    10 E           FALSE 5.69e- 8
-##  3    10 C           FALSE 5.28e- 8
-##  4    10 H           FALSE 8.70e-10
-##  5    10 R           FALSE 3.95e- 8
-##  6    10 D           FALSE 2.36e-11
-##  7    10 S           TRUE  0       
-##  8    10 E           TRUE  0       
-##  9    10 C           TRUE  0       
-## 10    10 H           TRUE  0       
+##      day vax   compartment    value
+##    <int> <lgl> <fct>          <dbl>
+##  1    10 FALSE S           1.00e+ 0
+##  2    10 FALSE E           5.69e- 8
+##  3    10 FALSE C           5.28e- 8
+##  4    10 FALSE H           8.70e-10
+##  5    10 FALSE R           3.95e- 8
+##  6    10 FALSE D           2.36e-11
+##  7    10 TRUE  S           0       
+##  8    10 TRUE  E           0       
+##  9    10 TRUE  C           0       
+## 10    10 TRUE  H           0       
 ## # ℹ 122 more rows
 ```
 
@@ -371,6 +373,30 @@ vis_comparison(outputs)
 ```
 
 <img src="figure/unnamed-chunk-17-1.png" width="75%" style="display: block; margin: auto;" />
+
+### Licensing
+
+#### Simex software license
+
+License: 
+> 2024 by Collaboratory, made available under an [MIT license](https://opensource.org/license/mit).
+
+#### Demographic data license
+
+Source: 
+> United Nations, Department of Economic and Social Affairs, Population Division (2024). [World Population Prospects 2024, Online Edition](https://population.un.org/wpp/).
+
+License: 
+> 2024 by United Nations, made available under a [Creative Commons license CC BY 3.0 IGO](http://creativecommons.org/licenses/by/3.0/igo/).
+
+#### Contact data license
+
+Source:
+> Kiesha Prem, Alex R. Cook, Mark Jit, *Projecting social contact matrices in 152 countries using contact surveys and demographic data*, PLoS Comp. Biol. (2017), https://doi.org/10.1371/journal.pcbi.1005697.
+
+License:
+> 2017 by Prem et al., made available under a [Creative Commons license CC BY 4.0](https://creativecommons.org/licenses/by/4.0/).
+
 
 Contributors
 ------------

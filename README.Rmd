@@ -1,6 +1,8 @@
 *simex*: a disease modelling tool for decision makers
 ---------------------------------------------------------------
 
+[![MIT license](https://img.shields.io/badge/License-MIT-blue.svg)](https://github.com/epiforecasts/EpiNow2/blob/main/LICENSE.md/)
+
 *simex* is an R package for simulating the spread of infectious diseases, as
 well as interventions such as social distancing measures, isolation and
 vaccination. It uses an age-structured SEIR compartmental model with
@@ -253,6 +255,30 @@ outputs <- lapply(parlists, run_model)
 ## compare scenarios
 vis_comparison(outputs)
 ```
+
+### Licensing
+
+#### Simex software license
+
+License: 
+> 2024 by Collaboratory, made available under an [MIT license](https://opensource.org/license/mit).
+
+#### Demographic data license
+
+Source: 
+> United Nations, Department of Economic and Social Affairs, Population Division (2024). [World Population Prospects 2024, Online Edition](https://population.un.org/wpp/).
+
+License: 
+> 2024 by United Nations, made available under a [Creative Commons license CC BY 3.0 IGO](http://creativecommons.org/licenses/by/3.0/igo/).
+
+#### Contact data license
+
+Source:
+> Kiesha Prem, Alex R. Cook, Mark Jit, *Projecting social contact matrices in 152 countries using contact surveys and demographic data*, PLoS Comp. Biol. (2017), https://doi.org/10.1371/journal.pcbi.1005697.
+
+License:
+> 2017 by Prem et al., made available under a [Creative Commons license CC BY 4.0](https://creativecommons.org/licenses/by/4.0/).
+
 
 Contributors
 ------------
