@@ -1,7 +1,7 @@
 *simex*: a disease modelling tool for decision makers
 ---------------------------------------------------------------
 
-[![MIT license](https://img.shields.io/badge/License-MIT-blue.svg)](https://github.com/epiforecasts/EpiNow2/blob/main/LICENSE.md/)
+[![MIT license](https://img.shields.io/badge/License-MIT-blue.svg)](https://github.com/epiforecasts/EpiNow2/blob/main/LICENSE.md/) [![Lifecycle: maturing](https://img.shields.io/badge/lifecycle-maturing-blue.svg)](https://lifecycle.r-lib.org/articles/stages.html#maturing)
 
 *simex* is an R package for simulating the spread of infectious diseases, as
 well as interventions such as social distancing measures, isolation and
@@ -374,33 +374,20 @@ vis_comparison(outputs)
 
 <img src="figure/unnamed-chunk-17-1.png" width="75%" style="display: block; margin: auto;" />
 
-### Licensing
-
-#### Simex software license
-
-License: 
-> 2024 by Collaboratory, made available under an [MIT license](https://opensource.org/license/mit).
-
-#### Demographic data license
-
-Source: 
-> United Nations, Department of Economic and Social Affairs, Population Division (2024). [World Population Prospects 2024, Online Edition](https://population.un.org/wpp/).
-
-License: 
-> 2024 by United Nations, made available under a [Creative Commons license CC BY 3.0 IGO](http://creativecommons.org/licenses/by/3.0/igo/).
-
-#### Contact data license
-
-Source:
-> Kiesha Prem, Alex R. Cook, Mark Jit, *Projecting social contact matrices in 152 countries using contact surveys and demographic data*, PLoS Comp. Biol. (2017), https://doi.org/10.1371/journal.pcbi.1005697.
-
-License:
-> 2017 by Prem et al., made available under a [Creative Commons license CC BY 4.0](https://creativecommons.org/licenses/by/4.0/).
-
-
-Contributors
+### Contributors
 ------------
 - [Finlay Campbell](https://github.com/finlaycampbell) (campbellf@who.int)
 - Prabasaj Paul (ppaul@who.int)
 
 **Maintainer:** Finlay Campbell
+
+
+### Licensing
+
+The simex software is made available under an [MIT license](LICENSE.md). [Suggested citation](CITATION.cff).
+
+The demographic data used in this software is made available by United Nations (2024) under a [Creative Commons license CC BY 3.0 IGO](http://creativecommons.org/licenses/by/3.0/igo/).
+> United Nations, Department of Economic and Social Affairs, Population Division (2024). [World Population Prospects 2024, Online Edition](https://population.un.org/wpp/).
+
+The contact data used in this software is made available by Prem et al. (2017) under a [Creative Commons license CC BY 4.0](https://creativecommons.org/licenses/by/4.0/).
+> Kiesha Prem, Alex R. Cook, Mark Jit, *Projecting social contact matrices in 152 countries using contact surveys and demographic data*, PLoS Comp. Biol. (2017), https://doi.org/10.1371/journal.pcbi.1005697.
