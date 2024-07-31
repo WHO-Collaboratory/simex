@@ -53,12 +53,16 @@ get_matrices <- function(p_trans, pars) {
   )
 
   ## calculate the mean "age" of infections caused by each compartment
-  age_E <- if(length(pars$incubation_period) == 1) rep(pars$incubation_period, nr)/2
+  age_E <- if(length(pars$incubation_period) == 1)
+             rep(pars$incubation_period, nr)/2
            else pars$incubation_period/2
-  age_C <- pars$incubation_period + if(length(pars$symptomatic_period) == 1) rep(pars$symptomatic_period, nr)/2
-                                    else pars$symptomatic_period/2
-  age_H <- pars$incubation_period + if(length(pars$hosp_duration) == 1) rep(pars$hosp_duration, nr)/2
-                                    else pars$hosp_duration/2
+  age_C <- pars$incubation_period +
+    if(length(pars$symptomatic_period) == 1)
+      rep(pars$symptomatic_period, nr)/2
+    else pars$symptomatic_period/2
+  age_H <- pars$incubation_period +
+    if(length(pars$hosp_duration) == 1) rep(pars$hosp_duration, nr)/2
+    else pars$hosp_duration/2
   ages <- c(age_E, age_C, age_H)
 
   ## The RHS multiplies the days spent by j in i times the average age of the

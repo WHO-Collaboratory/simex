@@ -57,7 +57,7 @@ add_betas <- function(pars, mult = FALSE) {
   ## - estimated transmission probability per contact
   ## - relative infectiousness of Exposed relative to Infected
   pars$beta_E = pars$infectiousness_presymp * pars$p_trans * polyscale_non_isol
-
+#browser()
   ## beta for Infected cases in the community takes:
   ## - weighted mean of contact rates from isolated and non-isolated Infecteds
   ## - estimated transmission probability per contact

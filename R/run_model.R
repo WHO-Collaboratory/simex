@@ -40,7 +40,7 @@ run_model <- function(pars,
   if (is.null(init_state)) {
     ## a single infection evenly distribution across age groups
     init_state <- state_naive
-    init_state[, "C_u"] <- age_frac/population
+    init_state[, "C_u"] <- age_frac/sum(population)
     init_state[, "S_u"] <- init_state[, "S_u"] - init_state[, "C_u"]
   } else {
     if(any(dim(init_state) != dim(state_naive)))
@@ -67,7 +67,8 @@ run_model <- function(pars,
       after <- solve_ode(pars[[i]], days = seq(times[i], times[i+1]), state = final_state)
       ## update endpoint
       final_state <- after$prevalence[dim(after$prevalence)[1],,]
-      ## update output by binding arrays along time axis, removed duplicated starting point
+      ## update output by binding arrays along time axis, removed duplicated
+      ## starting point
       for(j in seq_along(out)) {
         out[[j]] <- abind(out[[j]], after[[j]][-1,,], along = 1)
         names(dimnames(out[[j]])) <- dm_names

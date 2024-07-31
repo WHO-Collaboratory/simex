@@ -21,14 +21,15 @@ ode_model <- function(time, state, pars) {
     state, nrow=nr,
     dimnames=list(
       paste0("AGE", 1:nr),
-      c("S_u", "E_u", "C_u", "H_u", "R_u", "D_u", "S_v", "E_v", "C_v", "H_v", "R_v", "D_v")
+      c("S_u", "E_u", "C_u", "H_u", "R_u", "D_u",
+        "S_v", "E_v", "C_v", "H_v", "R_v", "D_v")
     )
   )
   dstate = state * 0
 
   ## update rates in response to changes in hospitalisation
   pars %<>% add_rates(state)
-
+#browser()
   ## New E_u come from S being infected by E_u, C_u and H_u, E_v, C_v, H_v
   ## infectiousness reduction of vaccinated incorporated here
   new_E_u <- state[, "S_u"] * (
@@ -74,22 +75,6 @@ ode_model <- function(time, state, pars) {
     if(pars$vax_rate > sum(state[, "S_u"])) vax <- state[, "S_u"]
     else vax <- pars$vax_rate*state[, "S_u"]/sum(state[, "S_u"])
   }
-
-  ## if(time > 100 & time < 170)
-  ##   df <<- rbind(df, tibble(
-  ##     time = time,
-  ##     ## S_u = sum(state[, "S_u"]),
-  ##     ## E_u = sum(state[, "E_u"]),
-  ##     ## C_u = sum(state[, "C_u"]),
-  ##     beta_E = sum(pars$beta_E),
-  ##     from_E_u = sum(state[, "E_u"] %*% pars$beta_E),
-  ##     from_C_u = sum(state[, "C_u"] %*% pars$beta_I_c),
-  ##     from_H_u = sum(state[, "H_u"] %*% pars$beta_I_h),
-  ##     entering = sum(new_E_u),
-  ##     leaving_rate = (pars$lambda_hu + pars$lambda_cu),
-  ##     leaving = sum(state[, "E_u"]*(pars$lambda_hu + pars$lambda_cu)),
-  ##     diff = entering - leaving
-  ##   ))
 
   ## S are lost to E_u by infection and to V by vaccination
   dstate[, "S_u"] = -new_E_u - vax
