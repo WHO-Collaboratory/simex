@@ -9,7 +9,6 @@ type: software
 license: MIT
 title: 'simex: Simulating epidemics and interventions'
 version: 1.0.0.0000
-doi: 10.32614/CRAN.package.simex
 abstract: Simulate epidemics and interventions using country-specific contact rates
   and age demographics.
 authors:
