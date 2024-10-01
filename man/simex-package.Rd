@@ -9,7 +9,12 @@
 Simulate epidemics and interventions using country-specific contact rates and age demographics.
 }
 \author{
-\strong{Maintainer}: Finlay Campbell \email{campellf@who.int}
+\strong{Maintainer}: Finlay Campbell \email{campbellf@who.int}
+
+Authors:
+\itemize{
+  \item Prabasaj Paul \email{ppaul@who.int}
+}
 
 }
 \keyword{internal}

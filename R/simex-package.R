@@ -6,6 +6,8 @@
 #' @import tidyr
 #' @import dplyr
 #' @import shiny
+#' @import bslib
+#' @import highcharter
 
 ## usethis namespace: start
 #' @importFrom magrittr %>% %<>% divide_by

@@ -2,7 +2,7 @@
 #'
 #' @importFrom shinyMatrix matrixInput
 #' @importFrom shinyjs click useShinyjs
-#' @importFrom shinyWidgets setBackgroundColor
+#' @importFrom shinyWidgets setBackgroundColor switchInput
 #'
 #' @author Finlay Campbell
 #'
@@ -76,7 +76,7 @@ run_shiny <- function() {
     ## convert social distancing to matrix for matrix input
     simex_input$social_distancing <- matrix(
       simex_input$social_distancing, nrow = 1,
-      dimnames = list("Reduction (%)", names(simex_input$social_distancing))
+      dimnames = list("Reduction (%)", str_to_title(names(simex_input$social_distancing)))
     )
 
     ## convert vax parameters to matrix for matrix input
@@ -124,7 +124,7 @@ run_shiny <- function() {
         ## reshape social distancing and agestrat to useable formats
         par$social_distancing <- setNames(
           as.numeric(unlist(par$social_distancing)),
-          colnames(par$social_distancing)
+          tolower(colnames(par$social_distancing))
         )
 
         ## get age-stratified parameters
@@ -191,69 +191,101 @@ run_shiny <- function() {
   sidebar_col <- "#fefae0"
   button_col <- "#dda15e"
   button_active_col <- "#bc6c25"
+  button2_col <- "#D2596A"
+  button2_active_col <- "#B43546"
 
   ## Define the UI
-  ui <- fluidPage(
+  ui <- page_sidebar(
+
     useShinyjs(),
     setBackgroundColor(background_col),
     tags$head(tags$style(HTML(paste(
                      paste0("#sidebar{background-color:", sidebar_col, "}"),
-                     paste0("#run_scenario{background-color:", button_col, "}"),
-                     paste0("#run_scenario:hover{background-color:", button_active_col, "}"),
-                     paste0("#save_scenario{background-color:", button_col, "}"),
-                     paste0("#save_scenario:hover{background-color:", button_active_col, "}"),
+
+                     paste0("#run_scenario{background-color:", button2_col, "}"),
+                     paste0("#run_scenario:hover{background-color:", button2_active_col, "}"),
+
+                     paste0("#save_scenario{background-color:", button2_col, "}"),
+                     paste0("#save_scenario:hover{background-color:", button2_active_col, "}"),
+
                      paste0("#reset{background-color:", button_col, "}"),
                      paste0("#reset:hover{background-color:", button_active_col, "}"),
+
                      paste0("#add_period{background-color:", button_col, "}"),
                      paste0("#add_period:hover{background-color:", button_active_col, "}"),
+
                      paste0("#remove_period{background-color:", button_col, "}"),
                      paste0("#remove_period:hover{background-color:", button_active_col, "}")
-                   )))),
-    titlePanel(p(strong(
+                   )))
+              ),
+
+### next two lines for class - use class attribute (.inline instead of #inline)
+    tags$head(
+           tags$style(
+                  type="text/css",
+                  ".inline label{ display: table-cell; text-align: left; vertical-align: middle; } .inline .form-group { display: table-row;} p.indent {margin-right: 10px}")
+         ),
+
+    title = h4(strong(
       em("simex:"),
       "simulating pandemics and public health interventions")
-      )),
-    sidebarLayout(
-      sidebarPanel(
-        id = "sidebar",
-        actionButton("add_period", "Add Period"),
-        actionButton("remove_period", "Remove Period"),
-        actionButton("run_scenario", "Run Scenario"),
-        actionButton("save_scenario", "Save Scenario"),
-        actionButton("reset", "Reset"),
-        headerPanel(""),
-        textInput(inputId = "scenario_name", label = "Scenario name", "Baseline"),
-        tabsetPanel(id = "parameters_panel")
       ),
-      mainPanel(
-        tabsetPanel(
-          id = "plots_panel",
-          tabPanel(
-            title = "Timeline",
-            headerPanel(""),
-            selectInput(
-              "timeline_what", "What to plot",
-              c("incidence", "prevalence"),
-              selected = "prevalence"
-            ),
-            plotOutput("timeline", width = "80%")
-          ),
-          tabPanel(
-            title = "Comparison",
-            headerPanel(""),
-            selectInput(
-              "comparison_what", "What to plot",
-              c("incidence", "prevalence"),
-              selected = "prevalence"
-            ),
-            plotOutput("comparison", height = "auto", width = "80%"),
-            headerPanel(""),
-            plotOutput("endpoint", height = "auto", width = "80%")
-          )
-        )
+
+    sidebar = sidebar(
+      width = "40%",
+      textInput(inputId = "scenario_name", label = "Scenario name", "Baseline"),
+      div(
+        style = "display: flex; align-items: stretch; margin-top: 0px",
+        actionButton("run_scenario", "Run Scenario", width = "50%",
+                     style = "margin-right:2px; margin-left: 2px"),
+        actionButton("save_scenario", "Save Scenario", width = "50%",
+                     style = "margin-right:2px; margin-left: 2px")
+      ),
+      div(
+        style = "display: flex; align-items: stretch; margin-top: -20px",
+        actionButton("add_period", "Add Period", width = "33%",
+                     style = "margin-right:2px; margin-left: 2px"),
+        actionButton("remove_period", "Remove Period", width = "33%",
+                     style = "margin-right:2px; margin-left: 2px"),
+        actionButton("reset", "Reset", width = "33%",
+                     style = "margin-right:2px; margin-left: 2px")
+      ),
+      navset_card_underline(id = "parameters_panel")
+    ),
+
+    navset_card_underline(
+
+      nav_panel(
+        title = "Timeline",
+
+        switchInput(
+          inputId = "timeline_what",
+          value = TRUE,
+          onLabel = "Prevalence",
+          offLabel = "Incidence"
+        ),
+
+        highchartOutput("timeline")
+
+      ),
+
+      nav_panel(
+        title = "Comparison",
+        switchInput(
+          inputId = "comparison_what",
+          value = TRUE,
+          onLabel = "Prevalence",
+          offLabel = "Incidence"
+        ),
+        plotOutput("comparison", height = "auto", width = "100%"),
+        headerPanel(""),
+        plotOutput("endpoint", height = "auto", width = "100%")
       )
+
     )
+
   )
+
 
   ## FRAC SYMP DOESNT SEEM TO BE WORKING? ##
   ## Maybe something odd with hospital admissions when shortening gentime?
@@ -295,32 +327,38 @@ run_shiny <- function() {
         start_day <- if(length(days) == 0) 1 else max(days) + 50
 
         ## insert new parameters tab
-        insertTab(
-          inputId = "parameters_panel",
-          do.call(
-            tabPanel,
-            list(
-              title = get_tabname(total_par()),
-              value = last(active_par()),
-              headerPanel(""),
-              numericInput(rn("day", last(active_par())), "Start day", start_day),
-              ## generate shiny UI for newest tab, taking defaults from most recent tab
-              simex_to_shiny(
-                ## if no tabs existent yet, use defaults simex values
-                if(length(days) == 0) simex_defaults
-                ## otherwise use most recent tab (have to remove last active tab
-                ## because it hasn't been initialised yet)
-                else last(shiny_to_simex(input, head(active_par(), -1))),
-                ## assign tab ID
-                tab_id = last(active_par())
+        nav_insert(
+          id = "parameters_panel",
+          nav_panel(
+            title = get_tabname(total_par()),
+            value = last(active_par()),
+            do.call(
+              div,
+              list(
+                style = "margin-left: 10px; margin-right: 10px",
+                headerPanel(""),
+                numericInput(rn("day", last(active_par())), "Start day", start_day),
+                ## generate shiny UI for newest tab, taking defaults from most recent tab
+                simex_to_shiny(
+                  ## if no tabs existent yet, use defaults simex values
+                  if(length(days) == 0) simex_defaults
+                  ## otherwise use most recent tab (have to remove last active tab
+                  ## because it hasn't been initialised yet)
+                  else last(shiny_to_simex(input, head(active_par(), -1))),
+                  ## assign tab ID
+                  tab_id = last(active_par())
+                )
               )
             )
           )
         )
-        updateTabsetPanel(
-          session, "parameters_panel",
-          selected = last(active_par())
+
+        nav_select(
+          id = "parameters_panel",
+          select = last(active_par()),
+          session = session
         )
+
       }
     )
 
@@ -330,10 +368,11 @@ run_shiny <- function() {
         ## remove parameter set
         active_par(setdiff(active_par(), input$parameters_panel))
         n_par(n_par()-1)
-        removeTab(inputId = "parameters_panel", target = input$parameters_panel)
-        updateTabsetPanel(
-          session, "parameters_panel",
-          selected = last(active_par())
+        nav_remove(id = "parameters_panel", target = input$parameters_panel)
+        nav_select(
+          id = "parameters_panel",
+          select = last(active_par()),
+          session = session
         )
       }
     })
@@ -385,14 +424,22 @@ run_shiny <- function() {
     )
 
     ## timeline plot
-    output$timeline <- renderPlot(
-      plot(simex(), what = input$timeline_what, base_size = 20, show_hosp_capacity = TRUE),
-      height = function() 0.7*session$clientData$output_timeline_width
+    output$timeline <- highcharter::renderHighchart(
+      plot(simex(),
+           what = ifelse(input$timeline_what, "prevalence", "incidence"),
+           base_size = 20,
+           show_hosp_capacity = TRUE,
+           type = "highchart")
+      ## height = function() 0.7*session$clientData$output_timeline_width
     )
 
     ## comparison plot
     output$comparison <- renderPlot(
-      vis_comparison(scenarios(), what = input$comparison_what, base_size = 20),
+      vis_comparison(
+        scenarios(),
+        what = ifelse(input$comparison_what, "prevalence", "incidence"),
+        base_size = 20
+      ),
       height = function() 0.7*session$clientData$output_comparison_width
     )
 

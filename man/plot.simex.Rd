@@ -13,7 +13,8 @@
   show_hosp_capacity = TRUE,
   use_absolute_numbers = FALSE,
   show_compartment = c("D", "S", "E", "C", "H", "R"),
-  base_size = 11
+  base_size = 11,
+  type = c("ggplot", "highchart")
 )
 }
 \arguments{

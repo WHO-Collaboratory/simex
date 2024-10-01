@@ -24,7 +24,10 @@
 #'
 #' @param show_compartment The compartment to show when using \code{format = "endpoint"}.
 #'
-#' @param base_size Base size passed to theme_*
+#' @param base_size Base size passed to theme_*.
+#'
+#' @param type "ggplot" will return a static ggplot figure, "highchart" will
+#'   return a dynamic figure.
 #'
 #' @author Finlay Campbell
 #'
@@ -40,9 +43,11 @@ plot.simex <- function(simex,
                        show_hosp_capacity = TRUE,
                        use_absolute_numbers = FALSE,
                        show_compartment = c("D", "S", "E", "C", "H", "R"),
-                       base_size = 11) {
+                       base_size = 11,
+                       type = c("ggplot", "highchart")) {
 
   ## check arguments
+  type <- match.arg(type)
   what <- match.arg(what)
   format <- match.arg(format)
   show_compartment <- match.arg(show_compartment)
@@ -73,9 +78,85 @@ plot.simex <- function(simex,
           ),
           aes(yintercept = y),
           color = "grey",
+
           linewidth = 1.5
         )
       else NULL
+
+    if(type == "highchart") {
+
+      cols <- RColorBrewer::brewer.pal(6, "Set1")
+      ## cols <- c("#2caffe", "#544fc5", "#00e272", "#fe6a35", "#6b8abc", "#d568fb")
+
+      hcl <- distinct(df, compartment, vax) %>% mutate(color = rep(cols, 2))
+
+      hc <- highchart()
+      for(i in seq_len(nrow(hc_list)))
+        hc <- hc %>%
+          hc_add_series(
+            name = hcl$compartment[i],
+            df %>%
+            filter(vax == hcl$vax[i], compartment == hcl$compartment[i]) %>%
+            mutate(value = value*100),
+            "line", dashStyle = ifelse(!hcl$vax[i], "Solid", "ShortDash"),
+            color = hcl$color[i],
+            ## showInLegend = !hcl$vax[i],
+            hcaes(x = day, y = value)
+          )
+      hc %>%
+        hc_legend(symbolWidth = 40, width = "60%") %>%
+        hc_yAxis(
+          title = list(text = "Proportion"),
+          labels = list(format = "{value}%"),
+          min = 0
+        ) %>%
+        hc_xAxis(
+          title = list(text = "Day")
+        ) %>%
+        hc_plotOptions(
+          line = list(
+            lineWidth = 5,
+            marker = list(enabled = FALSE)
+          )
+        ) %>%
+        hc_tooltip(valueDecimals = 1, valueSuffix = "%")
+
+      ## get_hc <- function(comp, df) {
+
+      ##   highchart() %>%
+      ##     hc_add_series(
+      ##       name = "Unvaccinated",
+      ##       mutate(filter(df, !vax, compartment == comp), value = value*100),
+      ##       "line", dashStyle = "Solid",
+      ##       hcaes(x = day, y = value)
+      ##     ) %>%
+      ##     hc_add_series(
+      ##       name = "Vaccinated",
+      ##       mutate(filter(df, vax, compartment == comp), value = value*100),
+      ##       "line", dashStyle = "ShortDash",
+      ##       hcaes(x = day, y = value)
+      ##     ) %>%
+      ##     hc_yAxis(
+      ##       title = list(text = "Proportion"),
+      ##       labels = list(format = "{value}%"),
+      ##       min = 0
+      ##     ) %>%
+      ##     hc_xAxis(
+      ##       title = list(text = "Day")
+      ##     ) %>%
+      ##     hc_plotOptions(
+      ##       line = list(
+      ##         lineWidth = 5,
+      ##         marker = list(enabled = FALSE)
+      ##       )
+      ##     ) %>%
+      ##     hc_tooltip(valueDecimals = 1, valueSuffix = "%")
+
+      ## }
+
+      ## hw_grid(map(unique(df$compartment), get_hc, df), ncol = 3)
+
+    } else {
 
     ## plot
     df %>%
@@ -97,8 +178,10 @@ plot.simex <- function(simex,
       theme_minimal(base_size = base_size) +
       theme(
         legend.position = 'bottom',
-        plot.background = element_rect(fill = "white")
+        plot.background = element_rect(fill = "white", color = "white")
       )
+
+    }
 
   } else if(format == "endpoint") {
 
@@ -136,7 +219,7 @@ plot.simex <- function(simex,
       ) +
       theme_minimal(base_size = base_size) +
       theme(
-        plot.background = element_rect(fill = "white")
+        plot.background = element_rect(fill = "white", color = "white")
       )
 
   }
