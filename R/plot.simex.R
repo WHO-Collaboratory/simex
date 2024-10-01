@@ -85,76 +85,102 @@ plot.simex <- function(simex,
 
     if(type == "highchart") {
 
-      cols <- RColorBrewer::brewer.pal(6, "Set1")
-      ## cols <- c("#2caffe", "#544fc5", "#00e272", "#fe6a35", "#6b8abc", "#d568fb")
+      ## define different series and their colour
+      cols <- RColorBrewer::brewer.pal(7, "Set1")[c(2, 1, 4, 5, 3, 7)]
+      hcl <- distinct(df, compartment, vax) %>%
+        mutate(color = rep(cols, 2))
 
-      hcl <- distinct(df, compartment, vax) %>% mutate(color = rep(cols, 2))
+      ## define baseline chart
+      hc <- highchart() %>%
+        hc_chart(
+          type = "line",
+          backgroundColor = "#FFFFFF"
+        )
 
-      hc <- highchart()
-      for(i in seq_len(nrow(hc_list)))
+      ## add these serie
+      for(i in seq_len(nrow(hcl)))
         hc <- hc %>%
           hc_add_series(
-            name = hcl$compartment[i],
-            df %>%
+            name = HTML(paste0(
+              hcl$compartment[i], "<sub>",
+              ifelse(hcl$vax[i], "v", "u"), "</sub>"
+            )),
+            id = paste0(hcl$compartment[i], "_", ifelse(hcl$vax[i], "v", "u")),
+            data = df %>%
             filter(vax == hcl$vax[i], compartment == hcl$compartment[i]) %>%
             mutate(value = value*100),
-            "line", dashStyle = ifelse(!hcl$vax[i], "Solid", "ShortDash"),
-            color = hcl$color[i],
-            ## showInLegend = !hcl$vax[i],
-            hcaes(x = day, y = value)
+            "line", hcaes(x = day, y = value),
+            dashStyle = ifelse(!hcl$vax[i], "Solid", "ShortDash"),
+            color = hcl$color[i]
           )
+
+      ## add further optionsg
       hc %>%
-        hc_legend(symbolWidth = 40, width = "60%") %>%
+        hc_legend(symbolWidth = 35, width = "60%", useHTML = TRUE) %>%
         hc_yAxis(
           title = list(text = "Proportion"),
           labels = list(format = "{value}%"),
           min = 0
         ) %>%
-        hc_xAxis(
-          title = list(text = "Day")
-        ) %>%
+        hc_xAxis(title = list(text = "Day")) %>%
         hc_plotOptions(
           line = list(
             lineWidth = 5,
             marker = list(enabled = FALSE)
           )
         ) %>%
-        hc_tooltip(valueDecimals = 1, valueSuffix = "%")
-
-      ## get_hc <- function(comp, df) {
-
-      ##   highchart() %>%
-      ##     hc_add_series(
-      ##       name = "Unvaccinated",
-      ##       mutate(filter(df, !vax, compartment == comp), value = value*100),
-      ##       "line", dashStyle = "Solid",
-      ##       hcaes(x = day, y = value)
-      ##     ) %>%
-      ##     hc_add_series(
-      ##       name = "Vaccinated",
-      ##       mutate(filter(df, vax, compartment == comp), value = value*100),
-      ##       "line", dashStyle = "ShortDash",
-      ##       hcaes(x = day, y = value)
-      ##     ) %>%
-      ##     hc_yAxis(
-      ##       title = list(text = "Proportion"),
-      ##       labels = list(format = "{value}%"),
-      ##       min = 0
-      ##     ) %>%
-      ##     hc_xAxis(
-      ##       title = list(text = "Day")
-      ##     ) %>%
-      ##     hc_plotOptions(
-      ##       line = list(
-      ##         lineWidth = 5,
-      ##         marker = list(enabled = FALSE)
-      ##       )
-      ##     ) %>%
-      ##     hc_tooltip(valueDecimals = 1, valueSuffix = "%")
-
-      ## }
-
-      ## hw_grid(map(unique(df$compartment), get_hc, df), ncol = 3)
+        hc_tooltip(valueDecimals = 1, valueSuffix = "%") %>%
+        hc_exporting(
+          enabled = TRUE,
+          buttons = list(
+            contextButton = list(
+              align = "left",
+              verticalAlign = "top",
+              x = 0,
+              y = -10,
+              menuItems = list(
+                "viewFullscreen",
+                "downloadJPEG",
+                "downloadPDF",
+                "downloadCSV"
+              )
+            ),
+            customButton = list(
+              text = "Toggle Unvaccinated",
+              onclick = JS(
+                "function() {
+            var seriesIDs = ['S_u', 'E_u', 'C_u', 'H_u', 'R_u', 'D_u'];
+            seriesIDs.forEach(function(seriesID) {
+              var series = this.get(seriesID);
+              if (series.visible) {
+                series.hide();
+              } else {
+                series.show();
+              }
+            }.bind(this));}"),
+            align = "right",
+            x = 0,
+            y = 3),
+            customButton2 = list(
+              text = "Toggle Vaccinated",
+              onclick = JS(
+                "function() {
+            var seriesIDs = ['S_v', 'E_v', 'C_v', 'H_v', 'R_v', 'D_v'];
+            seriesIDs.forEach(function(seriesID) {
+              var series = this.get(seriesID);
+              if (series.visible) {
+                series.hide();
+              } else {
+                series.show();
+              }
+            }.bind(this));
+          }"),
+          align = "right",
+          x = 0,
+          y = 31
+          )
+          )
+        )
 
     } else {
 

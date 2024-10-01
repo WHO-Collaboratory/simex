@@ -25,7 +25,7 @@ run_shiny <- function() {
     hosp_duration = "Duration of hospitalisation (days)",
     hosp_capacity = "Hospital capacity (per 100k population)",
     comm_mortality = "Proportions of community infections that die (%)",
-    vax_rate = "Vaccination rate (population proportion per day)",
+    vax_rate = "Vaccination rate (% population per day)",
     vax = "Vaccination protection",
     vax_infectiousness = "Infectiousness",
     vax_infection = "Infection",
