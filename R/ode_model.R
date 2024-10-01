@@ -29,7 +29,7 @@ ode_model <- function(time, state, pars) {
 
   ## update rates in response to changes in hospitalisation
   pars %<>% add_rates(state)
-#browser()
+
   ## New E_u come from S being infected by E_u, C_u and H_u, E_v, C_v, H_v
   ## infectiousness reduction of vaccinated incorporated here
   new_E_u <- state[, "S_u"] * (
