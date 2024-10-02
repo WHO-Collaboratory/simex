@@ -33,6 +33,11 @@ library("simex")
 Running *simex*
 -------------
 
+### Shiny App
+The simplest way to interact with the tool is to use the [Shiny
+App](https://portal.who.int/eios-colab/rconnect/simex). You can also launch this
+locally using `simex::run_shiny()`.
+
 ### Parameters and settings
 
 Most settings are specified via the `get_parameters` function. The arguments and

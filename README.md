@@ -16,19 +16,24 @@ Installation
 To install the development version from github:
 
 
-```r
+``` r
 remotes::install_github("finlaycampbell/simex", dependencies = TRUE, force = TRUE)
 ```
 
 Load the package using:
 
 
-```r
+``` r
 library("simex")
 ```
 
 Running *simex*
 -------------
+
+### Shiny App
+The simplest way to interact with the tool is to use the [Shiny
+App](https://portal.who.int/eios-colab/rconnect/simex). You can also launch this
+locally using `simex::run_shiny()`.
 
 ### Parameters and settings
 
@@ -50,7 +55,7 @@ their default values are given below:
 |hosp_duration           |The mean duration of stay in the hospital in days, either as a single value or as a vector of the same length as the number of age categories.                                                                                |seq(7, 21, length = 16)                      |
 |hosp_capacity           |Total hospital bed capacity given as a proportion of the population.                                                                                                                                                          |0.0025                                       |
 |comm_mortality          |The probability of death of cases that remain in the community, either as a single value or as a vector of the same length as the number of age categories.                                                                   |rep(0, 16)                                   |
-|vax_rate                |The daily rate of vaccination as a proportion of the population.                                                                                                                                                              |0                                            |
+|vax_rate                |The daily rate of vaccination as a proportion of the population.                                                                                                                                                              |0.001                                        |
 |vax_infectiousness      |The reduction (as a proportion) in infectioussness of an individual due to vaccination.                                                                                                                                       |0.3                                          |
 |vax_infection           |The protection (as a proportion) against infection provided by vaccination.                                                                                                                                                   |0.5                                          |
 |vax_hosp                |The protection (as a proportion) against hospitalisation provided by vaccination, given infection.                                                                                                                            |0.5                                          |
@@ -68,7 +73,7 @@ To run the model using default settings, specify a parameter object `par` and
 feed this into the `run_model` function.
 
 
-```r
+``` r
 ## set parameters using defaults
 pars <- get_parameters()
 
@@ -94,14 +99,14 @@ To visualise the results, use the generic `plot` function defined for the
 specified using the `what` argument.
 
 
-```r
+``` r
 ## visualise prevalence
 plot(output, what = "prevalence")
 ```
 
 <img src="figure/unnamed-chunk-6-1.png" width="75%" style="display: block; margin: auto;" />
 
-```r
+``` r
 ## visualise incidence
 plot(output, what = "incidence")
 ```
@@ -112,7 +117,7 @@ Hospital capacity can be displayed by toggling the `show_hosp_capacity`
 argument.
 
 
-```r
+``` r
 ## visualise prevalence with hospital capaciy
 plot(output, what = "prevalence", show_hosp_capacity = TRUE)
 ```
@@ -126,26 +131,26 @@ function with the optional `day` argument. In the example below, we display the
 summary statistics for day 150:
 
 
-```r
+``` r
 ## get summary at day 150
 summary(output, day = 150)
 ```
 
 |statistic                            |     value|
 |:------------------------------------|---------:|
-|incidence_last_7                     | 0.0158874|
-|incidence_cumulative                 | 0.2940323|
-|incidence_weekly_change              | 0.3805793|
-|death_last_7                         | 0.0000157|
-|death_cumulative                     | 0.0002300|
-|death_weekly_change                  | 0.8238843|
-|hosp_admission_last_7                | 0.0002737|
-|hosp_admission_cumulative            | 0.0043034|
-|hosp_admission_weekly_change         | 0.6649767|
-|hospital_occupancy                   | 1.0189239|
-|proportion_cases_hospitalised_last_7 | 0.0169349|
-|ifr_last_7                           | 0.0009868|
-|ifr_cumulative                       | 0.0007824|
+|incidence_last_7                     | 0.0026936|
+|incidence_cumulative                 | 0.0370007|
+|incidence_weekly_change              | 1.0051376|
+|death_last_7                         | 0.0000007|
+|death_cumulative                     | 0.0000103|
+|death_weekly_change                  | 1.0257307|
+|hosp_admission_last_7                | 0.0000211|
+|hosp_admission_cumulative            | 0.0002897|
+|hosp_admission_weekly_change         | 1.0261607|
+|hospital_occupancy                   | 0.0698724|
+|proportion_cases_hospitalised_last_7 | 0.0077865|
+|ifr_last_7                           | 0.0002768|
+|ifr_cumulative                       | 0.0002774|
 
 
 
@@ -178,22 +183,22 @@ day is done with `output$prevalence[250,,]`:
 ```
 ##         state
 ## age      S_u E_u C_u H_u R_u D_u S_v E_v C_v H_v R_v D_v
-##   age_1  1.2   0   0 0.0 4.3 0.0   0   0   0   0   0   0
-##   age_2  0.5   0   0 0.0 5.3 0.0   0   0   0   0   0   0
-##   age_3  0.3   0   0 0.0 5.9 0.0   0   0   0   0   0   0
-##   age_4  0.1   0   0 0.0 6.5 0.0   0   0   0   0   0   0
-##   age_5  0.5   0   0 0.0 6.0 0.0   0   0   0   0   0   0
-##   age_6  0.5   0   0 0.0 6.0 0.0   0   0   0   0   0   0
-##   age_7  0.6   0   0 0.0 6.4 0.0   0   0   0   0   0   0
-##   age_8  0.5   0   0 0.0 6.2 0.0   0   0   0   0   0   0
-##   age_9  0.5   0   0 0.0 6.0 0.0   0   0   0   0   0   0
-##   age_10 0.6   0   0 0.0 5.4 0.0   0   0   0   0   0   0
-##   age_11 0.7   0   0 0.0 5.4 0.1   0   0   0   0   0   0
-##   age_12 1.2   0   0 0.0 4.8 0.1   0   0   0   0   0   0
-##   age_13 2.4   0   0 0.0 3.7 0.1   0   0   0   0   0   0
-##   age_14 2.9   0   0 0.0 2.6 0.2   0   0   0   0   0   0
-##   age_15 2.7   0   0 0.0 1.7 0.2   0   0   0   0   0   0
-##   age_16 5.1   0   0 0.1 2.1 0.2   0   0   0   0   0   0
+##   age_1  1.3   0 0.1   0 4.1   0 0.0   0 0.0   0 0.0   0
+##   age_2  0.6   0 0.1   0 5.2   0 0.0   0 0.0   0 0.0   0
+##   age_3  0.3   0 0.1   0 5.8   0 0.0   0 0.0   0 0.0   0
+##   age_4  0.1   0 0.0   0 6.4   0 0.0   0 0.0   0 0.0   0
+##   age_5  0.6   0 0.1   0 5.9   0 0.0   0 0.0   0 0.0   0
+##   age_6  0.6   0 0.1   0 5.9   0 0.0   0 0.0   0 0.0   0
+##   age_7  0.7   0 0.1   0 6.2   0 0.0   0 0.0   0 0.0   0
+##   age_8  0.5   0 0.1   0 6.1   0 0.0   0 0.0   0 0.0   0
+##   age_9  0.1   0 0.1   0 5.9   0 0.4   0 0.0   0 0.0   0
+##   age_10 0.0   0 0.1   0 5.2   0 0.6   0 0.0   0 0.0   0
+##   age_11 0.0   0 0.1   0 5.2   0 0.8   0 0.0   0 0.0   0
+##   age_12 0.0   0 0.1   0 4.6   0 1.4   0 0.0   0 0.1   0
+##   age_13 0.0   0 0.0   0 2.4   0 3.2   0 0.1   0 0.6   0
+##   age_14 0.0   0 0.0   0 0.1   0 4.2   0 0.1   0 1.3   0
+##   age_15 0.0   0 0.0   0 0.0   0 3.6   0 0.0   0 0.9   0
+##   age_16 0.0   0 0.0   0 0.0   0 6.3   0 0.0   0 1.1   0
 ```
 
 Accessing the prevalence of the 1st age compartment (0-4) and 1st infectious
@@ -203,7 +208,7 @@ compartment (unvaccinated susceptible) for days 130 to 135 is done with
 
 ```
 ## day_130 day_131 day_132 day_133 day_134 day_135 
-##     5.3     5.3     5.3     5.2     5.2     5.2
+##     5.5     5.5     5.5     5.5     5.5     5.5
 ```
 
 The outputs can also be extracted in `tibble` form using the `extract` function,
@@ -211,32 +216,32 @@ once again using the `what` argument to specify whether prevalence or incidence
 is extracted.
 
 
-```r
+``` r
 ## extract prevalence
 extract(output, what = "prevalence")
 ```
 
 ```
 ## # A tibble: 4,380 × 4
-##      day vax   compartment        value
-##    <int> <lgl> <fct>              <dbl>
-##  1     1 FALSE S           1.00        
-##  2     1 FALSE E           0           
-##  3     1 FALSE C           0.0000000469
-##  4     1 FALSE H           0           
-##  5     1 FALSE R           0           
-##  6     1 FALSE D           0           
-##  7     1 TRUE  S           0           
-##  8     1 TRUE  E           0           
-##  9     1 TRUE  C           0           
-## 10     1 TRUE  H           0           
+##      day vax   compartment         value
+##    <int> <lgl> <fct>               <dbl>
+##  1     1 FALSE S           1.00         
+##  2     1 FALSE E           0            
+##  3     1 FALSE C           0.00000000293
+##  4     1 FALSE H           0            
+##  5     1 FALSE R           0            
+##  6     1 FALSE D           0            
+##  7     1 TRUE  S           0            
+##  8     1 TRUE  E           0            
+##  9     1 TRUE  C           0            
+## 10     1 TRUE  H           0            
 ## # ℹ 4,370 more rows
 ```
 If we want to filter this list for a sequence of days, we can then do basic
 dataframe manipulation:
 
 
-```r
+``` r
 ## define start and end days
 days_from <- 10
 days_to <- 20
@@ -251,16 +256,16 @@ df
 ## # A tibble: 132 × 4
 ##      day vax   compartment    value
 ##    <int> <lgl> <fct>          <dbl>
-##  1    10 FALSE S           1.00e+ 0
-##  2    10 FALSE E           5.69e- 8
-##  3    10 FALSE C           5.28e- 8
-##  4    10 FALSE H           8.70e-10
-##  5    10 FALSE R           3.95e- 8
-##  6    10 FALSE D           2.36e-11
-##  7    10 TRUE  S           0       
-##  8    10 TRUE  E           0       
-##  9    10 TRUE  C           0       
-## 10    10 TRUE  H           0       
+##  1    10 FALSE S           9.91e- 1
+##  2    10 FALSE E           3.60e- 9
+##  3    10 FALSE C           3.33e- 9
+##  4    10 FALSE H           5.35e-11
+##  5    10 FALSE R           2.48e- 9
+##  6    10 FALSE D           1.45e-12
+##  7    10 TRUE  S           9.00e- 3
+##  8    10 TRUE  E           2.10e-12
+##  9    10 TRUE  C           6.97e-13
+## 10    10 TRUE  H           2.06e-13
 ## # ℹ 122 more rows
 ```
 
@@ -271,7 +276,7 @@ can see that vaccination rate is specified using the `vax_rate` argument and
 set it to 0.5% of the population per day.
 
 
-```r
+``` r
 ## define vaccination rate
 pars <- get_parameters(vax_rate = 0.005)
 
@@ -298,7 +303,7 @@ previous run, and modify the compartments so half the susceptible population is
 assigned to the vaccinated compartment.
 
 
-```r
+``` r
 ## extract starting point from previous run
 state <- output$prevalence[1,,]
 
@@ -326,7 +331,7 @@ should be used from. In the example below, we introduce isolation measures with
 an adherence of 50% on the 125th day.
 
 
-```r
+``` r
 ## introduce isolation on the 125th day
 parlist <- list(
   "1" = get_parameters(),
@@ -355,7 +360,7 @@ the default scenario (no interventions) with the a scenario where isolation is
 introduced on the 125th day.
 	
 
-```r
+``` r
 ## define two scenarios, one without intervention and one with isolation
 parlists <- list(
   "No intervention" = get_parameters(),
