@@ -6,7 +6,9 @@
 *simex* is an R package for simulating the spread of infectious diseases, as
 well as interventions such as social distancing measures, isolation and
 vaccination. It uses an age-structured SEIR compartmental model with
-country-specific age demographics and contact rates.
+country-specific age demographics and contact rates. The simplest way to
+interact with the tool is to use the [Shiny App](https://portal.who.int/eios-colab/rconnect/simex). If you have the package
+installed, you can also launch it locally using `simex::run_shiny()`.
 
 ```{r, echo = FALSE} 
 knitr::opts_chunk$set(fig.cap="",
@@ -32,11 +34,6 @@ library("simex")
 
 Running *simex*
 -------------
-
-### Shiny App
-The simplest way to interact with the tool is to use the [Shiny
-App](https://portal.who.int/eios-colab/rconnect/simex). You can also launch this
-locally using `simex::run_shiny()`.
 
 ### Parameters and settings
 
