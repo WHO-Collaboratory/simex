@@ -2,7 +2,7 @@
 #'
 #' @importFrom shinyMatrix matrixInput
 #' @importFrom shinyjs click useShinyjs
-#' @importFrom shinyWidgets setBackgroundColor switchInput
+#' @importFrom shinyWidgets setBackgroundColor switchInput radioGroupButtons
 #'
 #' @author Finlay Campbell
 #'
@@ -232,25 +232,52 @@ run_shiny <- function() {
       ),
 
     sidebar = sidebar(
+
       width = "40%",
-      textInput(inputId = "scenario_name", label = "Scenario name", "Baseline"),
-      div(
-        style = "display: flex; align-items: stretch; margin-top: 0px",
-        actionButton("run_scenario", "Run Scenario", width = "50%",
-                     style = "margin-right:2px; margin-left: 2px"),
-        actionButton("save_scenario", "Save Scenario", width = "50%",
-                     style = "margin-right:2px; margin-left: 2px")
-      ),
-      div(
-        style = "display: flex; align-items: stretch; margin-top: -20px",
-        actionButton("add_period", "Add Period", width = "33%",
-                     style = "margin-right:2px; margin-left: 2px"),
-        actionButton("remove_period", "Remove Period", width = "33%",
-                     style = "margin-right:2px; margin-left: 2px"),
-        actionButton("reset", "Reset", width = "33%",
-                     style = "margin-right:2px; margin-left: 2px")
-      ),
-      navset_card_underline(id = "parameters_panel")
+
+      navset_card_underline(
+
+        nav_panel(
+          title = "Introduction",
+          strong("Introduction to simex"),
+          p("simex is a simulation excercise tool for epidemic and pandemic preparedness that lets you explore different outbreak scenarios and the effect of different public health interventions. The text below will give a brief overview of how to use the tool."),
+          strong("Running a default scenario"),
+          p("A scenario represents a single run of the simulation from beginning to end. To run a simulation using the default settings, navigate to the", em("Entry tab"), "and click ", em("Run Scenario"), ". You will see the simulation outputs in the ", em("Timeline"), "panel on the right. The compartments are as follows:"),
+          htmlOutput("compartments_description"),
+          p("The subscript u and v correspond to unvaccinated and vaccinated populations, respectively. You can toggle whether you want to see prevalence or incidence using the buttons above the plot, and you can toggle whether you want to hide/show the vaccinated and unvaccinated populations using the buttons in the bottom right."),
+          strong("Running a custom scenario"),
+          p("To run a scenario under your own parameter settings, simply change any of the values in the parameter tab as you desire and press the ", em("Run Scenario"), "button again and the plot on the right will update."),
+          strong("Changing parameter values over time"),
+          p("The settings so far run a single set of parameters over the entire time period. To simulate a scenario where the parameters change at a given point in the pandemic, use the ", em("Add Period"), "button. This will add a new set of parameters, associated with a given start day. Try adding a new period and changing the reproduction number from 3 to 5 with a start day of 75. Then run the scenario and see how the increased reproduction number (e.g. due to the introduction of a new variant) changes the course of the pandemic. You can add as many periods as you would like, and can navigate between the parameter settings of each period by clicking on the respective tabs. You can also delete a period using the ", em("Remove Period"), "button."),
+          strong("Comparing different scenarios"),
+          p("You can also compare different scenarios to see e.g. what the effect of an intervention is. To do so, define your first scenario (with as a many periods as you like), provid a Scenario name and save it using the ", em("Save Scenario"), "button. Then define a second scenario, name it and and once again save it. Now navigate to the ", em("Comparison"), "panel and see how the total number of cases across age groups differ. You can toggle whether you want to see cases, hospitalisations or deaths. Try comparing two scenarios, one with a reproduction number of 2 and one with 5.")
+        ),
+
+        nav_panel(
+          title = "Entry",
+          textInput(inputId = "scenario_name", label = "Scenario name", "Baseline"),
+          div(
+            style = "display: flex; align-items: stretch; margin-top: 0px",
+            actionButton("run_scenario", "Run Scenario", width = "50%",
+                         style = "margin-right:2px; margin-left: 2px"),
+            actionButton("save_scenario", "Save Scenario", width = "50%",
+                         style = "margin-right:2px; margin-left: 2px")
+          ),
+          div(
+            style = "display: flex; align-items: stretch; margin-top: -20px",
+            actionButton("add_period", "Add Period", width = "33%",
+                         style = "margin-right:2px; margin-left: 2px"),
+            actionButton("remove_period", "Remove Period", width = "33%",
+                         style = "margin-right:2px; margin-left: 2px"),
+            actionButton("reset", "Reset", width = "33%",
+                         style = "margin-right:2px; margin-left: 2px")
+          ),
+          navset_card_underline(id = "parameters_panel")
+        )
+
+      )
+
+
     ),
 
     navset_card_underline(
@@ -258,11 +285,11 @@ run_shiny <- function() {
       nav_panel(
         title = "Timeline",
 
-        switchInput(
+        radioGroupButtons( # or radioGroupButtons
           inputId = "timeline_what",
-          value = TRUE,
-          onLabel = "Prevalence",
-          offLabel = "Incidence"
+          selected = "Prevalence",
+          label = NULL,
+          choices = c("Prevalence", "Incidence")
         ),
 
         highchartOutput("timeline")
@@ -271,15 +298,14 @@ run_shiny <- function() {
 
       nav_panel(
         title = "Comparison",
-        switchInput(
+        radioGroupButtons( # or radioGroupButtons
           inputId = "comparison_what",
-          value = TRUE,
-          onLabel = "Prevalence",
-          offLabel = "Incidence"
+          selected = "Cases",
+          label = NULL,
+          choices = c("Cases", "Hospitalisations", "Deaths")
         ),
-        plotOutput("comparison", height = "auto", width = "100%"),
-        headerPanel(""),
-        plotOutput("endpoint", height = "auto", width = "100%")
+
+        highchartOutput("endpoint")
       )
 
     )
@@ -308,7 +334,8 @@ run_shiny <- function() {
 
     ## initiate server with clicking add_period button
     o <- observe({
-      shinyjs::click("add_period")
+      click("add_period")
+      click("run_scenario")
       ## destroy observer as it has no use after initial button click
       o$destroy()
     })
@@ -381,16 +408,18 @@ run_shiny <- function() {
     simex <- eventReactive(
       input$run_scenario,
       {
-        ## get parlist
-        parlist <- shiny_to_simex(input, active_par())
-
-        ## checks
-        start_days <- as.numeric(names(parlist))
-        validate(
-          need(any(start_days == 1), "One period must start on day 1!"),
-          need(all(table(start_days) == 1), "Periods can't have the same start day!")
-        )
-
+        ## if input not initiated call default values
+        if(!any(grepl("agestrat", names(input)))) {
+          parlist <- get_parameters()
+        } else {
+          parlist <- shiny_to_simex(input, active_par())
+          ## checks
+          start_days <- as.numeric(names(parlist))
+          validate(
+            need(any(start_days == 1), "One period must start on day 1!"),
+            need(all(table(start_days) == 1), "Periods can't have the same start day!")
+          )
+        }
         ## run the model
         run_model(parlist)
       }
@@ -424,9 +453,9 @@ run_shiny <- function() {
     )
 
     ## timeline plot
-    output$timeline <- highcharter::renderHighchart(
+    output$timeline <- renderHighchart(
       plot(simex(),
-           what = ifelse(input$timeline_what, "prevalence", "incidence"),
+           what = tolower(input$timeline_what),
            base_size = 20,
            show_hosp_capacity = TRUE,
            type = "highchart")
@@ -434,20 +463,25 @@ run_shiny <- function() {
     )
 
     ## comparison plot
-    output$comparison <- renderPlot(
+    output$endpoint <- renderHighchart(
       vis_comparison(
-        scenarios(),
-        what = ifelse(input$comparison_what, "prevalence", "incidence"),
-        base_size = 20
-      ),
-      height = function() 0.7*session$clientData$output_comparison_width
+        scenarios(), format = "endpoint",
+        type = "highchart",
+        show_compartment = c(Cases = "E", Hospitalisations = "H", Deaths = "D")[input$comparison_what]
+      )
     )
 
-    ## comparison plot
-    output$endpoint <- renderPlot(
-      vis_comparison(scenarios(), format = "endpoint", base_size = 20),
-      height = function() 0.7*session$clientData$output_endpoint_width
-    )
+    output$compartments_description <- renderText({
+      format_html_list(c(
+        "S: susceptible",
+        "E: exposed but not symptomatic",
+        "C: symptomatic in the community",
+        "H: symptomatic in the hospital",
+        "R: recovered",
+        "D: dead"
+      ))
+    })
+
 
   }
 

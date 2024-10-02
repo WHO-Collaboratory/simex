@@ -8,6 +8,7 @@ vis_comparison(
   simexl,
   what = c("prevalence", "deltas", "incidence"),
   format = c("timeline", "endpoint"),
+  type = c("ggplot", "highchart"),
   log = FALSE,
   use_absolute_numbers = FALSE,
   show_compartment = c("D", "S", "E", "C", "H", "R"),

@@ -42,7 +42,10 @@ size.}
 
 \item{show_compartment}{The compartment to show when using \code{format = "endpoint"}.}
 
-\item{base_size}{Base size passed to theme_*}
+\item{base_size}{Base size passed to theme_*.}
+
+\item{type}{"ggplot" will return a static ggplot figure, "highchart" will
+return a dynamic figure.}
 }
 \description{
 Plot timeline of prevalence or incidence.

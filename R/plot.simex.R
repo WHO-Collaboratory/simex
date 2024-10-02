@@ -97,6 +97,36 @@ plot.simex <- function(simex,
           backgroundColor = "#FFFFFF"
         )
 
+      js_code1 <- "
+        function() {
+          if (typeof x === 'undefined') {
+              var recalc_legend = true;
+          }
+          let chart = this;
+            recalc_legend = false;
+            console.log(chart);
+            chart.update({
+              legend: {
+                itemWidth: chart.plotSizeX * 0.8 / 5.8,
+                symbolWidth: chart.plotSizeX * 0.8 / 12
+              }
+            });
+        }"
+
+      js_code2 <- "
+        function() {
+          let chart = this;
+          if (recalc_legend) {
+            console.log(chart);
+            chart.update({
+              legend: {
+                itemWidth: chart.plotSizeX * 0.8 / 5.8,
+                symbolWidth: chart.plotSizeX * 0.8 / 12
+              }
+            });
+          }
+        }"
+
       ## add these serie
       for(i in seq_len(nrow(hcl)))
         hc <- hc %>%
@@ -107,8 +137,8 @@ plot.simex <- function(simex,
             )),
             id = paste0(hcl$compartment[i], "_", ifelse(hcl$vax[i], "v", "u")),
             data = df %>%
-            filter(vax == hcl$vax[i], compartment == hcl$compartment[i]) %>%
-            mutate(value = value*100),
+              filter(vax == hcl$vax[i], compartment == hcl$compartment[i]) %>%
+              mutate(value = value*100),
             "line", hcaes(x = day, y = value),
             dashStyle = ifelse(!hcl$vax[i], "Solid", "ShortDash"),
             color = hcl$color[i]
@@ -116,7 +146,15 @@ plot.simex <- function(simex,
 
       ## add further optionsg
       hc %>%
-        hc_legend(symbolWidth = 35, width = "60%", useHTML = TRUE) %>%
+        hc_legend(
+          align = "center",
+          width = "80%",
+          useHTML = TRUE
+        ) %>%
+        hc_chart(
+          type = "line",
+          events = list(load = JS(js_code1), render = JS(js_code2))
+        ) %>%
         hc_yAxis(
           title = list(text = "Proportion"),
           labels = list(format = "{value}%"),
@@ -127,7 +165,19 @@ plot.simex <- function(simex,
           line = list(
             lineWidth = 5,
             marker = list(enabled = FALSE)
-          )
+          ),
+          events = list(
+            legendItemClick = JS(
+              "function (event) {
+            recalc_legend = false;
+                var series = this;
+                if (series.visible) {
+                    series.hide();
+                } else {
+                    series.show();
+                }
+            recalc_legend = true;
+             }"))
         ) %>%
         hc_tooltip(valueDecimals = 1, valueSuffix = "%") %>%
         hc_exporting(
@@ -149,6 +199,7 @@ plot.simex <- function(simex,
               text = "Toggle Unvaccinated",
               onclick = JS(
                 "function() {
+            recalc_legend = false;
             var seriesIDs = ['S_u', 'E_u', 'C_u', 'H_u', 'R_u', 'D_u'];
             seriesIDs.forEach(function(seriesID) {
               var series = this.get(seriesID);
@@ -157,14 +208,18 @@ plot.simex <- function(simex,
               } else {
                 series.show();
               }
-            }.bind(this));}"),
+            }.bind(this));
+            recalc_legend = true;
+            }"),
             align = "right",
+            verticalAlign = "bottom",
             x = 0,
-            y = 3),
+            y = 0),
             customButton2 = list(
               text = "Toggle Vaccinated",
               onclick = JS(
                 "function() {
+            recalc_legend = false;
             var seriesIDs = ['S_v', 'E_v', 'C_v', 'H_v', 'R_v', 'D_v'];
             seriesIDs.forEach(function(seriesID) {
               var series = this.get(seriesID);
@@ -174,38 +229,40 @@ plot.simex <- function(simex,
                 series.show();
               }
             }.bind(this));
+            recalc_legend = true;
           }"),
           align = "right",
+          verticalAlign = "bottom",
           x = 0,
-          y = 31
+          y = -30
           )
           )
         )
 
     } else {
 
-    ## plot
-    df %>%
-      ggplot(aes(day, if(use_absolute_numbers) value*pop else value, linetype = vax)) +
-      hline +
-      geom_line(linewidth = 1.5) +
-      facet_wrap(
-        ~ compartment,
-        scales = ifelse(freescales, "free_y", "fixed"),
-        labeller = labeller(compartment = cat)
-      ) +
-      scale_y_continuous(
-        expand = expansion(mult = c(0.01, 0.05)),
-        trans = ifelse(log, "log10", "identity"),
-        labels = if(use_absolute_numbers) waiver() else percent
-      ) +
-      scale_linetype(name = "Vaccinated") +
-      labs(x = "Day", y = str_to_title(what)) +
-      theme_minimal(base_size = base_size) +
-      theme(
-        legend.position = 'bottom',
-        plot.background = element_rect(fill = "white", color = "white")
-      )
+      ## plot
+      df %>%
+        ggplot(aes(day, if(use_absolute_numbers) value*pop else value, linetype = vax)) +
+        hline +
+        geom_line(linewidth = 1.5) +
+        facet_wrap(
+          ~ compartment,
+          scales = ifelse(freescales, "free_y", "fixed"),
+          labeller = labeller(compartment = cat)
+        ) +
+        scale_y_continuous(
+          expand = expansion(mult = c(0.01, 0.05)),
+          trans = ifelse(log, "log10", "identity"),
+          labels = if(use_absolute_numbers) waiver() else percent
+        ) +
+        scale_linetype(name = "Vaccinated") +
+        labs(x = "Day", y = str_to_title(what)) +
+        theme_minimal(base_size = base_size) +
+        theme(
+          legend.position = 'bottom',
+          plot.background = element_rect(fill = "white", color = "white")
+        )
 
     }
 
@@ -221,7 +278,7 @@ plot.simex <- function(simex,
     groupings <- unlist(unname(imap(groupings, ~ setNames(rep(.y, length(.x)), .x))))
 
     ## extract relevant data
-    extract(simex, what, stratify_by = c("day", "compartment", "age")) %>%
+    df <- extract(simex, what, stratify_by = c("day", "compartment", "age")) %>%
       filter(day == max(day) & compartment == show_compartment) %>%
       arrange(age) %>%
       mutate(
@@ -231,7 +288,9 @@ plot.simex <- function(simex,
       group_by(age) %>%
       summarise(
         value = if(use_absolute_numbers) sum(value)*pop else sum(value)/sum(age_frac)
-      ) %>%
+      )
+
+    df %>%
       ggplot(aes(age, value)) +
       geom_col() +
       scale_x_discrete(labels = get_age_cat()) +
