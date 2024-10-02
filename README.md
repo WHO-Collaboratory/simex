@@ -19,7 +19,7 @@ To install the development version from github:
 
 
 ``` r
-remotes::install_github("finlaycampbell/simex", dependencies = TRUE, force = TRUE)
+remotes::install_github("WHO-Collaboratory/simex", dependencies = TRUE, force = TRUE)
 ```
 
 Load the package using:
