@@ -7,8 +7,7 @@
 well as interventions such as social distancing measures, isolation and
 vaccination. It uses an age-structured SEIR compartmental model with
 country-specific age demographics and contact rates. The simplest way to
-interact with the tool is to use the [Shiny App](https://portal.who.int/eios-colab/rconnect/simex). If you have the package
-installed, you can also launch it locally using `simex::run_shiny()`.
+interact with the tool is to use the [Shiny App](https://portal.who.int/eios-colab/rconnect/simex).
 
 
 
@@ -31,6 +30,11 @@ library("simex")
 
 Running *simex*
 -------------
+
+### Shiny App
+You can use *simex* interactively by launching the shiny app locally with
+`simex::run_shiny()`. If you want to use it programmatically, follow the steps
+below.
 
 ### Parameters and settings
 
