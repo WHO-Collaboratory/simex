@@ -242,7 +242,7 @@ run_shiny <- function() {
           strong("Introduction to simex"),
           p("simex is a simulation excercise tool for epidemic and pandemic preparedness that lets you explore different outbreak scenarios and the effect of different public health interventions. The text below will give a brief overview of how to use the tool."),
           strong("Running a default scenario"),
-          p("A scenario represents a single run of the simulation from beginning to end. To run a simulation using the default settings, navigate to the", em("Entry tab"), "and click ", em("Run Scenario"), ". You will see the simulation outputs in the ", em("Timeline"), "panel on the right. The compartments are as follows:"),
+          p("A scenario represents a single run of the simulation from beginning to end. To run a simulation using the default settings, navigate to the", em("Inputs tab"), "and click ", em("Run Scenario"), ". You will see the simulation outputs in the ", em("Timeline"), "panel on the right. The compartments are as follows:"),
           htmlOutput("compartments_description"),
           p("The subscript u and v correspond to unvaccinated and vaccinated populations, respectively. You can toggle whether you want to see prevalence or incidence using the buttons above the plot, and you can toggle whether you want to hide/show the vaccinated and unvaccinated populations using the buttons in the bottom right."),
           strong("Running a custom scenario"),
@@ -254,7 +254,7 @@ run_shiny <- function() {
         ),
 
         nav_panel(
-          title = "Entry",
+          title = "Inputs",
           textInput(inputId = "scenario_name", label = "Scenario name", "Baseline"),
           div(
             style = "display: flex; align-items: stretch; margin-top: 0px",
