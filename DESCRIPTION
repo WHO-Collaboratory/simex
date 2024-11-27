@@ -42,4 +42,5 @@ Imports:
     shinyjs,
     shinyMatrix,
     shinyWidgets,
-    gbRd
+    gbRd,
+    waiter

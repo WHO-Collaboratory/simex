@@ -3,6 +3,7 @@
 #' @importFrom shinyMatrix matrixInput
 #' @importFrom shinyjs click useShinyjs
 #' @importFrom shinyWidgets setBackgroundColor switchInput radioGroupButtons
+#' @importFrom waiter waiter_preloader spin_3
 #'
 #' @author Finlay Campbell
 #'
@@ -50,9 +51,11 @@ run_shiny <- function() {
   vax_nms <- c("vax_infectiousness", "vax_infection", "vax_hosp", "vax_death")
 
   ## variable names expressed in percent
-  percent_nms <- c(vax_nms, "ifr", "hosp_mortality", "frac_symp",
-                   "hosp_protection_death", "comm_mortality",
-                   "isolation_adherence", "isolation_effectiveness", "vax_rate")
+  percent_nms <- c(
+    vax_nms, "ifr", "hosp_mortality", "frac_symp",
+    "hosp_protection_death", "comm_mortality",
+    "isolation_adherence", "isolation_effectiveness", "vax_rate"
+  )
 
   ## generate shiny output for a given parameter tab
   simex_to_shiny <- function(simex_input, tab_id) {
@@ -194,37 +197,36 @@ run_shiny <- function() {
   button2_col <- "#D2596A"
   button2_active_col <- "#B43546"
 
-  ## Define the UI
+  # Define the UI
   ui <- page_sidebar(
-
     useShinyjs(),
     setBackgroundColor(background_col),
     tags$head(tags$style(HTML(paste(
-                     paste0("#sidebar{background-color:", sidebar_col, "}"),
+      paste0("#sidebar{background-color:", sidebar_col, "}"),
 
-                     paste0("#run_scenario{background-color:", button2_col, "}"),
-                     paste0("#run_scenario:hover{background-color:", button2_active_col, "}"),
+      paste0("#run_scenario{background-color:", button2_col, "}"),
+      paste0("#run_scenario:hover{background-color:", button2_active_col, "}"),
 
-                     paste0("#save_scenario{background-color:", button2_col, "}"),
-                     paste0("#save_scenario:hover{background-color:", button2_active_col, "}"),
+      paste0("#save_scenario{background-color:", button2_col, "}"),
+      paste0("#save_scenario:hover{background-color:", button2_active_col, "}"),
 
-                     paste0("#reset{background-color:", button_col, "}"),
-                     paste0("#reset:hover{background-color:", button_active_col, "}"),
+      paste0("#reset{background-color:", button_col, "}"),
+      paste0("#reset:hover{background-color:", button_active_col, "}"),
 
-                     paste0("#add_period{background-color:", button_col, "}"),
-                     paste0("#add_period:hover{background-color:", button_active_col, "}"),
+      paste0("#add_period{background-color:", button_col, "}"),
+      paste0("#add_period:hover{background-color:", button_active_col, "}"),
 
-                     paste0("#remove_period{background-color:", button_col, "}"),
-                     paste0("#remove_period:hover{background-color:", button_active_col, "}")
-                   )))
-              ),
+      paste0("#remove_period{background-color:", button_col, "}"),
+      paste0("#remove_period:hover{background-color:", button_active_col, "}")
+    )))
+    ),
 
-### next two lines for class - use class attribute (.inline instead of #inline)
+    ### next two lines for class - use class attribute (.inline instead of #inline)
     tags$head(
-           tags$style(
-                  type="text/css",
-                  ".inline label{ display: table-cell; text-align: left; vertical-align: middle; } .inline .form-group { display: table-row;} p.indent {margin-right: 10px}")
-         ),
+      tags$style(
+        type="text/css",
+        ".inline label{ display: table-cell; text-align: left; vertical-align: middle; } .inline .form-group { display: table-row;} p.indent {margin-right: 10px}")
+    ),
 
     title = h4(strong(
       em("simex:"),
@@ -242,7 +244,7 @@ run_shiny <- function() {
           strong("Introduction to simex"),
           p("simex is a simulation excercise tool for epidemic and pandemic preparedness that lets you explore different outbreak scenarios and the effect of different public health interventions. The text below will give a brief overview of how to use the tool."),
           strong("Running a default scenario"),
-          p("A scenario represents a single run of the simulation from beginning to end. To run a simulation using the default settings, navigate to the", em("Inputs tab"), "and click ", em("Run Scenario"), ". You will see the simulation outputs in the ", em("Timeline"), "panel on the right. The compartments are as follows:"),
+          p("A scenario represents a single run of the simulation from beginning to end. To run a simulation using the default settings, navigate to the", em("Inputs tab"), "and click ", em("Run Scenario."), " You will see the simulation outputs in the ", em("Timeline"), "panel on the right. The compartments are as follows:"),
           htmlOutput("compartments_description"),
           p("The subscript u and v correspond to unvaccinated and vaccinated populations, respectively. You can toggle whether you want to see prevalence or incidence using the buttons above the plot, and you can toggle whether you want to hide/show the vaccinated and unvaccinated populations using the buttons in the bottom right."),
           strong("Running a custom scenario"),
@@ -308,6 +310,20 @@ run_shiny <- function() {
         highchartOutput("endpoint")
       )
 
+    ),
+
+    # start up loading spinner
+    waiter::waiter_preloader(
+      html = tagList(
+        tags$img(
+          src = "simex/img/collaboratory_logo.jpg",
+          width = 600,
+          style = "padding: 20px;"
+        ),
+        tags$br(),
+        waiter::spin_3()
+      ),
+      color = "#FFFFFF"
     )
 
   )

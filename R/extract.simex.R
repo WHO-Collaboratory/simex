@@ -18,8 +18,9 @@ extract.simex <- function(simex,
 
   ## check arguments
   variables <- c("day", "age", "compartment", "vax")
-  if(!all(stratify_by %in% variables))
-    stop(paste("stratify_by must be one or more of", paste(variables, collapse = ", ")))
+  if (!all(stratify_by %in% variables))
+    stop(paste("stratify_by must be one or more of",
+               paste(variables, collapse = ", ")))
   what <- match.arg(what)
 
   as_tibble(simex[[what]]) %>%

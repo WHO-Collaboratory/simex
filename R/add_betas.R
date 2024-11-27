@@ -33,40 +33,41 @@ add_betas <- function(pars, mult = FALSE) {
   ## symptom onset to isolation
   frac_isol <- pars$frac_symp *
     pars$isolation_adherence *
-    max(c(0, (pars$symptomatic_period - pars$isolation_delay)/pars$symptomatic_period))
+    max(c(0, 1 - pars$isolation_delay / pars$symptomatic_period))
 
   ## Multiply non-isolation coefficients (i.e. proportion of contacts still
   ## occuring after a given intervention while *not* isolated) by baseline
   ## contact rates and sum to get total contacts in non-isolated state during a
   ## given intervention
-  polyscale_non_isol <- map2(non_isol_coeffs, pars$polyscale[places], \(x, y) x*y) %>%
+  polyscale_non_isol <- map2(non_isol_coeffs, pars$polyscale[places], `*`) %>%
     Reduce("+", .)
 
   ## Multiply isolation coefficients (i.e. proportion of contacts still occuring
   ## once isolated) by baseline contact rates and sum to get total contacts in
   ## isolated state
-  polyscale_isol <- map2(isol_coeffs, pars$polyscale[places], \(x, y) x*y) %>%
+  polyscale_isol <- map2(isol_coeffs, pars$polyscale[places], `*`) %>%
     Reduce("+", .)
 
   ## get total contact rates across different types
-  polyscale_hosp <- map2(hosp_coeffs, pars$polyscale[places], \(x, y) x*y) %>%
+  polyscale_hosp <- map2(hosp_coeffs, pars$polyscale[places], `*`) %>%
     Reduce("+", .)
 
   ## beta for Exposed cases takes:
   ## - contact rates unaffected by isolated but affected by social distancing
   ## - estimated transmission probability per contact
   ## - relative infectiousness of Exposed relative to Infected
-  pars$beta_E = pars$infectiousness_presymp * pars$p_trans * polyscale_non_isol
-#browser()
+  pars$beta_E <- pars$infectiousness_presymp * pars$p_trans * polyscale_non_isol
+
   ## beta for Infected cases in the community takes:
   ## - weighted mean of contact rates from isolated and non-isolated Infecteds
   ## - estimated transmission probability per contact
-  pars$beta_I_c = pars$p_trans * (frac_isol * polyscale_isol + (1 - frac_isol) * polyscale_non_isol)
+  pars$beta_I_c <- pars$p_trans *
+    (frac_isol * polyscale_isol + (1 - frac_isol) * polyscale_non_isol)
 
   ## beta for Infected cases in the hospital takes:
   ## - estimated transmission probability per contact
   ## - polyscale that removes home/work/school
-  pars$beta_I_h = pars$p_trans * polyscale_hosp
+  pars$beta_I_h <- pars$p_trans * polyscale_hosp
 
   return(pars)
 

@@ -33,7 +33,8 @@ age category).}
 numbers (in terms of individuals) should be shown or relative to population
 size.}
 
-\item{show_compartment}{The compartment to show when using \code{format = "endpoint"}.}
+\item{show_compartment}{The compartment to show when using \code{format =
+"endpoint"}.}
 
 \item{freescales}{Logical indicating whether the different comparments should
 use different y-axes.}

@@ -3,11 +3,7 @@
 
 [![MIT license](https://img.shields.io/badge/License-MIT-blue.svg)](https://github.com/epiforecasts/EpiNow2/blob/main/LICENSE.md/) [![Lifecycle: maturing](https://img.shields.io/badge/lifecycle-maturing-blue.svg)](https://lifecycle.r-lib.org/articles/stages.html#maturing)
 
-*simex* is an R package for simulating the spread of infectious diseases, as
-well as interventions such as social distancing measures, isolation and
-vaccination. It uses an age-structured SEIR compartmental model with
-country-specific age demographics and contact rates. The simplest way to
-interact with the tool is to use the [Shiny App](https://portal.who.int/eios-colab/rconnect/simex).
+*simex* is an R package for simulating the spread of infectious diseases, as well as interventions such as social distancing measures, isolation and vaccination. It uses an age-structured SEIR compartmental model with country-specific age demographics and contact rates. The simplest way to interact with the tool is to use the [Shiny App](https://portal.who.int/eios-colab/rconnect/simex).
 
 
 
@@ -18,7 +14,7 @@ To install the development version from github:
 
 
 ``` r
-remotes::install_github("WHO-Collaboratory/simex", dependencies = TRUE, force = TRUE)
+remotes::install_github("WHO-Collaboratory/simex")
 ```
 
 Load the package using:
