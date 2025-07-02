@@ -4,6 +4,7 @@
 #' @importFrom shinyjs click useShinyjs
 #' @importFrom shinyWidgets setBackgroundColor switchInput radioGroupButtons
 #' @importFrom waiter waiter_preloader spin_3
+#' @importFrom stringr str_to_title
 #'
 #' @author Finlay Campbell
 #'

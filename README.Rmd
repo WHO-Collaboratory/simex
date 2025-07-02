@@ -8,6 +8,7 @@
 ```{r, echo = FALSE} 
 knitr::opts_chunk$set(fig.cap = "",
                       fig.align = "center",
+                      fig.path = "man/figures"
                       dpi = 200,
                       out.width = "75%")
 ``` 
@@ -31,9 +32,7 @@ Running *simex*
 -------------
 
 ### Shiny App
-You can use *simex* interactively by launching the shiny app locally with
-`simex::run_shiny()`. If you want to use it programmatically, follow the steps
-below.
+You can use *simex* interactively by launching the shiny app locally with `simex::run_shiny()`. If you want to use it programmatically, follow the steps below.
 
 ### Parameters and settings
 
@@ -46,8 +45,7 @@ simex:::get_arg_table("get_parameters", type = "kable")
 
 ### Running default settings
 
-To run the model using default settings, specify a parameter object `par` and
-feed this into the `run_model` function.
+To run the model using default settings, specify a parameter object `par` and feed this into the `run_model` function.
 
 ```{r, echo = TRUE}
 ## set parameters using defaults
@@ -62,9 +60,7 @@ print(output)
 
 ### Visualising outputs
 
-To visualise the results, use the generic `plot` function defined for the
-`simex` class. Below, we first visualise prevalence and then incidence,
-specified using the `what` argument.
+To visualise the results, use the generic `plot` function defined for the `simex` class. Below, we first visualise prevalence and then incidence, specified using the `what` argument.
 
 ```{r, echo = TRUE}
 ## visualise prevalence
@@ -74,8 +70,7 @@ plot(output, what = "prevalence")
 plot(output, what = "incidence")
 ```
 
-Hospital capacity can be displayed by toggling the `show_hosp_capacity`
-argument.
+Hospital capacity can be displayed by toggling the `show_hosp_capacity` argument.
 
 ```{r, echo = TRUE}
 ## visualise prevalence with hospital capaciy
@@ -84,9 +79,7 @@ plot(output, what = "prevalence", show_hosp_capacity = TRUE)
 
 ### Summarising outputs
 
-To get a summary of the model state at a given point in time, use the `summary`
-function with the optional `day` argument. In the example below, we display the
-summary statistics for day 150:
+To get a summary of the model state at a given point in time, use the `summary` function with the optional `day` argument. In the example below, we display the summary statistics for day 150:
 
 ```{r, eval = FALSE}
 ## get summary at day 150

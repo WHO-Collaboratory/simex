@@ -24,9 +24,9 @@
 #'
 #' @param base_size Base size passed to theme_*
 #'
-#' @author Finlay Campbell
+#' @importFrom forcats fct_inorder
 #'
-#' @importFrom scales percent
+#' @author Finlay Campbell
 #'
 #' @export
 #'
@@ -80,7 +80,7 @@ vis_comparison <- function(simexl,
         limits = if (!log) c(0, NA) else waiver(),
         expand = expansion(mult = c(0.01, 0.05)),
         trans = ifelse(log, "log10", "identity"),
-        labels = if (use_absolute_numbers) waiver() else percent
+        labels = if (use_absolute_numbers) waiver() else scales::percent
       ) +
       scale_color_brewer(name = "Scenario", palette = "Dark2") +
       labs(x = "Day", y = str_to_title(what), color = "Category") +
@@ -149,7 +149,7 @@ vis_comparison <- function(simexl,
           expand = expansion(mult = c(0.01, 0.05)),
           labels =
             if (use_absolute_numbers) waiver()
-            else function(x) percent(x, 0.001)
+            else function(x) scales::percent(x, 0.001)
         ) +
         scale_fill_brewer(
           name = "Scenario",

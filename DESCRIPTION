@@ -33,7 +33,6 @@ Imports:
     forcats,
     scales,
     stats,
-    stringr,
     tidyr,
     deSolve,
     shiny,

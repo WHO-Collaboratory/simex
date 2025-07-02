@@ -31,10 +31,14 @@ add_cdat <- function() {
       matrix = map2(
         file, country,
         function(file, country) {
-          dat <- suppressMessages(readxl::read_excel(file, country, col_names = T))
+          dat <- suppressMessages(
+            readxl::read_excel(file, country, col_names = TRUE)
+          )
           ## catch missing column names
-          if(nrow(dat) == 15)
-            dat <- suppressMessages(readxl::read_excel(file, country, col_names = F))
+          if (nrow(dat) == 15)
+            dat <- suppressMessages(
+              readxl::read_excel(file, country, col_names = FALSE)
+            )
           as.matrix(dat)
         }
       )
@@ -54,11 +58,12 @@ add_cdat <- function() {
             ## additivity and consistency with flu-models approach
             mod = map(
               setNames(contacts$matrix, contacts$place),
-              ~ ((pop$count * .x) + t(pop$count * .x))/(2 * pop$count)
+              ~ ((pop$count * .x) + t(pop$count * .x)) / (2 * pop$count)
             ),
             ## Scale the polymod by population proportions
-            scale = map(mod, ~ t(t(.x)/pop$prop))
-          )}
+            scale = map(mod, ~ t(t(.x) / pop$prop))
+          )
+        }
       )
     ) %>%
     ## next steps are all reformatting into list for easier indexing

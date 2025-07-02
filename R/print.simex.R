@@ -2,6 +2,8 @@
 #'
 #' @param simex A simex object returned by \code{run_model}.
 #'
+#' @importFrom stringr str_remove
+#'
 #' @export
 #'
 print.simex <- function(simex) {

@@ -59,7 +59,7 @@ run_model <- function(pars,
     ## solve first run from init state
     out <- solve_ode(pars[[1]], days = seq(1, times[2]), state = init_state)
     ## store dimension names
-    dm_names <- names(dimnames(out$prevalence))
+    dn <- names(dimnames(out$prevalence))
     final_state <- out$prevalence[dim(out$prevalence)[1],,]
     ## iterate across parameter set
     for(i in 2:length(pars)) {
@@ -71,7 +71,7 @@ run_model <- function(pars,
       ## starting point
       for(j in seq_along(out)) {
         out[[j]] <- abind(out[[j]], after[[j]][-1,,], along = 1)
-        names(dimnames(out[[j]])) <- dm_names
+        names(dimnames(out[[j]])) <- dn
       }
     }
   }
