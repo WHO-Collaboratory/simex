@@ -30,8 +30,8 @@
 #'
 #' @export
 #'
-vis_comparison <- function(simexl,
-                           what = c("prevalence", "incidence"),
+vis_comparison2 <- function(simexl,
+                           what = c("prevalence", "deltas", "incidence"),
                            format = c("timeline", "endpoint"),
                            type = c("ggplot", "highchart"),
                            log = FALSE,
@@ -58,20 +58,15 @@ vis_comparison <- function(simexl,
 
   if (format == "timeline") {
 
-    map_dfr(
-      simexl,
-      ~ extract(.x, what, stratify_by = c("time", "vax", "compartment")),
-      .id = "scenario"
-    ) |>
-      # imap_dfr(simexl, ~ mutate(extract(.x, what), scenario = .y)) %>%
+    imap_dfr(simexl, ~ mutate(extract(.x, what), scenario = .y)) %>%
       mutate(scenario = fct_inorder(scenario)) %>%
-      group_by(time, compartment, scenario) %>%
+      group_by(day, compartment, scenario) %>%
       summarise(value = sum(value)) %>%
       ungroup() %>%
       ggplot(
         aes(
-          x = time,
-          y = if (use_absolute_numbers) value else value / pop,
+          x = day,
+          y = if (use_absolute_numbers) value * pop else value,
           color = scenario
         )
       ) +
@@ -101,26 +96,26 @@ vis_comparison <- function(simexl,
     get_agestrat <- function(simex) {
 
       extract(
-        simex, "incidence", stratify_by = c("time", "compartment", "age")
+        simex, "incidence", stratify_by = c("day", "compartment", "age")
       ) %>%
         filter(compartment == show_compartment) %>%
         group_by(age) %>%
         summarise(value = sum(value), .groups = "drop") %>%
         mutate(
           age_frac = simex$pars[[1]]$age_frac[age],
-          value = if (use_absolute_numbers) value else value / (pop * age_frac)
+          value = if (use_absolute_numbers) value * pop else value / age_frac
         )
 
     }
 
-    df <- map_dfr(simexl, get_agestrat, .id = "scenario") %>%
+    df <- imap_dfr(simexl, ~ mutate(get_agestrat(.x), scenario = .y)) %>%
       mutate(scenario = fct_inorder(scenario))
 
     if (type == "highchart") {
 
       df <- df %>%
         mutate(
-          value = if(use_absolute_numbers) value else value * 100,
+          value = value * 100,
           age = get_age_cat()[as.numeric(age)]
         )
 
@@ -134,8 +129,8 @@ vis_comparison <- function(simexl,
           data = df, "column", hcaes(x = age, y = value, group = scenario)
         ) %>%
         hc_yAxis(
-          title = list(text = ifelse(use_absolute_numbers, "Count", "Proportion of population")),
-          labels = list(format = ifelse(use_absolute_numbers, "{value}", "{value}%")),
+          title = list(text = "Proportion of population"),
+          labels = list(format = "{value}%"),
           min = 0
         ) %>%
         hc_xAxis(

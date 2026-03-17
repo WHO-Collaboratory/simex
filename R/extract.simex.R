@@ -7,60 +7,47 @@
 #'   "incidence" (new additions to that compartment per day).
 #'
 #' @param stratify_by Variables to stratify output but, must be one or more of
-#'   "day", "age", "compartment", "vax".
+#'   "time", "age", "compartment", "vax".
 #'
 #' @export
 #'
 extract.simex <- function(simex,
-                          what = c("prevalence", "deltas", "incidence"),
-                          stratify_by = c("day", "vax", "compartment")) {
+                           what = c("prevalence", "incidence"),
+                           cri = FALSE,
+                           cri_alpha = 0.95,
+                           stratify_by = c("time", "vax", "compartment", "age")) {
 
-  ## check arguments
-  variables <- c("day", "age", "compartment", "vax")
+  # check arguments
+  variables <- c("time", "age", "compartment", "vax")
   if (!all(stratify_by %in% variables))
     stop(paste("stratify_by must be one or more of",
                paste(variables, collapse = ", ")))
   what <- match.arg(what)
 
-  ## add vaccination as new array dimension
-  arr <- simex[[what]]
-  arr <- abind(
-    u = arr[,,grep("_u", dimnames(arr)[[3]], value = TRUE)],
-    v = arr[,,grep("_v", dimnames(arr)[[3]], value = TRUE)],
-    along = 4
-  )
-  names(dimnames(arr)) <- variables
+  # select incidence or prevalence
+  out <- simex[[what]]
 
-  ## collapse across stratifiers
-  arr <- apply(arr, stratify_by, sum)
+  # don't sum if stratified by all variables
+  if (!all(variables %in% stratify_by))
+    out <- out[
+    , .(value = sum(value)),
+      by = intersect(c(stratify_by, "particle", "sample"), names(out))
+    ]
 
-  ## functions for converting array dimnames to labels
-  fn <- c(
-    day = \(x) as.integer(sub(".*_", "", x)),
-    age = \(x) factor(x, unique(x)),
-    vax = \(x) x == "v",
-    compartment = \(x) toupper(gsub("\\_.*", "", x))
-  )
+  # generate credible intervals if needed
+  if (any(c("particle", "sample") %in% names(out))) {
+    if (cri)
+      out <- out[, as.list(get_cri(value, cri_alpha)), by = stratify_by]
+    else
+      out <- out[, .(value = median(value)), by = stratify_by]
+  } else {
+    if (cri) {
+      warning("Generating credible interval for single particle")
+      out[, c("lower", "upper") := value]
+    }
+  }
 
-  ## base R implemention of reshape2::melt using label names
-  tibble(
-    expand.grid(imap(dimnames(arr), \(value, name) fn[[name]](value))),
-    value = as.vector(arr)
-  )
-
-  ## as_tibble(simex[[what]]) %>%
-  ##   mutate(day = seq_len(n())) %>%
-  ##   pivot_longer(-day) %>%
-  ##   separate(name, c("age", "compartment"), sep = "\\.") %>%
-  ##   separate(compartment, c("compartment", "vax")) %>%
-  ##   mutate(
-  ##     vax = grepl("v", vax),
-  ##     age = factor(age, unique(age)),
-  ##     compartment = factor(compartment, unique(compartment))
-  ##   ) %>%
-  ##   group_by(across(all_of(stratify_by))) %>%
-  ##   summarise(value = sum(value)) %>%
-  ##   ungroup()
+  return(out)
 
 }
 

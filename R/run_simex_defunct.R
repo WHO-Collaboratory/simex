@@ -64,7 +64,9 @@ run_model <- function(pars,
     ## iterate across parameter set
     for(i in 2:length(pars)) {
       ## solve using endpoint of previous run
-      after <- solve_ode(pars[[i]], days = seq(times[i], times[i+1]), state = final_state)
+      after <- solve_ode(
+        pars[[i]], days = seq(times[i], times[i+1]), state = final_state
+      )
       ## update endpoint
       final_state <- after$prevalence[dim(after$prevalence)[1],,]
       ## update output by binding arrays along time axis, removed duplicated

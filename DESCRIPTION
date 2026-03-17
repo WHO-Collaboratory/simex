@@ -26,8 +26,10 @@ Suggests:
     knitr
 Imports: 
     dplyr,
+    dust2,
     ggplot2,
     magrittr,
+    data.table,
     purrr,
     abind,
     forcats,
@@ -43,3 +45,7 @@ Imports:
     shinyWidgets,
     gbRd,
     waiter
+LinkingTo:
+    cpp11,
+    dust2,
+    monty

@@ -6,7 +6,7 @@
 #' @param mult A logical indicating whether social distancing and isolation
 #'   measures have a combined effect.
 #'
-add_betas <- function(pars, mult = FALSE) {
+add_kappas <- function(pars, mult = FALSE) {
 
   ## names of places that contacts are split into
   places <- c("home", "school", "work", "other")
@@ -52,22 +52,24 @@ add_betas <- function(pars, mult = FALSE) {
   polyscale_hosp <- map2(hosp_coeffs, pars$polyscale[places], `*`) %>%
     Reduce("+", .)
 
-  ## beta for Exposed cases takes:
+  ## kappa for Exposed cases takes:
   ## - contact rates unaffected by isolated but affected by social distancing
   ## - estimated transmission probability per contact
   ## - relative infectiousness of Exposed relative to Infected
-  pars$beta_E <- pars$infectiousness_presymp * pars$p_trans * polyscale_non_isol
+  pars$kappa_E <- pars$infectiousness_presymp * polyscale_non_isol
+  # pars$beta_E <- pars$kappa_E * pars$p_trans
 
-  ## beta for Infected cases in the community takes:
+  ## kappa for Infected cases in the community takes:
   ## - weighted mean of contact rates from isolated and non-isolated Infecteds
   ## - estimated transmission probability per contact
-  pars$beta_I_c <- pars$p_trans *
-    (frac_isol * polyscale_isol + (1 - frac_isol) * polyscale_non_isol)
+  pars$kappa_C <- (frac_isol * polyscale_isol + (1 - frac_isol) * polyscale_non_isol)
+  # pars$beta_C <- pars$kappa_C * pars$p_trans
 
-  ## beta for Infected cases in the hospital takes:
+  ## kappa for Infected cases in the hospital takes:
   ## - estimated transmission probability per contact
   ## - polyscale that removes home/work/school
-  pars$beta_I_h <- pars$p_trans * polyscale_hosp
+  pars$kappa_H <- polyscale_hosp
+  # pars$beta_H <- pars$kappa_H * pars$p_trans
 
   return(pars)
 

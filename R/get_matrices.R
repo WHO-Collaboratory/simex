@@ -8,13 +8,14 @@ get_matrices <- function(p_trans, pars) {
 
   nr <- length(pars$age_frac)
 
-  ## these are new infections (E_u to E_u, C_u to E_u, I_h to E_u) (filling by column)
+  ## these are new infections (E_u to E_u, C_u to E_u, H to E_u)
+  ## (filling by column)
   T <- cbind(
     ## E generate E with contact_rate*p_transmission*infectiousness_ratio
     rbind(t(p_trans * pars$infectiousness_presymp * pars$polymod$all), diag(0, nr), diag(0, nr)),
-    ## I_c generate E with contact_rate*p_transmission
+    ## C generate E with contact_rate*p_transmission
     rbind(t(p_trans*pars$polymod$all), diag(0, nr), diag(0, nr)),
-    ## I_h generate E with contact_rate*p_transmission using ONLY other contacts
+    ## H generate E with contact_rate*p_transmission using ONLY other contacts
     rbind(t(p_trans*pars$polymod$other), diag(0, nr), diag(0, nr))
   )
 
@@ -31,24 +32,24 @@ get_matrices <- function(p_trans, pars) {
   ## average future time spent by index j in index i
   Eps_inv <- cbind(
     rbind(
-      ## E will spend in E given by inverse of the rates leave into I_h and I_c
+      ## E will spend in E given by inverse of the rates leave into H and C
       diag(1/(pars$lambda_cu + pars$lambda_hu), nr),
-      ## average future time spent by E in I_c: the first part is the duration
-      ## I_c spends in the community, the second part is the proportion of E
+      ## average future time spent by E in C: the first part is the duration
+      ## C spends in the community, the second part is the proportion of E
       ## that go into I-c
       diag(
         1/(pars$sigma_cu + pars$mu_cu) * pars$lambda_cu/(pars$lambda_cu + pars$lambda_hu),
         nr
       ),
-      ## average future time spent by E in I_h
+      ## average future time spent by E in H
       diag(
         1/(pars$sigma_hu + pars$mu_hu)*pars$lambda_hu/(pars$lambda_cu + pars$lambda_hu),
         nr
       )
     ),
-    ## I_c spends symptomatic_period in community
+    ## C spends symptomatic_period in community
     rbind(diag(0, nr), diag(1/(pars$sigma_cu + pars$mu_cu), nr), diag(0, nr)),
-    ## I_h spends hosp_duration in community
+    ## H spends hosp_duration in community
     rbind(diag(0, nr), diag(0, nr), diag(1/(pars$sigma_hu + pars$mu_hu), nr))
   )
 
@@ -81,7 +82,10 @@ get_matrices <- function(p_trans, pars) {
   ## This gives new infections and is used for R0
   ngm <- T %*% Eps_inv
 
-  list(T = T, Eps = Eps, Eps_inv = Eps_inv, delta = delta, ngm = ngm, agesums = agesums)
+  list(
+    T = T, Eps = Eps, Eps_inv = Eps_inv,
+    delta = delta, ngm = ngm, agesums = agesums
+  )
 
 }
 

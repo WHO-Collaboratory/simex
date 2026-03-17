@@ -32,3 +32,17 @@ format_html_list <- function(char, ordered = FALSE){
 
   return(html_list)
 }
+
+# Set dimension names
+setDimnames <- function(x, nm) {
+  dimnames(x) <- nm
+  x
+}
+
+# get credible intervals
+get_cri <- function(x, alpha = 0.75) {
+  setNames(
+    quantile(x, c(0.5, 0.5 - alpha / 2, 0.5 + alpha / 2)),
+    c("value", "lower", "upper")
+  )
+}

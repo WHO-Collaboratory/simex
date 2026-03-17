@@ -16,7 +16,7 @@
 ode_model <- function(time, state, pars) {
 
   ## Each element is number of persons/total population (sum(state)=1)
-  nr = nrow(pars$beta_I_c) ## Gettin the number of age groups, N
+  nr = nrow(pars$beta_C) ## Gettin the number of age groups, N
   state = matrix(
     state, nrow=nr,
     dimnames=list(
@@ -34,11 +34,11 @@ ode_model <- function(time, state, pars) {
   ## infectiousness reduction of vaccinated incorporated here
   new_E_u <- state[, "S_u"] * (
     state[, "E_u"] %*% pars$beta_E  +
-    state[, "C_u"] %*% pars$beta_I_c +
-    state[, "H_u"] %*% pars$beta_I_h +
+    state[, "C_u"] %*% pars$beta_C +
+    state[, "H_u"] %*% pars$beta_H +
     (1-pars$vax_infectiousness) * state[, "E_v"] %*% pars$beta_E +
-    (1-pars$vax_infectiousness) * state[, "C_v"] %*% pars$beta_I_c +
-    (1-pars$vax_infectiousness) * state[, "H_v"] %*% pars$beta_I_h
+    (1-pars$vax_infectiousness) * state[, "C_v"] %*% pars$beta_C +
+    (1-pars$vax_infectiousness) * state[, "H_v"] %*% pars$beta_H
   )
 
   ## New E_v come from V being infected by E_u, C_u and H_u, E_v, C_v, H_v
@@ -46,11 +46,11 @@ ode_model <- function(time, state, pars) {
   ## infectiousness reduction of vaccinated incorporated here
   new_E_v <- state[, "S_v"] * (1-pars$vax_infection) * (
     state[, "E_u"] %*% pars$beta_E +
-    state[, "C_u"] %*% pars$beta_I_c +
-    state[, "H_u"] %*% pars$beta_I_h +
+    state[, "C_u"] %*% pars$beta_C +
+    state[, "H_u"] %*% pars$beta_H +
     (1-pars$vax_infectiousness) * state[, "E_v"] %*% pars$beta_E +
-    (1-pars$vax_infectiousness) * state[, "C_v"] %*% pars$beta_I_c +
-    (1-pars$vax_infectiousness) * state[, "H_v"] %*% pars$beta_I_h
+    (1-pars$vax_infectiousness) * state[, "C_v"] %*% pars$beta_C +
+    (1-pars$vax_infectiousness) * state[, "H_v"] %*% pars$beta_H
   )
 
   ## Define absolute number of vaccinations not proportions (behaviour is not

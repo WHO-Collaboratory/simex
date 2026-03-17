@@ -6,9 +6,10 @@
 \usage{
 get_parameters(
   iso3 = "USA",
+  population = 10000,
   R0 = 3,
-  generation_time = 10,
-  incubation_period = 6,
+  generation_time = 8,
+  incubation_period = 3,
   infectiousness_presymp = 0.25,
   frac_symp = 0.8,
   ifr = age_to_ifr(get_age_median()),
@@ -17,7 +18,7 @@ get_parameters(
   hosp_duration = seq(7, 21, length = 16),
   hosp_capacity = 0.0025,
   comm_mortality = rep(0, 16),
-  vax_rate = 0.001,
+  vax_rate = 10,
   vax_infectiousness = 0.3,
   vax_infection = 0.5,
   vax_hosp = 0.5,
@@ -26,6 +27,8 @@ get_parameters(
   isolation_effectiveness = 0.8,
   isolation_delay = 3,
   social_distancing = c(home = 0, school = 0, work = 0, other = 0),
+  init_infections = 5,
+  init_compartment = "Eu",
   vax_prioritised = TRUE,
   hosp_prioritised = TRUE
 )

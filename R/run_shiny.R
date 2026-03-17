@@ -15,6 +15,8 @@ run_shiny <- function() {
   ## define labels
   labs <- c(
     iso3 = "Country code",
+    population = "Population",
+    init_infections = "Number of initial infections",
     R0 = "Basic reproduction number",
     generation_time = "Generation time (days)",
     incubation_period = "Incubation period (days)",
@@ -27,7 +29,7 @@ run_shiny <- function() {
     hosp_duration = "Duration of hospitalisation (days)",
     hosp_capacity = "Hospital capacity (per 100k population)",
     comm_mortality = "Proportions of community infections that die (%)",
-    vax_rate = "Vaccination rate (% population per day)",
+    vax_rate = "Vaccination rate (doses per day)",
     vax = "Vaccination protection",
     vax_infectiousness = "Infectiousness",
     vax_infection = "Infection",
@@ -55,7 +57,7 @@ run_shiny <- function() {
   percent_nms <- c(
     vax_nms, "ifr", "hosp_mortality", "frac_symp",
     "hosp_protection_death", "comm_mortality",
-    "isolation_adherence", "isolation_effectiveness", "vax_rate"
+    "isolation_adherence", "isolation_effectiveness"
   )
 
   ## generate shiny output for a given parameter tab
@@ -132,7 +134,9 @@ run_shiny <- function() {
         )
 
         ## get age-stratified parameters
-        agestrat <- setNames(map(data.frame(par$agestrat), as.numeric), agestrat_nms)
+        agestrat <- setNames(
+          map(data.frame(par$agestrat), as.numeric), agestrat_nms
+        )
         par$agestrat <- NULL
         par <- c(par, agestrat)
 
@@ -142,8 +146,8 @@ run_shiny <- function() {
         par <- c(par, vax)
 
         ## adjust units
-        for(i in percent_nms) par[[i]] <- par[[i]]/100
-        par$hosp_capacity <- par$hosp_capacity/1e5
+        for (i in percent_nms) par[[i]] <- par[[i]] / 100
+        par$hosp_capacity <- par$hosp_capacity / 1e5
 
         ## remove input values that are not arguments of get_parameters
         par[setdiff(names(par), names(simex_defaults))] <- NULL
@@ -153,8 +157,9 @@ run_shiny <- function() {
       }
     )
 
-    ## order by day
-    out[order(as.numeric(names(out)))]
+    ## order by day and return as matrix
+    out <- out[order(as.numeric(names(out)))]
+    out <- t(as.matrix(out))
 
   }
 
@@ -176,9 +181,10 @@ run_shiny <- function() {
 
   ## function for generating an input panel for one panel ID
   make_input <- function(value, name, id) {
-    if(name == "iso3") selectInput(rn(name, id), labs[name], names(cdat), selected = value)
+    if(name == "iso3")
+      selectInput(rn(name, id), labs[name], names(cdat), selected = value)
     ## else if(name == "hosp_capacity") numericInput(rn(name, id), labs[name], value*1e5)
-    else if(is.numeric(value)) {
+    else if (is.numeric(value)) {
       if(is.matrix(value)) matrixInput(rn(name, id), labs[name], value)
       else if(!is.null(names(value)))
         do.call(
@@ -275,6 +281,16 @@ run_shiny <- function() {
             actionButton("reset", "Reset", width = "33%",
                          style = "margin-right:2px; margin-left: 2px")
           ),
+          div(
+            style = "margin-top: 8px",
+            numericInput(
+              "n_particles",
+              "Number of simulations",
+              value = 1L,
+              min = 1L,
+              step = 1L
+            )
+          ),
           navset_card_underline(id = "parameters_panel")
         )
 
@@ -288,11 +304,57 @@ run_shiny <- function() {
       nav_panel(
         title = "Timeline",
 
-        radioGroupButtons( # or radioGroupButtons
-          inputId = "timeline_what",
-          selected = "Prevalence",
-          label = NULL,
-          choices = c("Prevalence", "Incidence")
+        fluidRow(
+          column(
+            width = 12,
+            div(style = "display: inline-block; vertical-align: top; margin-right: 12px;",
+                radioGroupButtons(
+                  inputId = "timeline_what",
+                  selected = "Prevalence",
+                  label = NULL,
+                  choices = c("Prevalence", "Incidence"),
+                  size = "sm"
+                )
+            ),
+            div(style = "display: inline-block; vertical-align: top; margin-right: 12px;",
+                radioGroupButtons(
+                  inputId = "timeline_stratify",
+                  selected = "Compartment",
+                  label = NULL,
+                  choices = c("Compartment", "Age"),
+                  size = "sm"
+                )
+            ),
+            conditionalPanel(
+              condition = "input.timeline_stratify == 'Compartment'",
+              div(style = "display: inline-block; vertical-align: middle; margin-right: 12px;",
+                  shinyWidgets::materialSwitch(
+                    inputId = "timeline_split_vax",
+                    label = "Show vaccination status",
+                    value = FALSE,
+                    status = "primary"
+                  )
+              )
+            ),
+            conditionalPanel(
+              condition = "input.timeline_stratify == 'Age'",
+              div(style = "display: inline-block; vertical-align: top;",
+                  selectInput(
+                    inputId = "timeline_show_compartment",
+                    label = NULL,
+                    choices = c(
+                      "Susceptible" = "S",
+                      "Exposed" = "E",
+                      "Community Infection" = "C",
+                      "Hospitalised" = "H",
+                      "Recovered" = "R",
+                      "Dead" = "D"
+                    ),
+                    selected = "E"
+                  )
+              )
+            )
+          )
         ),
 
         highchartOutput("timeline")
@@ -300,14 +362,61 @@ run_shiny <- function() {
       ),
 
       nav_panel(
+        title = "Summary",
+        fluidRow(
+          column(
+            width = 12,
+            div(style = "display: inline-block; vertical-align: top; margin-right: 12px;",
+                radioGroupButtons(
+                  inputId = "summary_stratify",
+                  selected = "Compartment",
+                  label = NULL,
+                  choices = c("Compartment", "Age"),
+                  size = "sm"
+                )
+            ),
+            conditionalPanel(
+              condition = "input.summary_stratify == 'Compartment'",
+              div(style = "display: inline-block; vertical-align: middle; margin-right: 12px;",
+                  shinyWidgets::materialSwitch(
+                    inputId = "summary_split_vax",
+                    label = "Show vaccination status",
+                    value = FALSE,
+                    status = "primary"
+                  )
+              )
+            ),
+            conditionalPanel(
+              condition = "input.summary_stratify == 'Age'",
+              div(style = "display: inline-block; vertical-align: top;",
+                  selectInput(
+                    inputId = "summary_show_compartment",
+                    label = NULL,
+                    choices = c(
+                      "Susceptible" = "S",
+                      "Exposed" = "E",
+                      "Community Infection" = "C",
+                      "Hospitalised" = "H",
+                      "Recovered" = "R",
+                      "Dead" = "D"
+                    ),
+                    selected = "E"
+                  )
+              )
+            )
+          )
+        ),
+        highchartOutput("summary")
+      ),
+
+      nav_panel(
         title = "Comparison",
-        radioGroupButtons( # or radioGroupButtons
+        radioGroupButtons(
           inputId = "comparison_what",
           selected = "Cases",
           label = NULL,
           choices = c("Cases", "Hospitalisations", "Deaths")
         ),
-
         highchartOutput("endpoint")
       )
 
@@ -431,14 +540,20 @@ run_shiny <- function() {
         } else {
           parlist <- shiny_to_simex(input, active_par())
           ## checks
-          start_days <- as.numeric(names(parlist))
+          start_days <- as.numeric(colnames(parlist))
           validate(
-            need(any(start_days == 1), "One period must start on day 1!"),
-            need(all(table(start_days) == 1), "Periods can't have the same start day!")
+            need(
+              any(start_days == 1),
+              "One period must start on day 1!"
+            ),
+            need(
+              all(table(start_days) == 1),
+              "Periods can't have the same start day!"
+            )
           )
         }
         ## run the model
-        run_model(parlist)
+        run_simex(parlist, n_particles = as.integer(input$n_particles))
       }
     )
 
@@ -457,7 +572,15 @@ run_shiny <- function() {
             ## call current set of scenarios
             scenarios(),
             ## run model with appropriate scenario name
-            setNames(list(run_model(shiny_to_simex(input, active_par()))), input$scenario_name)
+            setNames(
+              list(
+                run_simex(
+                  shiny_to_simex(input, active_par()),
+                  n_particles = as.integer(input$n_particles)
+                )
+              ),
+              input$scenario_name
+            )
           )
         )
       }
@@ -471,19 +594,41 @@ run_shiny <- function() {
 
     ## timeline plot
     output$timeline <- renderHighchart(
-      plot(simex(),
-           what = tolower(input$timeline_what),
-           base_size = 20,
-           show_hosp_capacity = TRUE,
-           type = "highchart")
+      plot(
+        simex(),
+        what = tolower(input$timeline_what),
+        stratify_by = tolower(input$timeline_stratify),
+        split_vax = input$timeline_split_vax,
+        show_compartment = input$timeline_show_compartment,
+        base_size = 20,
+        show_hosp_capacity = TRUE,
+        show_ribbon = TRUE,
+        type = "highchart"
+      )
       ## height = function() 0.7*session$clientData$output_timeline_width
     )
 
-    ## comparison plot
+    ## summary plot (sum across time of incidence, same toggles as timeline)
+    output$summary <- renderHighchart({
+      validate(need(!is.null(simex()), "Run a scenario to see the summary."))
+      plot(
+        simex(),
+        format = "summary",
+        type = "highchart",
+        stratify_by = tolower(input$summary_stratify),
+        split_vax = input$summary_split_vax,
+        show_compartment = input$summary_show_compartment,
+        use_absolute_numbers = TRUE,
+        base_size = 20
+      )
+    })
+
+    ## comparison plot (saved scenarios)
     output$endpoint <- renderHighchart(
       vis_comparison(
         scenarios(), format = "endpoint",
         type = "highchart",
+        use_absolute_numbers = FALSE,
         show_compartment = c(Cases = "E", Hospitalisations = "H", Deaths = "D")[input$comparison_what]
       )
     )

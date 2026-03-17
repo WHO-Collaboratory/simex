@@ -77,18 +77,19 @@
 #' @export
 #'
 get_parameters <- function(iso3 = "USA",
+                           population = 1e4,
                            R0 = 3,
-                           generation_time = 10,
-                           incubation_period = 6,
+                           generation_time = 8,
+                           incubation_period = 3,
                            infectiousness_presymp = 0.25,
                            frac_symp = 0.8,
                            ifr = age_to_ifr(get_age_median()),
-                           hosp_mortality = 1/seq(20, 5, length = 16),
+                           hosp_mortality = 1 / seq(20, 5, length = 16),
                            hosp_protection_death = 0.75,
                            hosp_duration = seq(7, 21, length = 16),
                            hosp_capacity = 0.0025,
                            comm_mortality = rep(0, 16),
-                           vax_rate = 0.001,
+                           vax_rate = 10,
                            vax_infectiousness = 0.3,
                            vax_infection = 0.5,
                            vax_hosp = 0.5,
@@ -96,34 +97,40 @@ get_parameters <- function(iso3 = "USA",
                            isolation_adherence = 0,
                            isolation_effectiveness = 0.8,
                            isolation_delay = 3,
-                           social_distancing = c(home = 0, school = 0, work = 0, other = 0),
+                           social_distancing = c(
+                             home = 0, school = 0, work = 0, other = 0
+                           ),
+                           init_infections = 5,
+                           init_compartment = "Eu",
                            vax_prioritised = TRUE,
-                           hosp_prioritised = TRUE
-                           ) {
+                           hosp_prioritised = TRUE) {
 
   ## form to list
   pars <- as.list(environment())
 
   ## get age-group populations and age fractions
-  pars$population = cdat[[iso3]]$pop$count
-  pars$age_frac = cdat[[iso3]]$pop$prop
+  pars$N <- sum(pars$population)
+  pars$age_frac <- cdat[[iso3]]$pop$prop
+  pars$n_age <- length(pars$age_frac)
+  pars$age_groups <- paste0("age_", seq_len(pars$n_age))
 
   ## get polymod contact matrix
   pars$polymod <- cdat[[iso3]]$mod
   pars$polyscale <- cdat[[iso3]]$scale
 
   ## check specified generation time is possible
-  if(generation_time < incubation_period/2)
+  if (generation_time < incubation_period/2)
     stop("Generation time not possible with incubation period provided.")
 
   ## check social distancing is provided properly
-  if(!all(map_lgl(c("home", "school", "work", "other"),
-                  ~ .x %in% names(social_distancing))))
+  if (!all(map_lgl(c("home", "school", "work", "other"),
+                   ~ .x %in% names(social_distancing))))
     stop(paste(
       "social_distancing must contain contact reductions",
       "for 'home', 'school', 'work' and 'other'"))
 
-  ## calculate proportion hospitalised from IFR and proportion in hospital that die
+  ## calculate proportion hospitalised from IFR and proportion in
+  ## hospital that die
   pars$prop_hosp <- pars$ifr/pars$hosp_mortality
 
   ## calculate mortality if you would go to hospital but can't
@@ -147,8 +154,31 @@ get_parameters <- function(iso3 = "USA",
   pars$p_trans <- uniroot(\(x) get_R0(x, pars) - R0, c(0, 1))$root
   pars$doubling_time <- get_doubling_time(pars$p_trans, pars)
 
-  ## calculate betas from pathogen, population structure and interventions
-  pars %<>% add_betas(mult = FALSE)
+  ## calculate kappas from pathogen, population structure and interventions
+  pars %<>% add_kappas(mult = FALSE)
+
+  ## add compartments
+  pars$compartments <- c(
+    "Su", "Eu", "Cu", "Hu", "Ru", "Du",
+    "Sv", "Ev", "Cv", "Hv", "Rv", "Dv"
+  )
+
+  # define a naive state
+  init_state <- matrix(
+    c(
+      round(pars$age_frac * pars$N),
+      rep(pars$age_frac * 0, length(pars$compartments) - 1)
+    ),
+    ncol = length(pars$compartments),
+    dimnames = list(pars$age_groups, pars$compartments)
+  )
+  init_state[, init_compartment] <- as.vector(rmultinom(1, init_infections, pars$age_frac))
+  init_state[, "Su"] <- init_state[, "Su"] - init_state[, init_compartment]
+  pars$init_state <- init_state
+  pars$init_infections <- pars$init_compartment <- NULL
+
+  pars$vax_prioritised <- as.integer(pars$vax_prioritised)
+  pars$hosp_prioritised <- as.integer(pars$hosp_prioritised)
 
   return(pars)
 

@@ -45,22 +45,22 @@ solve_ode <- function(pars, days, state) {
       t(apply(prevalence, 1, \(state) {
         state[, "S_u"] * (
           state[, "E_u"] %*% pars$beta_E  +
-          state[, "C_u"] %*% pars$beta_I_c +
-          state[, "H_u"] %*% pars$beta_I_h +
+          state[, "C_u"] %*% pars$beta_C +
+          state[, "H_u"] %*% pars$beta_H +
           (1-pars$vax_infectiousness) * state[, "E_v"] %*% pars$beta_E +
-          (1-pars$vax_infectiousness) * state[, "C_v"] %*% pars$beta_I_c +
-          (1-pars$vax_infectiousness) * state[, "H_v"] %*% pars$beta_I_h
+          (1-pars$vax_infectiousness) * state[, "C_v"] %*% pars$beta_C +
+          (1-pars$vax_infectiousness) * state[, "H_v"] %*% pars$beta_H
         )
       })),
       ## C_u: E_u multiplied by the rate of leaving E_u into cu
       t(apply(prevalence, 1, \(state) state[,"E_u"]*pars$lambda_cu)),
       ## H_u: E_u multiplied by the rate of leaving E_u into hu
       t(apply(prevalence, 1, \(state) state[,"E_u"]*pars$lambda_hu)),
-      ## R_u: I_c * community recovery rate + I_h * hosp recovery rate (unvax)
+      ## R_u: C * community recovery rate + H * hosp recovery rate (unvax)
       t(apply(prevalence, 1, \(state) {
         state[,"C_u"]*pars$sigma_cu + state[,"H_u"]*pars$sigma_hu
       })),
-      ## D_u: I_c * community mortality rate + I_h * hosp mortality rate (unvax)
+      ## D_u: C * community mortality rate + H * hosp mortality rate (unvax)
       t(apply(prevalence, 1, \(state) {
         state[,"C_u"]*pars$mu_cu + state[,"H_u"]*pars$mu_hu
       })),
@@ -72,22 +72,22 @@ solve_ode <- function(pars, days, state) {
       t(apply(prevalence, 1, \(state) {
         state[, "S_v"] * (1-pars$vax_infection) * (
           state[, "E_u"] %*% pars$beta_E  +
-          state[, "C_u"] %*% pars$beta_I_c +
-          state[, "H_u"] %*% pars$beta_I_h +
+          state[, "C_u"] %*% pars$beta_C +
+          state[, "H_u"] %*% pars$beta_H +
           (1-pars$vax_infectiousness) * state[, "E_v"] %*% pars$beta_E +
-          (1-pars$vax_infectiousness) * state[, "C_v"] %*% pars$beta_I_c +
-          (1-pars$vax_infectiousness) * state[, "H_v"] %*% pars$beta_I_h
+          (1-pars$vax_infectiousness) * state[, "C_v"] %*% pars$beta_C +
+          (1-pars$vax_infectiousness) * state[, "H_v"] %*% pars$beta_H
         )
       })),
       ## C_v: E_v multiplied by the rate of leaving E_v into cv
       t(apply(prevalence, 1, \(state) state[,"E_v"]*pars$lambda_cv)),
       ## H_v: E_v multiplied by the rate of leaving E_v into hv
       t(apply(prevalence, 1, \(state) state[,"E_v"]*pars$lambda_hv)),
-      ## R_v: I_c * community recovery rate + I_h * hosp recovery rate (for vax)
+      ## R_v: C * community recovery rate + H * hosp recovery rate (for vax)
       t(apply(prevalence, 1, \(state) {
         state[,"C_v"]*pars$sigma_cv + state[,"H_v"]*pars$sigma_hv
       })),
-      ## D_v: I_c * community mortality rate + I_h * hosp mortality rate (for vax)
+      ## D_v: C * community mortality rate + H * hosp mortality rate (for vax)
       t(apply(prevalence, 1, \(state) {
         state[,"C_v"]*pars$mu_cv + state[,"H_v"]*pars$mu_hv
       }))
