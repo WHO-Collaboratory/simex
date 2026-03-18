@@ -6,17 +6,20 @@
 \usage{
 \method{plot}{simex}(
   simex,
+  data = NULL,
   what = c("prevalence", "incidence"),
-  format = c("timeline", "endpoint"),
+  format = c("timeline", "summary"),
+  show_compartment = c("E", "D", "S", "C", "H", "R"),
+  stratify_by = c("compartment", "age"),
+  type = c("ggplot", "highchart"),
   log = FALSE,
   freescales = TRUE,
   show_hosp_capacity = TRUE,
   show_ribbon = FALSE,
   use_absolute_numbers = TRUE,
-  show_compartment = c("D", "S", "E", "C", "H", "R"),
+  split_vax = FALSE,
   cri_alpha = 0.95,
-  base_size = 11,
-  type = c("ggplot", "highchart")
+  base_size = 11
 )
 }
 \arguments{
@@ -27,8 +30,21 @@ day), "deltas" (change in prevalence from one day to the next) and
 "incidence" (new additions to that compartment per day).}
 
 \item{format}{One of "timeline" (shows a timeline stratified by compartment
-and vaccination status) or "endpoint" (shows the final value stratified by
-age category).}
+and vaccination status) or "summary" (sum across time of incidence, with
+same stratification options as timeline).}
+
+\item{show_compartment}{The compartment to show when using
+\code{format = "summary"} (age stratification) or when
+\code{format = "timeline"}, \code{type = "highchart"} and
+\code{stratify_by = "age"}.}
+
+\item{stratify_by}{When \code{type = "highchart"} and \code{format =
+  "timeline"} or \code{format = "summary"}, either \code{"compartment"}
+(all compartments, ages summed) or \code{"age"} (single compartment
+given by \code{show_compartment}, stratified by age).}
+
+\item{type}{"ggplot" will return a static ggplot figure, "highchart" will
+return a dynamic figure.}
 
 \item{log}{Logical indicating whether a log scale should be used.}
 
@@ -43,13 +59,11 @@ possible when what = "prevalence").}
 numbers (in terms of individuals) should be shown or relative to population
 size.}
 
-\item{show_compartment}{The compartment to show when using
-\code{format = "endpoint"}.}
+\item{split_vax}{When \code{stratify_by = "compartment"}, if \code{TRUE}
+(default) series are split by vaccination status; if \code{FALSE},
+vaccination is not stratified.}
 
 \item{base_size}{Base size passed to theme_*.}
-
-\item{type}{"ggplot" will return a static ggplot figure, "highchart" will
-return a dynamic figure.}
 }
 \description{
 Plot timeline of prevalence or incidence.

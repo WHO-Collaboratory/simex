@@ -7,8 +7,10 @@
 #'   "incidence" (new additions to that compartment per day).
 #'
 #' @param format One of "timeline" (shows a timeline stratified by compartment
-#'   and vaccination status) or "summary" (sum across time of incidence, with
-#'   same stratification options as timeline).
+#'   and vaccination status), "summary" (sum across time of incidence, with
+#'   same stratification options as timeline), or "fit" (compare model C+H
+#'   incidence to \code{data}; requires \code{data} with columns
+#'   \code{time}, \code{age}, \code{value}).
 #'
 #' @param log Logical indicating whether a log scale should be used.
 #'
@@ -37,6 +39,10 @@
 #'   (default) series are split by vaccination status; if \code{FALSE},
 #'   vaccination is not stratified.
 #'
+#' @param stratify_fit_by_age When \code{format = "fit"}, if \code{TRUE}
+#'   (default) model and data are stratified by age (one series per age, by
+#'   colour); if \code{FALSE}, model and data are summed over age.
+#'
 #' @param base_size Base size passed to theme_*.
 #'
 #' @param type "ggplot" will return a static ggplot figure, "highchart" will
@@ -49,7 +55,7 @@
 plot.simex <- function(simex,
                        data = NULL,
                        what = c("prevalence", "incidence"),
-                       format = c("timeline", "summary"),
+                       format = c("timeline", "summary", "fit"),
                        show_compartment = c("E", "D", "S", "C", "H", "R"),
                        stratify_by = c("compartment", "age"),
                        type = c("ggplot", "highchart"),
@@ -59,6 +65,7 @@ plot.simex <- function(simex,
                        show_ribbon = FALSE,
                        use_absolute_numbers = TRUE,
                        split_vax = FALSE,
+                       stratify_fit_by_age = TRUE,
                        cri_alpha = 0.95,
                        base_size = 11) {
   ## check arguments
@@ -67,6 +74,19 @@ plot.simex <- function(simex,
   format <- match.arg(format)
   show_compartment <- match.arg(show_compartment)
   stratify_by <- match.arg(stratify_by)
+  if (format == "fit") {
+    if (is.null(data)) {
+      stop("format = \"fit\" requires a data argument with columns time, age, value.")
+    }
+    need_cols <- c("time", "age", "value")
+    if (!all(need_cols %in% names(data))) {
+      stop("format = \"fit\" requires data with columns: ", paste(need_cols, collapse = ", "))
+    }
+    if (type != "highchart") {
+      type <- "highchart"
+      warning("format = \"fit\" only supports type = \"highchart\"; ignoring type.")
+    }
+  }
 
   ## get population
   pop <- simex$pars[[1]]$N
@@ -97,13 +117,17 @@ plot.simex <- function(simex,
         )
         df <- as.data.frame(df)
         cols <- RColorBrewer::brewer.pal(7, "Set1")[c(2, 1, 4, 5, 3, 7)]
+        comp_order <- c("S", "E", "C", "H", "R", "D")
         if (split_vax) {
           hcl <- distinct(df, compartment, vax) %>%
-            arrange(vax) %>%
+            arrange(vax, match(compartment, comp_order)) %>%
             mutate(color = rep(cols, 2))
         } else {
-          hcl <- distinct(df, compartment) %>%
-            mutate(color = cols[seq_len(n())])
+          hcl <- tibble(
+            compartment = comp_order,
+            color = cols[seq_along(comp_order)]
+          ) %>%
+            filter(compartment %in% unique(df$compartment))
         }
       } else {
         simex[[what]] <- simex[[what]][compartment == show_compartment]
@@ -136,10 +160,11 @@ plot.simex <- function(simex,
           }
           let chart = this;
             recalc_legend = false;
-            console.log(chart);
             chart.update({
               legend: {
-                itemWidth: chart.plotSizeX * 0.8 / 5.8,
+                align: 'center',
+                width: chart.plotSizeX * 0.8,
+                itemWidth: chart.plotSizeX * 0.8 / 6,
                 symbolWidth: chart.plotSizeX * 0.8 / 12
               }
             });
@@ -149,10 +174,11 @@ plot.simex <- function(simex,
         function() {
           let chart = this;
           if (recalc_legend) {
-            console.log(chart);
             chart.update({
               legend: {
-                itemWidth: chart.plotSizeX * 0.8 / 5.8,
+                align: 'center',
+                width: chart.plotSizeX * 0.8,
+                itemWidth: chart.plotSizeX * 0.8 / 6,
                 symbolWidth: chart.plotSizeX * 0.8 / 12
               }
             });
@@ -162,6 +188,7 @@ plot.simex <- function(simex,
       if (stratify_by == "compartment") {
         ## Add one series per compartment (and per vax if split_vax)
         for (i in seq_len(nrow(hcl))) {
+          show_series <- hcl$compartment[i] %in% c("E", "C", "H", "D")
           if (split_vax) {
             hc <- hc %>%
               hc_add_series(
@@ -174,7 +201,8 @@ plot.simex <- function(simex,
                   filter(vax == hcl$vax[i], compartment == hcl$compartment[i]),
                 "line", hcaes(x = time, y = value),
                 dashStyle = ifelse(!hcl$vax[i], "Solid", "ShortDash"),
-                color = hcl$color[i]
+                color = hcl$color[i],
+                visible = show_series
               )
             if (show_ribbon) {
               hc <- hc %>%
@@ -194,7 +222,8 @@ plot.simex <- function(simex,
                   color = hcl$color[i],
                   fillOpacity = 0.2,
                   lineWidth = 0,
-                  marker = list(enabled = FALSE)
+                  marker = list(enabled = FALSE),
+                  visible = show_series
                 )
             }
           } else {
@@ -205,7 +234,8 @@ plot.simex <- function(simex,
                 id = as.character(comp),
                 data = df %>% filter(compartment == comp),
                 "line", hcaes(x = time, y = value),
-                color = hcl$color[i]
+                color = hcl$color[i],
+                visible = show_series
               )
             if (show_ribbon && "lower" %in% names(df)) {
               hc <- hc %>%
@@ -220,7 +250,8 @@ plot.simex <- function(simex,
                   color = hcl$color[i],
                   fillOpacity = 0.2,
                   lineWidth = 0,
-                  marker = list(enabled = FALSE)
+                  marker = list(enabled = FALSE),
+                  visible = show_series
                 )
             }
           }
@@ -256,7 +287,6 @@ plot.simex <- function(simex,
         }
       }
 
-      ## Export buttons: toggle u/v only when colouring by compartment
       export_buttons <- list(
         contextButton = list(
           align = "left",
@@ -271,52 +301,6 @@ plot.simex <- function(simex,
           )
         )
       )
-      if (stratify_by == "compartment" && split_vax) {
-        export_buttons$customButton <- list(
-          text = "Toggle Unvaccinated",
-          onclick = JS(
-            "function() {
-            recalc_legend = false;
-            var seriesIDs = ['S_u', 'E_u', 'C_u', 'H_u', 'R_u', 'D_u'];
-            seriesIDs.forEach(function(seriesID) {
-              var series = this.get(seriesID);
-              if (series.visible) {
-                series.hide();
-              } else {
-                series.show();
-              }
-            }.bind(this));
-            recalc_legend = true;
-            }"
-          ),
-          align = "right",
-          verticalAlign = "bottom",
-          x = 0,
-          y = 0
-        )
-        export_buttons$customButton2 <- list(
-          text = "Toggle Vaccinated",
-          onclick = JS(
-            "function() {
-            recalc_legend = false;
-            var seriesIDs = ['S_v', 'E_v', 'C_v', 'H_v', 'R_v', 'D_v'];
-            seriesIDs.forEach(function(seriesID) {
-              var series = this.get(seriesID);
-              if (series.visible) {
-                series.hide();
-              } else {
-                series.show();
-              }
-            }.bind(this));
-            recalc_legend = true;
-          }"
-          ),
-          align = "right",
-          verticalAlign = "bottom",
-          x = 0,
-          y = -30
-        )
-      }
 
       ## yAxis: add hospital capacity line when showing H by age
       yaxis_plotLines <- NULL
@@ -422,6 +406,130 @@ plot.simex <- function(simex,
           legend.position = "bottom",
           plot.background = element_rect(fill = "white", color = "white")
         )
+    }
+  } else if (format == "fit") {
+    ## Fit: compare model C+H incidence to data (time, age, value)
+    df_mod <- extract(
+      simex, "incidence",
+      filter = list(compartment = c("C", "H")),
+      cri = show_ribbon, cri_alpha,
+      stratify_by = c("time", "age")
+    )
+    df_mod <- as.data.frame(df_mod)
+    data <- as.data.frame(data)[, c("time", "age", "value")]
+
+    has_cri <- "lower" %in% names(df_mod)
+    if (!stratify_fit_by_age) {
+      if (has_cri) {
+        df_mod <- df_mod %>%
+          group_by(time) %>%
+          summarise(value = sum(value), lower = sum(lower), upper = sum(upper), .groups = "drop")
+      } else {
+        df_mod <- df_mod %>%
+          group_by(time) %>%
+          summarise(value = sum(value), .groups = "drop")
+      }
+      data <- data %>%
+        group_by(time) %>%
+        summarise(value = sum(value), .groups = "drop")
+    }
+
+    if (type == "highchart") {
+      n_age <- if (stratify_fit_by_age) length(unique(df_mod$age)) else 1L
+      age_cols <- grDevices::colorRampPalette(
+        c("#89A236", "#277455", "#323776")
+      )(max(n_age, 1L))
+      if (stratify_fit_by_age) {
+        ages_vec <- unique(as.character(df_mod$age))
+        age_order <- order(as.numeric(gsub("age_", "", ages_vec)))
+        ages <- ages_vec[age_order]
+      } else {
+        ages <- "all"
+      }
+
+      y_title <- ifelse(use_absolute_numbers, "Daily count", "Proportion")
+
+      if (stratify_fit_by_age) {
+        ## One panel (highchart) per age
+        hc_list <- lapply(seq_along(ages), function(i) {
+          ag <- ages[i]
+          dm <- df_mod %>% filter(age == ag)
+          dd <- data %>% filter(age == ag)
+          hc <- highchart() %>%
+            hc_chart(type = "line", backgroundColor = "#FFFFFF") %>%
+            hc_title(text = as.character(ag)) %>%
+            hc_add_series(
+              data = dm, type = "line", hcaes(x = time, y = value),
+              id = "fit_model",
+              name = "Model", color = "#323776",
+              marker = list(enabled = FALSE)
+            ) %>%
+            hc_add_series(
+              data = dd, type = "scatter", hcaes(x = time, y = value),
+              name = "Data", color = "#c9424a",
+              marker = list(symbol = "circle", radius = 4)
+            )
+          if (show_ribbon && "lower" %in% names(dm)) {
+            hc <- hc %>%
+              hc_add_series(
+                data = dm %>% transmute(time = time, low = lower, high = upper),
+                type = "arearange", hcaes(x = time, low = low, high = high),
+                linkedTo = "fit_model", color = "#323776",
+                fillOpacity = 0.2, lineWidth = 0, marker = list(enabled = FALSE),
+                enableMouseTracking = FALSE
+              )
+          }
+          hc %>%
+            hc_plotOptions(line = list(lineWidth = 5)) %>%
+            hc_xAxis(title = list(text = "Day")) %>%
+            hc_yAxis(
+              title = list(text = y_title),
+              min = 0, labels = list(format = "{value}")
+            ) %>%
+            hc_tooltip(
+              valueDecimals = 0,
+              pointFormat = "Time: {point.x}<br/>{series.name}: {point.y}"
+            ) %>%
+            hc_exporting(enabled = FALSE)
+        })
+        return(hc_list)
+      }
+
+      ## Single chart (all ages summed)
+      hc <- highchart() %>%
+        hc_chart(type = "line", backgroundColor = "#FFFFFF") %>%
+        hc_add_series(
+          data = df_mod, type = "line", hcaes(x = time, y = value),
+          id = "fit_model", name = "Model", color = "#323776",
+          marker = list(enabled = FALSE)
+        ) %>%
+        hc_add_series(
+          data = data, type = "scatter", hcaes(x = time, y = value),
+          name = "Data", color = "#c9424a",
+          marker = list(symbol = "circle", radius = 4)
+        )
+      if (show_ribbon && has_cri) {
+        hc <- hc %>%
+          hc_add_series(
+            data = df_mod %>% transmute(time = time, low = lower, high = upper),
+            type = "arearange", hcaes(x = time, low = low, high = high),
+            linkedTo = "fit_model", color = "#323776",
+            fillOpacity = 0.2, lineWidth = 0, marker = list(enabled = FALSE),
+            enableMouseTracking = FALSE
+          )
+      }
+      hc %>%
+        hc_plotOptions(line = list(lineWidth = 5)) %>%
+        hc_xAxis(title = list(text = "Day")) %>%
+        hc_yAxis(
+          title = list(text = y_title),
+          min = 0, labels = list(format = "{value}")
+        ) %>%
+        hc_tooltip(
+          valueDecimals = 0,
+          pointFormat = "Time: {point.x}<br/>{series.name}: {point.y}"
+        ) %>%
+        hc_exporting(enabled = FALSE)
     }
   } else if (format == "summary") {
     ## Summary = sum across time of incidence only; 95% CRI when particles > 1

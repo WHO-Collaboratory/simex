@@ -22,7 +22,7 @@
 #' @export
 run_simex <- function(pars,
                       state = NULL,
-                      time = 0:365,
+                      time = 0:200,
                       n_particles = 1) {
 
   # convert into parameter matrix where rows represent parallel
@@ -82,6 +82,9 @@ run_simex <- function(pars,
 #' @export
 as.simex <- function(x, sys, pars, dims = c("state", "time"), ...) {
 
+  # generate index
+  index <- dust2::dust_unpack_index(sys)
+
   # collect dimension values if provided
   args <- list(...)
 
@@ -94,9 +97,6 @@ as.simex <- function(x, sys, pars, dims = c("state", "time"), ...) {
 
   # check dimensions
   stopifnot(length(dims) == length(dim(x)))
-
-  # generate index
-  index <- dust2::dust_unpack_index(sys)
 
   # is incidence vs prevalence
   is_i <- grepl("_", names(index))

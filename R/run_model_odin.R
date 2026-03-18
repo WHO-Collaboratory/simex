@@ -21,7 +21,7 @@
 #' @author Finlay Campbell, Prabasaj Paul
 #' @export
 run_model_odin <- function(pars,
-                           max_day = 365,
+                           max_day = 200,
                            n_particles = 1) {
 
 

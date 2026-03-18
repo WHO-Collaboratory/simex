@@ -12,10 +12,11 @@
 #' @export
 #'
 extract.simex <- function(simex,
-                           what = c("prevalence", "incidence"),
-                           cri = FALSE,
-                           cri_alpha = 0.95,
-                           stratify_by = c("time", "vax", "compartment", "age")) {
+                          what = c("prevalence", "incidence"),
+                          cri = FALSE,
+                          cri_alpha = 0.95,
+                          filter = NULL,
+                          stratify_by = c("time", "vax", "compartment", "age")) {
 
   # check arguments
   variables <- c("time", "age", "compartment", "vax")
@@ -26,6 +27,12 @@ extract.simex <- function(simex,
 
   # select incidence or prevalence
   out <- simex[[what]]
+
+  # apply filter if provided
+  if (!is.null(filter))
+    out <- out[
+      Reduce(`&`, Map(function(col, val) get(col) %in% val, names(filter), filter))
+    ]
 
   # don't sum if stratified by all variables
   if (!all(variables %in% stratify_by))

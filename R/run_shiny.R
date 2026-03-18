@@ -224,7 +224,11 @@ run_shiny <- function() {
       paste0("#add_period:hover{background-color:", button_active_col, "}"),
 
       paste0("#remove_period{background-color:", button_col, "}"),
-      paste0("#remove_period:hover{background-color:", button_active_col, "}")
+      paste0("#remove_period:hover{background-color:", button_active_col, "}"),
+
+      "#main_plots_nav .nav { display: flex; width: 100%; }",
+      "#main_plots_nav .nav-item { flex: 1; min-width: 0; }",
+      "#main_plots_nav .nav-link { text-align: center; }"
     )))
     ),
 
@@ -251,7 +255,7 @@ run_shiny <- function() {
           strong("Introduction to simex"),
           p("simex is a simulation excercise tool for epidemic and pandemic preparedness that lets you explore different outbreak scenarios and the effect of different public health interventions. The text below will give a brief overview of how to use the tool."),
           strong("Running a default scenario"),
-          p("A scenario represents a single run of the simulation from beginning to end. To run a simulation using the default settings, navigate to the", em("Inputs tab"), "and click ", em("Run Scenario."), " You will see the simulation outputs in the ", em("Timeline"), "panel on the right. The compartments are as follows:"),
+          p("A scenario represents a single run of the simulation from beginning to end. To run a simulation using the default settings, navigate to the", em("Parameters tab"), "and click ", em("Run Scenario."), " You will see the simulation outputs in the ", em("Timeline"), "panel on the right. The compartments are as follows:"),
           htmlOutput("compartments_description"),
           p("The subscript u and v correspond to unvaccinated and vaccinated populations, respectively. You can toggle whether you want to see prevalence or incidence using the buttons above the plot, and you can toggle whether you want to hide/show the vaccinated and unvaccinated populations using the buttons in the bottom right."),
           strong("Running a custom scenario"),
@@ -263,7 +267,7 @@ run_shiny <- function() {
         ),
 
         nav_panel(
-          title = "Inputs",
+          title = "Parameters",
           textInput(inputId = "scenario_name", label = "Scenario name", "Baseline"),
           div(
             style = "display: flex; align-items: stretch; margin-top: 0px",
@@ -292,6 +296,16 @@ run_shiny <- function() {
             )
           ),
           navset_card_underline(id = "parameters_panel")
+        ),
+
+        nav_panel(
+          title = "Data",
+          fileInput(
+            inputId = "fit_data_file",
+            label = NULL,
+            accept = c(".csv", "text/csv"),
+            buttonLabel = "Browse..."
+          )
         )
 
       )
@@ -300,6 +314,7 @@ run_shiny <- function() {
     ),
 
     navset_card_underline(
+      id = "main_plots_nav",
 
       nav_panel(
         title = "Timeline",
@@ -310,9 +325,9 @@ run_shiny <- function() {
             div(style = "display: inline-block; vertical-align: top; margin-right: 12px;",
                 radioGroupButtons(
                   inputId = "timeline_what",
-                  selected = "Prevalence",
+                  selected = "Incidence",
                   label = NULL,
-                  choices = c("Prevalence", "Incidence"),
+                  choices = c("Incidence", "Prevalence"),
                   size = "sm"
                 )
             ),
@@ -407,6 +422,24 @@ run_shiny <- function() {
           )
         ),
         highchartOutput("summary")
+      ),
+
+      nav_panel(
+        title = "Fit",
+        fluidRow(
+          column(
+            width = 12,
+            div(style = "display: inline-block; vertical-align: middle; margin-right: 12px;",
+                shinyWidgets::materialSwitch(
+                  inputId = "fit_stratify_by_age",
+                  label = "Stratify by age",
+                  value = FALSE,
+                  status = "primary"
+                )
+            )
+          )
+        ),
+        uiOutput("fit_plot_container")
       ),
 
       nav_panel(
@@ -621,6 +654,58 @@ run_shiny <- function() {
         use_absolute_numbers = TRUE,
         base_size = 20
       )
+    })
+
+    ## fit data from uploaded CSV (time, age, value)
+    fit_data <- reactive({
+      if (is.null(input$fit_data_file)) return(NULL)
+      df <- utils::read.csv(input$fit_data_file$datapath, check.names = FALSE)
+      need_cols <- c("time", "age", "value")
+      if (!all(need_cols %in% names(df))) return(NULL)
+      df[, need_cols]
+    })
+
+    ## fit plot result (single highchart or list of highcharts when stratify by age)
+    fit_plot_result <- reactive({
+      validate(need(!is.null(simex()), "Run a scenario to see the fit."))
+      validate(need(!is.null(fit_data()), "Upload a CSV with columns time, age, value."))
+      plot(
+        simex(),
+        format = "fit",
+        data = fit_data(),
+        stratify_fit_by_age = input$fit_stratify_by_age,
+        show_ribbon = TRUE,
+        use_absolute_numbers = TRUE,
+        type = "highchart"
+      )
+    })
+
+    ## fit plot container: one chart or one panel per age (facet-style grid)
+    output$fit_plot_container <- renderUI({
+      res <- fit_plot_result()
+      if (is.null(res)) return(NULL)
+      if (inherits(res, "list")) {
+        fluidRow(lapply(seq_along(res), function(i) {
+          column(6, highchartOutput(paste0("fit_plot_", i), height = "350px"))
+        }))
+      } else {
+        highchartOutput("fit_plot_single", height = "100vh")
+      }
+    })
+
+    observe({
+      res <- fit_plot_result()
+      if (is.null(res)) return()
+      if (inherits(res, "list")) {
+        for (i in seq_along(res)) {
+          local({
+            ii <- i
+            output[[paste0("fit_plot_", ii)]] <- renderHighchart(res[[ii]])
+          })
+        }
+      } else {
+        output$fit_plot_single <- renderHighchart(res)
+      }
     })
 
     ## comparison plot (saved scenarios)

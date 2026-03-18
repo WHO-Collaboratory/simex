@@ -9,6 +9,7 @@
   what = c("prevalence", "incidence"),
   cri = FALSE,
   cri_alpha = 0.95,
+  filter = NULL,
   stratify_by = c("time", "vax", "compartment", "age")
 )
 }
