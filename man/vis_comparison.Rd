@@ -13,7 +13,10 @@ vis_comparison(
   use_absolute_numbers = FALSE,
   show_compartment = c("D", "S", "E", "C", "H", "R"),
   freescales = TRUE,
-  base_size = 11
+  base_size = 11,
+  show_ribbon = TRUE,
+  cri_alpha = 0.75,
+  cri_display_alpha = 1
 )
 }
 \arguments{
@@ -40,6 +43,14 @@ size.}
 use different y-axes.}
 
 \item{base_size}{Base size passed to theme_*}
+
+\item{show_ribbon}{If \code{TRUE} (endpoint plots only), show credible intervals
+when multiple particles exist (same \code{cri_alpha} as timeline / \code{plot.simex}).}
+
+\item{cri_alpha}{Width of the central interval when \code{show_ribbon} is \code{TRUE}.}
+
+\item{cri_display_alpha}{Line alpha for \code{geom_errorbar} only (ggplot
+endpoint); Highcharts error bars are solid black above columns.}
 }
 \description{
 Compare different runs.

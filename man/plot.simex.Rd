@@ -8,7 +8,7 @@
   simex,
   data = NULL,
   what = c("prevalence", "incidence"),
-  format = c("timeline", "summary"),
+  format = c("timeline", "summary", "fit"),
   show_compartment = c("E", "D", "S", "C", "H", "R"),
   stratify_by = c("compartment", "age"),
   type = c("ggplot", "highchart"),
@@ -18,8 +18,10 @@
   show_ribbon = FALSE,
   use_absolute_numbers = TRUE,
   split_vax = FALSE,
-  cri_alpha = 0.95,
-  base_size = 11
+  stratify_fit_by_age = TRUE,
+  cri_alpha = 0.75,
+  base_size = 11,
+  period_days = 1L
 )
 }
 \arguments{
@@ -30,8 +32,10 @@ day), "deltas" (change in prevalence from one day to the next) and
 "incidence" (new additions to that compartment per day).}
 
 \item{format}{One of "timeline" (shows a timeline stratified by compartment
-and vaccination status) or "summary" (sum across time of incidence, with
-same stratification options as timeline).}
+and vaccination status), "summary" (sum across time of incidence, with
+same stratification options as timeline), or "fit" (compare model C+H
+incidence to \code{data}; requires \code{data} with columns
+\code{time}, \code{age}, \code{value}).}
 
 \item{show_compartment}{The compartment to show when using
 \code{format = "summary"} (age stratification) or when
@@ -63,7 +67,15 @@ size.}
 (default) series are split by vaccination status; if \code{FALSE},
 vaccination is not stratified.}
 
+\item{stratify_fit_by_age}{When \code{format = "fit"}, if \code{TRUE}
+(default) model and data are stratified by age (one series per age, by
+colour); if \code{FALSE}, model and data are summed over age.}
+
 \item{base_size}{Base size passed to theme_*.}
+
+\item{period_days}{Passed to \code{\link[=extract]{extract()}} for \code{what = "incidence"} in
+\code{format = "timeline"} and \code{format = "fit"} (default \code{1L} for daily
+values). Ignored for \code{format = "summary"} and for prevalence timelines.}
 }
 \description{
 Plot timeline of prevalence or incidence.

@@ -4,7 +4,7 @@
 \alias{run_model_odin}
 \title{Run the model using the odin2/dust2 backend (single parameter set only).}
 \usage{
-run_model_odin(pars, max_day = 365, n_particles = 1)
+run_model_odin(pars, max_day = 200, n_particles = 1)
 }
 \arguments{
 \item{pars}{A single parameter set as returned by \code{get_parameters}.}

@@ -8,9 +8,10 @@
   simex,
   what = c("prevalence", "incidence"),
   cri = FALSE,
-  cri_alpha = 0.95,
+  cri_alpha = 0.75,
   filter = NULL,
-  stratify_by = c("time", "vax", "compartment", "age")
+  stratify_by = c("time", "vax", "compartment", "age"),
+  period_days = 1L
 )
 }
 \arguments{
@@ -20,9 +21,30 @@
 day), "deltas" (change in prevalence from one day to the next) and
 "incidence" (new additions to that compartment per day).}
 
+\item{cri}{If \code{TRUE}, summarise particles with median and interval bounds.}
+
+\item{cri_alpha}{Width of the central credible interval (e.g. \code{0.75} for
+the 12.5\% to 87.5\% quantile band).}
+
 \item{stratify_by}{Variables to stratify output but, must be one or more of
 "time", "age", "compartment", "vax".}
+
+\item{period_days}{If greater than 1 and \code{what = "incidence"}, daily counts
+are summed into non-overlapping periods of this length (in days). The
+reported \code{time} is the first day of each period (aligned to the minimum
+observed time). Ignored when \code{what} is not \code{"incidence"}.}
 }
 \description{
 Extract formatted dataframes from simex object.
+}
+\details{
+For \code{what = "incidence"}, each compartment letter is the \strong{daily flow into}
+that stage: \code{E} new infections, \code{C} new symptomatic community cases,
+\code{H} new hospital admissions from \code{E}, \code{D} new deaths (from \code{C} or \code{H}).
+With default \code{\link[=get_parameters]{get_parameters()}}, \code{prop_hosp} is derived from IFR and
+\code{hosp_mortality}, so most people leaving \code{E} go to \code{C} rather than \code{H};
+\strong{\code{H} and \code{D} counts are therefore usually far smaller than \code{E} or \code{C}}
+(often single digits per day per age), not missing. Your filter omits \code{D};
+add \code{compartment = "D"} to extract deaths. Use a larger \code{period_days} or
+sum over time yourself if you need weekly or cumulative totals.
 }

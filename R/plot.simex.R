@@ -48,6 +48,10 @@
 #' @param type "ggplot" will return a static ggplot figure, "highchart" will
 #'   return a dynamic figure.
 #'
+#' @param period_days Passed to [extract()] for `what = "incidence"` in
+#'   `format = "timeline"` and `format = "fit"` (default `1L` for daily
+#'   values). Ignored for `format = "summary"` and for prevalence timelines.
+#'
 #' @author Finlay Campbell
 #'
 #' @export
@@ -66,8 +70,9 @@ plot.simex <- function(simex,
                        use_absolute_numbers = TRUE,
                        split_vax = FALSE,
                        stratify_fit_by_age = TRUE,
-                       cri_alpha = 0.95,
-                       base_size = 11) {
+                       cri_alpha = 0.75,
+                       base_size = 11,
+                       period_days = 1L) {
   ## check arguments
   type <- match.arg(type)
   what <- match.arg(what)
@@ -101,6 +106,34 @@ plot.simex <- function(simex,
     H = "Hospital Infection", R = "Recovered", D = "Dead"
   )
 
+  period_days <- as.integer(period_days)
+  if (length(period_days) != 1L || is.na(period_days) || period_days < 1L) {
+    stop("period_days must be a single positive integer.", call. = FALSE)
+  }
+  pd_ex <- if (what == "incidence") period_days else 1L
+  xlab_time <- if (what == "incidence" && period_days > 1L) {
+    paste0("Period start (day); ", period_days, "-day totals")
+  } else {
+    "Day"
+  }
+  timeline_y_title <- if (use_absolute_numbers) {
+    if (what == "incidence") {
+      if (period_days <= 1L) {
+        "Daily count"
+      } else if (period_days == 7L) {
+        "Weekly count"
+      } else {
+        paste0(period_days, "-day count")
+      }
+    } else {
+      "Count"
+    }
+  } else if (what == "incidence" && period_days > 1L) {
+    if (period_days == 7L) "Weekly proportion" else paste0(period_days, "-day proportion")
+  } else {
+    "Proportion"
+  }
+
   if (format == "timeline") {
     if (type == "highchart") {
       if (stratify_by == "compartment") {
@@ -113,7 +146,8 @@ plot.simex <- function(simex,
         df <- extract(
           simex, what,
           cri = show_ribbon, cri_alpha,
-          stratify_by = strat_comp
+          stratify_by = strat_comp,
+          period_days = pd_ex
         )
         df <- as.data.frame(df)
         cols <- RColorBrewer::brewer.pal(7, "Set1")[c(2, 1, 4, 5, 3, 7)]
@@ -135,7 +169,8 @@ plot.simex <- function(simex,
         df <- extract(
           simex, what,
           cri = show_ribbon, cri_alpha,
-          stratify_by = c("time", "age", "compartment")
+          stratify_by = c("time", "age", "compartment"),
+          period_days = pd_ex
         )
         ages <- unique(df$age)
         n_age <- length(ages)
@@ -330,14 +365,12 @@ plot.simex <- function(simex,
           events = list(load = JS(js_code1), render = JS(js_code2))
         ) %>%
         hc_yAxis(
-          title = list(
-            text = ifelse(use_absolute_numbers, "Daily count", "Proportion")
-          ),
+          title = list(text = timeline_y_title),
           labels = list(format = "{value}"),
           min = 0,
           plotLines = yaxis_plotLines
         ) %>%
-        hc_xAxis(title = list(text = "Day")) %>%
+        hc_xAxis(title = list(text = xlab_time)) %>%
         hc_boost(enabled = TRUE) %>%
         hc_plotOptions(
           line = list(
@@ -365,7 +398,8 @@ plot.simex <- function(simex,
       df <- extract(
         simex, what,
         cri = show_ribbon, cri_alpha,
-        stratify_by = c("time", "vax", "compartment")
+        stratify_by = c("time", "vax", "compartment"),
+        period_days = pd_ex
       )
 
       ## define horizontal line for hospital capacity if needed
@@ -400,7 +434,7 @@ plot.simex <- function(simex,
           labels = if (use_absolute_numbers) waiver() else scales::percent
         ) +
         scale_linetype(name = "Vaccinated") +
-        labs(x = "Day", y = tools::toTitleCase(what)) +
+        labs(x = xlab_time, y = tools::toTitleCase(what)) +
         theme_minimal(base_size = base_size) +
         theme(
           legend.position = "bottom",
@@ -413,7 +447,8 @@ plot.simex <- function(simex,
       simex, "incidence",
       filter = list(compartment = c("C", "H")),
       cri = show_ribbon, cri_alpha,
-      stratify_by = c("time", "age")
+      stratify_by = c("time", "age"),
+      period_days = period_days
     )
     df_mod <- as.data.frame(df_mod)
     data <- as.data.frame(data)[, c("time", "age", "value")]
@@ -434,6 +469,10 @@ plot.simex <- function(simex,
         summarise(value = sum(value), .groups = "drop")
     }
 
+    if (period_days > 1L) {
+      data <- aggregate_obs_incidence_by_period(data, period_days)
+    }
+
     if (type == "highchart") {
       n_age <- if (stratify_fit_by_age) length(unique(df_mod$age)) else 1L
       age_cols <- grDevices::colorRampPalette(
@@ -447,7 +486,24 @@ plot.simex <- function(simex,
         ages <- "all"
       }
 
-      y_title <- ifelse(use_absolute_numbers, "Daily count", "Proportion")
+      y_title <- if (use_absolute_numbers) {
+        if (period_days <= 1L) {
+          "Daily count"
+        } else if (period_days == 7L) {
+          "Weekly count"
+        } else {
+          paste0(period_days, "-day count")
+        }
+      } else if (period_days > 1L) {
+        if (period_days == 7L) "Weekly proportion" else paste0(period_days, "-day proportion")
+      } else {
+        "Proportion"
+      }
+      x_lab_fit <- if (period_days > 1L) {
+        paste0("Period start (day); ", period_days, "-day totals")
+      } else {
+        "Day"
+      }
 
       if (stratify_fit_by_age) {
         ## One panel (highchart) per age
@@ -481,7 +537,7 @@ plot.simex <- function(simex,
           }
           hc %>%
             hc_plotOptions(line = list(lineWidth = 5)) %>%
-            hc_xAxis(title = list(text = "Day")) %>%
+            hc_xAxis(title = list(text = x_lab_fit)) %>%
             hc_yAxis(
               title = list(text = y_title),
               min = 0, labels = list(format = "{value}")
@@ -520,7 +576,7 @@ plot.simex <- function(simex,
       }
       hc %>%
         hc_plotOptions(line = list(lineWidth = 5)) %>%
-        hc_xAxis(title = list(text = "Day")) %>%
+        hc_xAxis(title = list(text = x_lab_fit)) %>%
         hc_yAxis(
           title = list(text = y_title),
           min = 0, labels = list(format = "{value}")
@@ -550,7 +606,7 @@ plot.simex <- function(simex,
         strat_comp <- if (split_vax) c("vax", "compartment") else c("compartment")
         df <- extract(
           simex, "incidence",
-          cri = TRUE, cri_alpha = 0.95,
+          cri = TRUE, cri_alpha = 0.75,
           stratify_by = strat_comp
         )
         df <- as.data.frame(df)
@@ -679,7 +735,7 @@ plot.simex <- function(simex,
       } else {
         df <- extract(
           simex, "incidence",
-          cri = TRUE, cri_alpha = 0.95,
+          cri = TRUE, cri_alpha = 0.75,
           stratify_by = c("age", "compartment")
         )
         df <- as.data.frame(df) %>%
@@ -739,7 +795,7 @@ plot.simex <- function(simex,
       ## ggplot summary: sum over time of incidence by age, with CRI
       df_sum <- extract(
         simex, "incidence",
-        cri = TRUE, cri_alpha = 0.95,
+        cri = TRUE, cri_alpha = 0.75,
         stratify_by = c("age", "compartment")
       )
       df_sum <- as.data.frame(df_sum) %>%

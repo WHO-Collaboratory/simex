@@ -5,8 +5,8 @@
 \title{Define model parameters}
 \usage{
 get_parameters(
-  iso3 = "USA",
-  population = 10000,
+  iso3 = "CMR",
+  population = 1e+05,
   R0 = 3,
   generation_time = 8,
   incubation_period = 3,
@@ -18,7 +18,7 @@ get_parameters(
   hosp_duration = seq(7, 21, length = 16),
   hosp_capacity = 0.0025,
   comm_mortality = rep(0, 16),
-  vax_rate = 10,
+  vax_rate = 0,
   vax_infectiousness = 0.3,
   vax_infection = 0.5,
   vax_hosp = 0.5,

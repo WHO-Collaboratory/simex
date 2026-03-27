@@ -4,7 +4,7 @@
 \alias{run_simex}
 \title{Run the model using the odin2/dust2 backend (single parameter set only).}
 \usage{
-run_simex(pars, state = NULL, time = 0:365, n_particles = 1)
+run_simex(pars, state = NULL, time = 0:200, n_particles = 1)
 }
 \arguments{
 \item{pars}{A single parameter set as returned by \code{get_parameters}.}
