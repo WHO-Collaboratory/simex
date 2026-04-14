@@ -141,12 +141,32 @@ vis_saved_timeline <- function(simexl,
     } else {
       "Proportion"
     }
+    tl_dec <- if (use_absolute_numbers) 0L else 2L
     return(
       hc |>
         hc_plotOptions(line = list(lineWidth = 3)) |>
-        hc_xAxis(title = list(text = x_lab)) |>
+        hc_xAxis(
+          title = list(text = x_lab),
+          crosshair = list(
+            width = 1,
+            color = "#666666",
+            dashStyle = "ShortDot"
+          )
+        ) |>
         hc_yAxis(title = list(text = y_title), min = 0) |>
-        hc_tooltip(valueDecimals = 0) |>
+        hc_tooltip(
+          useHTML = TRUE,
+          shared = TRUE,
+          split = FALSE,
+          valueDecimals = tl_dec,
+          headerFormat = paste0(
+            "<span style=\"font-size:11px\"><b>Day {point.key}</b></span><br/>"
+          ),
+          pointFormat = paste0(
+            "<span style=\"color:{point.color}\">&#9679;</span> ",
+            "{series.name}: {point.y}<br/>"
+          )
+        ) |>
         hc_legend(enabled = TRUE) |>
         hc_exporting(enabled = TRUE)
     )
@@ -207,6 +227,7 @@ vis_saved_timeline <- function(simexl,
   } else {
     "Proportion"
   }
+  tl_dec <- if (use_absolute_numbers) 0L else 2L
 
   lapply(ages_sorted, function(ag) {
     hc <- highchart() |>
@@ -250,9 +271,28 @@ vis_saved_timeline <- function(simexl,
 
     hc |>
       hc_plotOptions(line = list(lineWidth = 3)) |>
-      hc_xAxis(title = list(text = x_lab)) |>
+      hc_xAxis(
+        title = list(text = x_lab),
+        crosshair = list(
+          width = 1,
+          color = "#666666",
+          dashStyle = "ShortDot"
+        )
+      ) |>
       hc_yAxis(title = list(text = y_title), min = 0) |>
-      hc_tooltip(valueDecimals = 0) |>
+      hc_tooltip(
+        useHTML = TRUE,
+        shared = TRUE,
+        split = FALSE,
+        valueDecimals = tl_dec,
+        headerFormat = paste0(
+          "<span style=\"font-size:11px\"><b>Day {point.key}</b></span><br/>"
+        ),
+        pointFormat = paste0(
+          "<span style=\"color:{point.color}\">&#9679;</span> ",
+          "{series.name}: {point.y}<br/>"
+        )
+      ) |>
       hc_legend(enabled = TRUE) |>
       hc_exporting(enabled = FALSE)
   })

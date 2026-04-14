@@ -292,9 +292,15 @@ update(Dv_i[]) <- Dv_i[i] + n_Cv_to_Dv[i] + n_Hv_to_Dv[i]
 # Data comparison
 # -------------------------------------------------------------------------
 
-# incidence treated as all new symptomatic cases in hospital or community
-cases <- data()
-cases[] ~ Poisson(Cu_i[i] + Hu_i[i] + Cv_i[i] + Hv_i[i] + 0.1)
+# compare to reported E (current proxy for all cases), H and D
+E_reported <- data()
+# H_reported <- data()
+# D_reported <- data()
+
+# add 0.1 to prevent overfitting to tail
+E_reported[] ~ Poisson(Eu_i[i] + Ev_i[i] + 0.1)
+# H_reported[] ~ Poisson(Hu_i[i] + Hv_i[i] + 0.1)
+# D_reported[] ~ Poisson(Du_i[i] + Dv_i[i] + 0.1)
 
 
 # -------------------------------------------------------------------------
@@ -332,7 +338,7 @@ dim(
   n_Cu_to_Du, n_Hu_to_Ru, n_Hu_to_Du, n_Cv_to_Rv, n_Cv_to_Dv, n_Hv_to_Rv,
   n_Hv_to_Dv, p_Su_to_Sv, n_Su_to_Sv,
   # data
-  cases
+  E_reported, H_reported, D_reported
 ) <- n_age
 
 # array of dimension n_age x n_age

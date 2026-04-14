@@ -138,7 +138,7 @@ public:
     std::vector<real_type> n_Su_to_Sv;
   };
   struct data_type {
-    std::vector<real_type> cases;
+    std::vector<real_type> E_reported;
   };
   static dust2::packing packing_state(const shared_state& shared) {
     return shared.odin.packing.state;
@@ -315,9 +315,9 @@ public:
     return internal_state{hosp_required, lambda_Eu, lambda_Ev, lambda_Cu, lambda_Cv, lambda_Hu, lambda_Hv, hosp_rem, lambda_E, lambda_C, lambda_H, hospitalised, p_Eu_exit, p_Ev_exit, p_Cu_exit, p_Cv_exit, lambda_u, lambda_v, total_hosp_mortality, n_Eu_exit, n_Ev_exit, n_Cu_exit, n_Cv_exit, gamma_Hu, mu_Hu, gamma_Hv, mu_Hv, p_Su_to_Eu, p_Sv_to_Ev, n_Eu_to_Cu, n_Ev_to_Cv, n_Cu_to_Ru, n_Cv_to_Rv, p_Hu_exit, p_Hv_exit, frac_Hu_to_R, frac_Hv_to_R, n_Su_to_Eu, n_Sv_to_Ev, n_Eu_to_Hu, n_Ev_to_Hv, n_Cu_to_Du, n_Cv_to_Dv, n_Hu_exit, n_Hv_exit, Su_after_inf, n_Hu_to_Ru, n_Hv_to_Rv, vax_rem, n_Hu_to_Du, n_Hv_to_Dv, vax_target, p_Su_to_Sv, n_Su_to_Sv};
   }
   static data_type build_data(cpp11::list data, const shared_state& shared) {
-    auto cases = std::vector<real_type>(shared.dim.Su.size);
-    dust2::r::read_real_array(data, shared.dim.Su, cases.data(), "cases", true);
-    return data_type{cases};
+    auto E_reported = std::vector<real_type>(shared.dim.Su.size);
+    dust2::r::read_real_array(data, shared.dim.Su, E_reported.data(), "E_reported", true);
+    return data_type{E_reported};
   }
   static void update_shared(cpp11::list parameters, shared_state& shared) {
     shared.N = dust2::r::read_real(parameters, "N", shared.N);
@@ -735,13 +735,11 @@ public:
   }
   static real_type compare_data(real_type time, const real_type* state, const data_type& data, const shared_state& shared, internal_state& internal, rng_state_type& rng_state) {
     auto unless_nan = [](real_type x) { return std::isnan(x) ? 0 : x; };
-    const auto * Cu_i = state + shared.odin.offset.state[14];
-    const auto * Hu_i = state + shared.odin.offset.state[15];
-    const auto * Cv_i = state + shared.odin.offset.state[20];
-    const auto * Hv_i = state + shared.odin.offset.state[21];
+    const auto * Eu_i = state + shared.odin.offset.state[13];
+    const auto * Ev_i = state + shared.odin.offset.state[19];
     real_type odin_ll = 0;
     for (size_t i = 1; i <= shared.dim.Su.size; ++i) {
-      odin_ll += unless_nan(monty::density::poisson(data.cases[i - 1], Cu_i[i - 1] + Hu_i[i - 1] + Cv_i[i - 1] + Hv_i[i - 1] + static_cast<real_type>(0.10000000000000001), true));
+      odin_ll += unless_nan(monty::density::poisson(data.E_reported[i - 1], Eu_i[i - 1] + Ev_i[i - 1] + static_cast<real_type>(0.10000000000000001), true));
     }
     return odin_ll;
   }

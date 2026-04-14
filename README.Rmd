@@ -1,14 +1,16 @@
 *simex*: a disease modelling tool for decision makers
 ---------------------------------------------------------------
 
-[![MIT license](https://img.shields.io/badge/License-MIT-blue.svg)](https://github.com/epiforecasts/EpiNow2/blob/main/LICENSE.md/) [![Lifecycle: maturing](https://img.shields.io/badge/lifecycle-maturing-blue.svg)](https://lifecycle.r-lib.org/articles/stages.html#maturing)
+[![MIT license](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE.md) [![Lifecycle: maturing](https://img.shields.io/badge/lifecycle-maturing-blue.svg)](https://lifecycle.r-lib.org/articles/stages.html#maturing)
 
 *simex* is an R package for simulating the spread of infectious diseases, as well as interventions such as social distancing measures, isolation and vaccination. It uses an age-structured SEIR compartmental model with country-specific age demographics and contact rates. The simplest way to interact with the tool is to use the [Shiny App](https://portal.who.int/eios-colab/rconnect/simex).
+
+The transmission model is written in [**odin**](https://mrc-ide.github.io/odin/) (odin2 DSL) in [`inst/odin/simex.R`](inst/odin/simex.R). That specification is compiled with [**dust2**](https://mrc-ide.github.io/dust2/) to C++ for fast discrete-time simulation (see the generated sources under `src/`). The main R entry point that uses this backend is `run_simex()`.
 
 ```{r, echo = FALSE} 
 knitr::opts_chunk$set(fig.cap = "",
                       fig.align = "center",
-                      fig.path = "man/figures"
+                      fig.path = "man/figures/",
                       dpi = 200,
                       out.width = "75%")
 ``` 
@@ -32,12 +34,12 @@ Running *simex*
 -------------
 
 ### Shiny App
-You can use *simex* interactively by launching the shiny app locally with `simex::run_shiny()`. If you want to use it programmatically, follow the steps below.
+You can use *simex* interactively by launching the Shiny app locally with `simex::run_shiny()`. The app runs the same odin/dust2 model via `run_simex()`. If you want to use it programmatically, follow the steps below.
 
 ### Parameters and settings
 
-Most settings are specified via the `get_parameters` function. The arguments and
-their default values are given below:
+Most settings are specified via `get_parameters()`. The arguments and their
+default values are summarised below (from the roxygen documentation):
 
 ```{r, echo = FALSE}
 simex:::get_arg_table("get_parameters", type = "kable")
@@ -45,14 +47,15 @@ simex:::get_arg_table("get_parameters", type = "kable")
 
 ### Running default settings
 
-To run the model using default settings, specify a parameter object `par` and feed this into the `run_model` function.
+To run the model using default settings, pass the list from `get_parameters()` to
+`run_simex()` and set `time` to the integer days you want (inclusive).
 
 ```{r, echo = TRUE}
 ## set parameters using defaults
 pars <- get_parameters()
 
-## run model using default parameters
-output <- run_model(pars)
+## run odin/dust2 model (example: days 1–365)
+output <- run_simex(pars, time = 1:365)
 
 ## look at output
 print(output)
@@ -77,79 +80,36 @@ Hospital capacity can be displayed by toggling the `show_hosp_capacity` argument
 plot(output, what = "prevalence", show_hosp_capacity = TRUE)
 ```
 
-### Summarising outputs
-
-To get a summary of the model state at a given point in time, use the `summary` function with the optional `day` argument. In the example below, we display the summary statistics for day 150:
-
-```{r, eval = FALSE}
-## get summary at day 150
-summary(output, day = 150)
-```
-```{r, echo = FALSE}
-## kable for Rmd
-knitr::kable(summary(output, day = 150))
-```
-
-
-
 ### Accessing outputs
 
-The `output` object is of class `simex` and is a list containing four items:
+Objects returned by `run_simex()` have class `simex` and are a list with at
+least:
 
-* `prevalence` is an array with 3 dimensions: time (365 days) x age (16
-  categories) x state (12 compartments). The compartments are S (susceptible), E
-  (exposed, pre-symptomatic), C (symptomatic in community), H (sympomatic in
-  hospital), R (recovered), D (dead). Each comparment is split into unvaccinated
-  (with subscript _u) and vaccinated (with subscript _v). Each value in the
-  array represents the proportion of the population in that given age-disease
-  compartment on a given day.
-* `deltas` is an array with the same dimensions as `prevalence`. Each value
-  represents the change in a given age-disease compartment from the previous
-  day.
-* `incidence` is an array with the same dimensions as `prevalence`. Each value
-  represents the new additions to a given age-disease comparment on a given
-  day. For the exposed category E, this represents incidence of new infections,
-  for the hospitalised category H this represents new hospital admissions, and
-  for the dead category D this represents new deaths.
-* `pars` contains the parameter set initially fed into `run_model`.
+* `prevalence` — long-format `data.table` with columns including `time`, `age`,
+  `compartment` (`S`, `E`, `C`, `H`, `R`, `D`), `vax`, and `value`. Stochastic
+  runs add `particle` and/or `sample` when relevant.
+* `incidence` — same layout for daily flows into each stage (see `?extract`).
+* `pars` — parameter object(s) passed into `run_simex()`.
 
-Accessing the data is easiest using array indexing. Remember, the dimensions are
-time, age and compartment. For example, accessing the prevalence on the 250th
-day is done with `output$prevalence[250,,]`:
-
-```{r, echo = FALSE}
-## extract prevalence in percent on day 250
-round(100*output$prevalence[250,,], 1)
-```
-
-Accessing the prevalence of the 1st age compartment (0-4) and 1st infectious
-compartment (unvaccinated susceptible) for days 130 to 135 is done with
-`output$prevalence[130:135,1,1]`:
-
-```{r, echo = FALSE}
-## extract in percent on day 130-135
-round(100*output$prevalence[130:135,1,1], 1)
-```
-
-The outputs can also be extracted in `tibble` form using the `extract` function,
-once again using the `what` argument to specify whether prevalence or incidence
-is extracted.
+Example: prevalence on day 250 for unvaccinated susceptibles:
 
 ```{r, echo = TRUE}
-## extract prevalence
+subset(output$prevalence, time == 250 & compartment == "S" & vax == FALSE)
+```
+
+Use `extract()` to aggregate over dimensions:
+
+```{r, echo = TRUE}
+## long-form prevalence (default stratification)
 extract(output, what = "prevalence")
 ```
-If we want to filter this list for a sequence of days, we can then do basic
-dataframe manipulation:
 
 ```{r, echo = TRUE}
-## define start and end days
+## restrict to a band of days
 days_from <- 10
 days_to <- 20
-
-## extract prevalence
 df <- extract(output, what = "prevalence")
-df <- df[df$day %in% seq(days_from, days_to),]
+df <- df[df$time %in% seq(days_from, days_to), ]
 df
 ```
 
@@ -164,7 +124,7 @@ set it to 0.5% of the population per day.
 pars <- get_parameters(vax_rate = 0.005)
 
 ## run model
-output <- run_model(pars)
+output <- run_simex(pars, time = 1:365)
 
 ## visualise prevalence
 plot(output)
@@ -173,50 +133,22 @@ plot(output)
 We can see that the daily increase in number of vaccinated individuals, as
 well as the impact on infection and disease severity.
 
-
-### Specifying an initial state
-
-The default initial state begins with an entirely susceptible, unvaccinated
-population and a single infection. We can also specify a custom initial state by
-passing a matrix specifying the number of individuals in each age-infection
-compartment. In the example below, we extract the initial state from the
-previous run, and modify the compartments so half the susceptible population is
-assigned to the vaccinated compartment.
-
-```{r, echo = TRUE}
-## extract starting point from previous run
-state <- output$prevalence[1,,]
-
-## assign half of susceptibles to vaccinated
-state[,"S_u"] <- state[,"S_v"] <- state[,"S_u"]/2
-
-## run model
-output <- run_model(pars, init_state = state)
-
-## visualise prevalence
-plot(output)
-```
-
-We can see that the simulation now begins with a 50% vaccinated population,
-significantly reducing the size and impact of the pandemic.
-
 ### Timed interventions, multiple interventions
 
-Sometime we only want to introduce interventions at a certain time, or we want
-to model multiple, successive interventions. We can do this easily by generating
-a named list of parameters, where the name gives the time that parameter set
-should be used from. In the example below, we introduce isolation measures with
-an adherence of 50% on the 125th day.
+To change parameters part-way through a run, pass a one-row **matrix** of
+parameter lists whose **column names** are the first model day each block applies
+to (one column must start on day 1, matching the Shiny app). Below, isolation
+adherence becomes 0.5 from day 125 onward.
 
 ```{r, echo = TRUE}
-## introduce isolation on the 125th day
-parlist <- list(
-  "1" = get_parameters(),
-  "125" = get_parameters(isolation_adherence = 0.5)
+## column names = first day each parameter set applies
+parlist <- matrix(
+  c(list(get_parameters()), list(get_parameters(isolation_adherence = 0.5))),
+  nrow = 1,
+  dimnames = list(NULL, c("1", "125"))
 )
 
-## run model
-output <- run_model(parlist)
+output <- run_simex(parlist, time = 1:365)
 
 ## visualise prevalence
 plot(output)
@@ -229,23 +161,21 @@ more than 40%!
 ### Comparing scenarios
 
 It is useful to directly compare different scenarios visually. The
-`vis_comarison` function does exactly this, and accepts a named list of `simex`
-objects. In the example below, we generate a named list of lists that compares
-the default scenario (no interventions) with the a scenario where isolation is
-introduced on the 125th day.
-	
+`vis_comparison()` function accepts a named list of `simex` objects. In the
+example below, the default scenario is compared with isolation from day 125.
+
 ```{r, echo = TRUE}
 ## define two scenarios, one without intervention and one with isolation
 parlists <- list(
   "No intervention" = get_parameters(),
-  "Isolation on day 125" = list(
-    "1" = get_parameters(),
-    "125" = get_parameters(isolation_adherence = 0.5)
+  "Isolation on day 125" = matrix(
+    c(list(get_parameters()), list(get_parameters(isolation_adherence = 0.5))),
+    nrow = 1,
+    dimnames = list(NULL, c("1", "125"))
   )
 )
 
-## run model across set of parameter lists
-outputs <- lapply(parlists, run_model)
+outputs <- lapply(parlists, run_simex, time = 1:365)
 
 ## compare scenarios
 vis_comparison(outputs)

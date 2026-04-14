@@ -147,6 +147,7 @@ vis_saved_outcomes_timeline <- function(simexl,
   }
 
   build_hc <- function(df, obs_df, chart_title = NULL) {
+    tooltip_decimals <- if (has_model && !use_absolute_numbers) 2L else 0L
     if (has_model && !use_absolute_numbers) {
       df$value <- df$value / pop
       if ("lower" %in% names(df)) {
@@ -209,17 +210,43 @@ vis_saved_outcomes_timeline <- function(simexl,
           data = obs_df,
           type = "scatter",
           hcaes(x = time, y = value),
-          name = "Data",
+          name = "Reported",
           color = "#c9424a",
           marker = list(symbol = "circle", radius = 4)
         )
     }
 
+    ## Shared tooltip + crosshair; HTML header/pointFormat (no custom formatter).
     out <- hc |>
-      hc_plotOptions(line = list(lineWidth = 3)) |>
-      hc_xAxis(title = list(text = x_axis_label)) |>
+      hc_plotOptions(
+        line = list(lineWidth = 3),
+        scatter = list(
+          stickyTracking = TRUE,
+          findNearestPointBy = "x"
+        )
+      ) |>
+      hc_xAxis(
+        title = list(text = x_axis_label),
+        crosshair = list(
+          width = 1,
+          color = "#666666",
+          dashStyle = "ShortDot"
+        )
+      ) |>
       hc_yAxis(title = list(text = y_title), min = 0) |>
-      hc_tooltip(valueDecimals = 0) |>
+      hc_tooltip(
+        useHTML = TRUE,
+        shared = TRUE,
+        split = FALSE,
+        valueDecimals = tooltip_decimals,
+        headerFormat = paste0(
+          "<span style=\"font-size:11px\"><b>Day {point.key}</b></span><br/>"
+        ),
+        pointFormat = paste0(
+          "<span style=\"color:{point.color}\">&#9679;</span> ",
+          "{series.name}: {point.y}<br/>"
+        )
+      ) |>
       hc_legend(enabled = TRUE) |>
       hc_exporting(enabled = FALSE)
     if (!is.null(chart_title) && nzchar(chart_title)) {

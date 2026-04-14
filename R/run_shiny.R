@@ -258,7 +258,7 @@ run_shiny <- function() {
     ),
     title = h4(strong(
       em("simex:"),
-      "simulating pandemics and public health interventions"
+      "simulating outbreaks and public health interventions"
     )),
     sidebar = sidebar(
       width = "40%",

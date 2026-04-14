@@ -106,6 +106,7 @@ vis_saved_fit <- function(simexl,
   } else {
     "Proportion"
   }
+  tooltip_decimals <- if (use_absolute_numbers) 0L else 2L
 
   if (!stratify_fit_by_age) {
     data_agg <- data |>
@@ -150,23 +151,45 @@ vis_saved_fit <- function(simexl,
         data = data_agg,
         type = "scatter",
         hcaes(x = time, y = value),
-        name = "Data",
+        name = "Reported",
         color = "#c9424a",
         marker = list(symbol = "circle", radius = 4)
       )
 
     return(
       hc |>
-        hc_plotOptions(line = list(lineWidth = 5)) |>
-        hc_xAxis(title = list(text = x_lab)) |>
+        hc_plotOptions(
+          line = list(lineWidth = 5),
+          scatter = list(
+            stickyTracking = TRUE,
+            findNearestPointBy = "x"
+          )
+        ) |>
+        hc_xAxis(
+          title = list(text = x_lab),
+          crosshair = list(
+            width = 1,
+            color = "#666666",
+            dashStyle = "ShortDot"
+          )
+        ) |>
         hc_yAxis(
           title = list(text = y_title),
           min = 0,
           labels = list(format = "{value}")
         ) |>
         hc_tooltip(
-          valueDecimals = 0,
-          pointFormat = "Time: {point.x}<br/>{series.name}: {point.y}"
+          useHTML = TRUE,
+          shared = TRUE,
+          split = FALSE,
+          valueDecimals = tooltip_decimals,
+          headerFormat = paste0(
+            "<span style=\"font-size:11px\"><b>Day {point.key}</b></span><br/>"
+          ),
+          pointFormat = paste0(
+            "<span style=\"color:{point.color}\">&#9679;</span> ",
+            "{series.name}: {point.y}<br/>"
+          )
         ) |>
         hc_exporting(enabled = FALSE)
     )
@@ -227,23 +250,45 @@ vis_saved_fit <- function(simexl,
           data = dd,
           type = "scatter",
           hcaes(x = time, y = value),
-          name = "Data",
+          name = "Reported",
           color = "#c9424a",
           marker = list(symbol = "circle", radius = 4)
         )
     }
 
     hc |>
-      hc_plotOptions(line = list(lineWidth = 5)) |>
-      hc_xAxis(title = list(text = x_lab)) |>
+      hc_plotOptions(
+        line = list(lineWidth = 5),
+        scatter = list(
+          stickyTracking = TRUE,
+          findNearestPointBy = "x"
+        )
+      ) |>
+      hc_xAxis(
+        title = list(text = x_lab),
+        crosshair = list(
+          width = 1,
+          color = "#666666",
+          dashStyle = "ShortDot"
+        )
+      ) |>
       hc_yAxis(
         title = list(text = y_title),
         min = 0,
         labels = list(format = "{value}")
       ) |>
       hc_tooltip(
-        valueDecimals = 0,
-        pointFormat = "Time: {point.x}<br/>{series.name}: {point.y}"
+        useHTML = TRUE,
+        shared = TRUE,
+        split = FALSE,
+        valueDecimals = tooltip_decimals,
+        headerFormat = paste0(
+          "<span style=\"font-size:11px\"><b>Day {point.key}</b></span><br/>"
+        ),
+        pointFormat = paste0(
+          "<span style=\"color:{point.color}\">&#9679;</span> ",
+          "{series.name}: {point.y}<br/>"
+        )
       ) |>
       hc_exporting(enabled = FALSE)
   })
