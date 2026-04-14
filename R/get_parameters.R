@@ -3,6 +3,9 @@
 #' @param iso3 The ISO3 code of the country used to draw age-distributions and
 #'   contact rates from.
 #'
+#' @param population Total population size (scalar) used to construct the
+#'   initial state matrix passed to the model.
+#'
 #' @param R0 The basic reproduction number.
 #'
 #' @param generation_time The mean generation time in days.
@@ -35,7 +38,8 @@
 #'   community, either as a single value or as a vector of the same length as the
 #'   number of age categories.
 #'
-#' @param vax_rate The daily rate of vaccination as a proportion of the population.
+#' @param vax_rate Number of vaccine doses administered per day (absolute
+#'   count, not a proportion of the population).
 #'
 #' @param vax_infectiousness The reduction (as a proportion) in infectioussness
 #'   of an individual due to vaccination.
@@ -69,6 +73,16 @@
 #'   hospitalised first when hospital capacity is exceeded.
 #'
 #' @param frac_symp The proportion of cases that eventually develop symptoms.
+#'
+#' @param init_infections Total number of individuals infected at time zero,
+#'   allocated across age groups by one multinomial draw with probabilities equal
+#'   to the country age fractions.
+#'
+#' @param init_compartment State column for the initial infection count (same
+#'   meaning as \code{init_infections}). Typical value \code{"Eu"} (exposed,
+#'   unvaccinated). Must
+#'   match one of the twelve odin state names (Su/Eu/Cu/Hu/Ru/Du and
+#'   Sv/Ev/Cv/Hv/Rv/Dv). Susceptibles in Su are reduced accordingly.
 #'
 #' @importFrom stats uniroot
 #'

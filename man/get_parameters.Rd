@@ -37,6 +37,9 @@ get_parameters(
 \item{iso3}{The ISO3 code of the country used to draw age-distributions and
 contact rates from.}
 
+\item{population}{Total population size (scalar) used to construct the
+initial state matrix passed to the model.}
+
 \item{R0}{The basic reproduction number.}
 
 \item{generation_time}{The mean generation time in days.}
@@ -71,7 +74,8 @@ population.}
 community, either as a single value or as a vector of the same length as the
 number of age categories.}
 
-\item{vax_rate}{The daily rate of vaccination as a proportion of the population.}
+\item{vax_rate}{Number of vaccine doses administered per day (absolute
+count, not a proportion of the population).}
 
 \item{vax_infectiousness}{The reduction (as a proportion) in infectioussness
 of an individual due to vaccination.}
@@ -97,6 +101,16 @@ days.}
 \item{social_distancing}{A named vector of length 4 containing the proportion
 reduction in contacts due to social distancing of 'home', 'school', 'work'
 and 'other'.}
+
+\item{init_infections}{Total number of individuals infected at time zero,
+allocated across age groups by one multinomial draw with probabilities equal
+to the country age fractions.}
+
+\item{init_compartment}{State column for the initial infection count (same
+meaning as \code{init_infections}). Typical value \code{"Eu"} (exposed,
+unvaccinated). Must
+match one of the twelve odin state names (Su/Eu/Cu/Hu/Ru/Du and
+Sv/Ev/Cv/Hv/Rv/Dv). Susceptibles in Su are reduced accordingly.}
 
 \item{vax_prioritised}{A logical indicating whether older age groups are
 vaccinated first.}

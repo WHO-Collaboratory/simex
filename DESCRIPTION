@@ -23,7 +23,8 @@ Suggests:
     usethis,
     gt,
     usethis,
-    knitr
+    knitr,
+    pkgload
 Imports: 
     dplyr,
     dust2,

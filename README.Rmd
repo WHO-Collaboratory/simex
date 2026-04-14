@@ -7,13 +7,26 @@
 
 The transmission model is written in [**odin**](https://mrc-ide.github.io/odin/) (odin2 DSL) in [`inst/odin/simex.R`](inst/odin/simex.R). That specification is compiled with [**dust2**](https://mrc-ide.github.io/dust2/) to C++ for fast discrete-time simulation (see the generated sources under `src/`). The main R entry point that uses this backend is `run_simex()`.
 
-```{r, echo = FALSE} 
-knitr::opts_chunk$set(fig.cap = "",
-                      fig.align = "center",
-                      fig.path = "man/figures/",
-                      dpi = 200,
-                      out.width = "75%")
-``` 
+```{r, echo = FALSE}
+knitr::opts_chunk$set(
+  fig.cap = "",
+  fig.align = "center",
+  fig.path = "man/figures/",
+  dpi = 200,
+  out.width = "75%",
+  message = FALSE,
+  warning = FALSE,
+  comment = ""
+)
+```
+
+```{r, include = FALSE}
+if (requireNamespace("pkgload", quietly = TRUE) && file.exists("DESCRIPTION")) {
+  suppressPackageStartupMessages(pkgload::load_all("."))
+} else {
+  suppressPackageStartupMessages(library(simex))
+}
+```
 
 Installation
 -------------
@@ -26,8 +39,8 @@ remotes::install_github("WHO-Collaboratory/simex")
 
 Load the package using:
 
-```{r}
-library("simex")
+``` r
+library(simex)
 ```
 
 Running *simex*
@@ -41,7 +54,7 @@ You can use *simex* interactively by launching the Shiny app locally with `simex
 Most settings are specified via `get_parameters()`. The arguments and their
 default values are summarised below (from the roxygen documentation):
 
-```{r, echo = FALSE}
+```{r, echo = FALSE, message = FALSE, warning = FALSE}
 simex:::get_arg_table("get_parameters", type = "kable")
 ```
 
@@ -51,13 +64,13 @@ To run the model using default settings, pass the list from `get_parameters()` t
 `run_simex()` and set `time` to the integer days you want (inclusive).
 
 ```{r, echo = TRUE}
-## set parameters using defaults
+# set parameters using defaults
 pars <- get_parameters()
 
-## run odin/dust2 model (example: days 1–365)
-output <- run_simex(pars, time = 1:365)
+# run odin/dust2 model (example: days 1–200)
+output <- run_simex(pars, time = 1:200)
 
-## look at output
+# look at output
 print(output)
 ```
 
@@ -66,17 +79,17 @@ print(output)
 To visualise the results, use the generic `plot` function defined for the `simex` class. Below, we first visualise prevalence and then incidence, specified using the `what` argument.
 
 ```{r, echo = TRUE}
-## visualise prevalence
+# visualise prevalence
 plot(output, what = "prevalence")
 
-## visualise incidence
+# visualise incidence
 plot(output, what = "incidence")
 ```
 
 Hospital capacity can be displayed by toggling the `show_hosp_capacity` argument.
 
 ```{r, echo = TRUE}
-## visualise prevalence with hospital capaciy
+# visualise prevalence with hospital capaciy
 plot(output, what = "prevalence", show_hosp_capacity = TRUE)
 ```
 
@@ -91,21 +104,21 @@ least:
 * `incidence` — same layout for daily flows into each stage (see `?extract`).
 * `pars` — parameter object(s) passed into `run_simex()`.
 
-Example: prevalence on day 250 for unvaccinated susceptibles:
+Example: prevalence on day 150 for unvaccinated susceptibles:
 
 ```{r, echo = TRUE}
-subset(output$prevalence, time == 250 & compartment == "S" & vax == FALSE)
+subset(output$prevalence, time == 150 & compartment == "S" & vax == FALSE)
 ```
 
 Use `extract()` to aggregate over dimensions:
 
 ```{r, echo = TRUE}
-## long-form prevalence (default stratification)
+# long-form prevalence (default stratification)
 extract(output, what = "prevalence")
 ```
 
 ```{r, echo = TRUE}
-## restrict to a band of days
+# restrict to a band of days
 days_from <- 10
 days_to <- 20
 df <- extract(output, what = "prevalence")
@@ -115,18 +128,18 @@ df
 
 ### Modelling a single intervention
 
-We use vaccination as an example intervention. Referencing the table above, we
-can see that vaccination rate is specified using the `vax_rate` argument and
-set it to 0.5% of the population per day.
+We use vaccination as an example intervention. The `vax_rate` argument is the
+number of doses per day (not a proportion of the population); here we use 100
+doses per day.
 
 ```{r, echo = TRUE}
-## define vaccination rate
-pars <- get_parameters(vax_rate = 0.005)
+# define vaccination rate (doses per day)
+pars <- get_parameters(vax_rate = 100)
 
-## run model
-output <- run_simex(pars, time = 1:365)
+# run model
+output <- run_simex(pars, time = 1:200)
 
-## visualise prevalence
+# visualise prevalence
 plot(output)
 ```
 
@@ -138,46 +151,45 @@ well as the impact on infection and disease severity.
 To change parameters part-way through a run, pass a one-row **matrix** of
 parameter lists whose **column names** are the first model day each block applies
 to (one column must start on day 1, matching the Shiny app). Below, isolation
-adherence becomes 0.5 from day 125 onward.
+adherence becomes 0.5 from day 75 onward.
 
 ```{r, echo = TRUE}
-## column names = first day each parameter set applies
+# column names = first day each parameter set applies
 parlist <- matrix(
   c(list(get_parameters()), list(get_parameters(isolation_adherence = 0.5))),
   nrow = 1,
-  dimnames = list(NULL, c("1", "125"))
+  dimnames = list(NULL, c("1", "75"))
 )
 
-output <- run_simex(parlist, time = 1:365)
+output <- run_simex(parlist, time = 1:200)
 
-## visualise prevalence
+# visualise prevalence
 plot(output)
 ```
 
-Comparing this figure with the first model run with no interventions, we can see
-the proportion of deaths drops from about 0.7% to 0.4%; a reduction in deaths of
-more than 40%!
+Comparing this figure with the first model run with no interventions shows a
+clear reduction in severe outcomes when isolation is introduced mid-outbreak.
 
 ### Comparing scenarios
 
 It is useful to directly compare different scenarios visually. The
 `vis_comparison()` function accepts a named list of `simex` objects. In the
-example below, the default scenario is compared with isolation from day 125.
+example below, the default scenario is compared with isolation from day 75.
 
 ```{r, echo = TRUE}
-## define two scenarios, one without intervention and one with isolation
+# define two scenarios, one without intervention and one with isolation
 parlists <- list(
   "No intervention" = get_parameters(),
-  "Isolation on day 125" = matrix(
+  "Isolation on day 75" = matrix(
     c(list(get_parameters()), list(get_parameters(isolation_adherence = 0.5))),
     nrow = 1,
-    dimnames = list(NULL, c("1", "125"))
+    dimnames = list(NULL, c("1", "75"))
   )
 )
 
-outputs <- lapply(parlists, run_simex, time = 1:365)
+outputs <- lapply(parlists, run_simex, time = 1:200)
 
-## compare scenarios
+# compare scenarios
 vis_comparison(outputs)
 ```
 
