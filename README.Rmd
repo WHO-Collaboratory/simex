@@ -53,8 +53,8 @@ You can use *simex* interactively by launching the Shiny app locally with `simex
 
 ### Parameters and settings
 
-Most settings are specified via `get_parameters()`. The arguments and their
-default values are summarised below (from the roxygen documentation):
+Parameters are specified via `get_parameters()`. The arguments and their
+default values are summarised below:
 
 ```{r, echo = FALSE, message = FALSE, warning = FALSE}
 simex:::get_arg_table("get_parameters", type = "kable")
@@ -63,8 +63,7 @@ simex:::get_arg_table("get_parameters", type = "kable")
 ### Passing parameters to `run_simex()`
 
 `run_simex()` accepts `pars` in three equivalent shapes. In each case you are
-simulating **one** underlying system (one epidemic process); only the layout
-of inputs differs.
+simulating **one** underlying system; only the layout of inputs differs.
 
 1. **Single list from `get_parameters()`** — the same parameter values apply for
    the whole simulation (internally coerced to a one-column matrix keyed by
@@ -74,17 +73,15 @@ of inputs differs.
    the **first model day** each parameter set applies from (e.g. `"1"`, `"75"`).
    One name must match the start of the simulated period (usually `"1"`).
 
-3. **Matrix of lists** — **columns** are the same time breaks as in (2); each
-   column is one parameter list for that segment. **Rows** are **parallel
-   runs** of the same calendar schedule (e.g. posterior draws). Outputs include a
-   **`sample`** column indexing the matrix row. With `n_particles > 1`, a
-   **`particle`** column indexes stochastic replicates within each run.
+3. **Matrix of lists** — **columns** are the same time breaks as in (2); **rows**
+   are **parallel runs** (e.g. posterior draws). Outputs include a **`sample`**
+   column indexing the matrix row; with `n_particles > 1`, a **`particle`**
+   column indexes stochastic replicates.
 
-To compare **different scenarios as different models** (e.g. no vaccine vs high
-vaccine), call **`run_simex()` separately** for each scenario, collect the
-`simex` objects in a list, and pass that list to `vis_comparison()`. For
-example: `lapply(list_of_par_lists, run_simex, time = 1:200)` or, with
-**purrr**, `purrr::map(list_of_par_lists, \(p) run_simex(p, time = 1:200))`.
+For **different scenarios**, call **`run_simex()` separately** for each,
+collect `simex` objects in a list, and pass it to **`vis_comparison()`** (e.g.
+`lapply(list_of_par_lists, run_simex, time = 1:200)` or
+`purrr::map(list_of_par_lists, \(p) run_simex(p, time = 1:200))`).
 
 ### Running default settings
 
@@ -102,11 +99,9 @@ output <- run_simex(pars, time = 1:200)
 print(output)
 ```
 
-**`print()`** summarises: **Time** (day range), **Age categories** (factor
-levels in the tables), **Compartments** (`S`–`D`), **Particles** (stochastic
-replicates; `1` with the default single particle), and **Samples** (parallel
-`pars` rows; `1` when `pars` has a single row). Detailed trajectories are in
-`output$prevalence` and `output$incidence` (see **Accessing outputs**).
+**`print()`** summarises **Time**, **Age categories**, **Compartments**
+(`S`–`D`), **Particles** (default `1`), and **Samples** (default `1` when
+`pars` has one row). See **Accessing outputs** for table columns.
 
 ### Visualising outputs
 
@@ -121,11 +116,9 @@ plot(output, what = "prevalence")
 plot(output, what = "incidence")
 ```
 
-Hospital capacity can be displayed with `show_hosp_capacity = TRUE` when
-`what = "prevalence"`.
+Hospital capacity (when `what = "prevalence"`):
 
 ```{r, echo = TRUE}
-# visualise prevalence with hospital capacity
 plot(output, what = "prevalence", show_hosp_capacity = TRUE)
 ```
 
@@ -135,13 +128,14 @@ Objects of class `simex` contain **`prevalence`** and **`incidence`**: long-form
 `data.table`s with these columns:
 
 * **`time`** — model day.
-* **`age`** — age stratum (`age_1`, …).
-* **`compartment`** — `S`, `E`, `C`, `H`, `R`, or `D`.
-* **`vax`** — logical (`TRUE` / `FALSE`), vaccinated vs unvaccinated strata.
-* **`value`** — count in that stratum (or daily flow for `incidence`).
+* **`age`** — age stratum.
+* **`compartment`** — model compartment: `S`, `E`, `C`, `H`, `R`, or `D`.
+* **`vax`** — logical indicating vaccination status.
+* **`value`** — number of individuals.
 * **`sample`** — present when `pars` has multiple matrix rows; indexes the row
   of `pars`.
-* **`particle`** — present when `n_particles > 1`.
+* **`particle`** — present when `n_particles > 1`; indexes stochastic
+  replicates.
 
 The **`pars`** object passed into `run_simex()` is stored as **`output$pars`**.
 
@@ -203,9 +197,9 @@ plot(output_timed, what = "prevalence")
 
 ### Comparing different scenarios (separate runs)
 
-Two **different** scenarios require two **`run_simex()`** calls, not a multi-row
-`pars` matrix (which is parallel draws for **one** schedule). Pass a **named
-list** of `simex` objects to **`vis_comparison()`**.
+Two **different** scenarios require two **`run_simex()`** calls, not a
+multi-row `pars` matrix. Pass a **named list** of `simex` objects to
+**`vis_comparison()`**.
 
 ```{r, echo = TRUE}
 scenario_pars <- list(
