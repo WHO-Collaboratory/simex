@@ -58,6 +58,7 @@ default values are summarised below:
 
 ```{r, echo = FALSE, message = FALSE, warning = FALSE}
 simex:::get_arg_table("get_parameters", type = "kable")
+```
 
 ### Running default settings
 

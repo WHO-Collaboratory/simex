@@ -40,12 +40,40 @@ Parameters are specified via `get_parameters()`. The arguments and their
 default values are summarised below:
 
 
-```
-Error in parse(text = input): <text>:5:6: unexpected symbol
-4: 
-5: Pass the
-        ^
-```
+|Argument                |Description                                                                                                                                                                                                                                                      |Default value                                |
+|:-----------------------|:----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|:--------------------------------------------|
+|iso3                    |The ISO3 code of the country used to draw age-distributions and contact rates from.                                                                                                                                                                              |"CMR"                                        |
+|population              |Total population size (scalar) used to construct the initial state matrix passed to the model.                                                                                                                                                                   |1e+05                                        |
+|R0                      |The basic reproduction number.                                                                                                                                                                                                                                   |3                                            |
+|generation_time         |The mean generation time in days.                                                                                                                                                                                                                                |8                                            |
+|incubation_period       |The mean incubation period in days.                                                                                                                                                                                                                              |3                                            |
+|infectiousness_presymp  |Relative infectiousness of presymptomatic cases to symptomatic cases.                                                                                                                                                                                            |0.25                                         |
+|frac_symp               |The proportion of cases that eventually develop symptoms.                                                                                                                                                                                                        |0.8                                          |
+|ifr                     |Infection fatality rate provided either as a single value or as a vector of the same length as the number of age categories. Use the function age_to_ifr to calculate a COVID-like IFR from a vector of ages.                                                    |age_to_ifr(get_age_median())                 |
+|hosp_mortality          |The probability of death given a case is admitted to hospital, either as a single value or as a vector of the same length as the number of age categories. The inverse of the number of cases admitted to hospital per death.                                    |1/seq(20, 5, length = 16)                    |
+|hosp_protection_death   |Given a case requires hospitalisation, the proportion of deaths admission to hospital averts.                                                                                                                                                                    |0.75                                         |
+|hosp_duration           |The mean duration of stay in the hospital in days, either as a single value or as a vector of the same length as the number of age categories.                                                                                                                   |seq(7, 21, length = 16)                      |
+|hosp_capacity           |Total hospital bed capacity given as a proportion of the population.                                                                                                                                                                                             |100                                          |
+|comm_mortality          |The probability of death of cases that remain in the community, either as a single value or as a vector of the same length as the number of age categories.                                                                                                      |rep(0, 16)                                   |
+|vax_rate                |Number of vaccine doses administered per day (absolute count, not a proportion of the population).                                                                                                                                                               |0                                            |
+|vax_infectiousness      |The reduction (as a proportion) in infectioussness of an individual due to vaccination.                                                                                                                                                                          |0.3                                          |
+|vax_infection           |The protection (as a proportion) against infection provided by vaccination.                                                                                                                                                                                      |0.5                                          |
+|vax_hosp                |The protection (as a proportion) against hospitalisation provided by vaccination, given infection.                                                                                                                                                               |0.5                                          |
+|vax_death               |The protection (as a proportion) against death provided by vaccination, given hospitalisation.                                                                                                                                                                   |0.8                                          |
+|isolation_adherence     |The proportion of symptomatic individuals that adhere to isolation measures.                                                                                                                                                                                     |0                                            |
+|isolation_effectiveness |The reduction in daily transmission potential of a given individual due to adherence to isolation measures.                                                                                                                                                      |0.8                                          |
+|isolation_delay         |The mean delay from symptom onset to isolation in days.                                                                                                                                                                                                          |3                                            |
+|social_distancing       |A named vector of length 4 containing the proportion reduction in contacts due to social distancing of 'home', 'school', 'work' and 'other'.                                                                                                                     |c(home = 0, school = 0, work = 0, other = 0) |
+|init_infections         |Total number of individuals infected at time zero, allocated across age groups by one multinomial draw with probabilities equal to the country age fractions.                                                                                                    |5                                            |
+|init_compartment        |State column for the initial infection count (same meaning as init_infections). Typical value "Eu" (exposed, unvaccinated). Must match one of the twelve odin state names (Su/Eu/Cu/Hu/Ru/Du and Sv/Ev/Cv/Hv/Rv/Dv). Susceptibles in Su are reduced accordingly. |"Eu"                                         |
+|vax_prioritised         |A logical indicating whether older age groups are vaccinated first.                                                                                                                                                                                              |TRUE                                         |
+|hosp_prioritised        |A logical indicating whether older age groups are hospitalised first when hospital capacity is exceeded.                                                                                                                                                         |TRUE                                         |
+
+### Running default settings
+
+Pass the list from `get_parameters()` to `run_simex()` and set `time` to the
+integer days you want the simulation to run.
+
 
 ``` r
 # set parameters using defaults
@@ -114,22 +142,22 @@ output$prevalence[time == 150L & compartment == "S" & !vax]
 ```
        age compartment    vax  time value
     <fctr>      <fctr> <lgcl> <int> <num>
- 1:  age_1           S  FALSE   150  2494
- 2:  age_2           S  FALSE   150   494
- 3:  age_3           S  FALSE   150   340
- 4:  age_4           S  FALSE   150   449
- 5:  age_5           S  FALSE   150  1129
- 6:  age_6           S  FALSE   150  1023
- 7:  age_7           S  FALSE   150  1044
- 8:  age_8           S  FALSE   150   828
- 9:  age_9           S  FALSE   150   681
-10: age_10           S  FALSE   150   629
-11: age_11           S  FALSE   150   479
-12: age_12           S  FALSE   150   423
-13: age_13           S  FALSE   150   490
-14: age_14           S  FALSE   150   591
-15: age_15           S  FALSE   150   440
-16: age_16           S  FALSE   150   611
+ 1:  age_1           S  FALSE   150  2398
+ 2:  age_2           S  FALSE   150   444
+ 3:  age_3           S  FALSE   150   326
+ 4:  age_4           S  FALSE   150   501
+ 5:  age_5           S  FALSE   150  1027
+ 6:  age_6           S  FALSE   150  1036
+ 7:  age_7           S  FALSE   150  1005
+ 8:  age_8           S  FALSE   150   763
+ 9:  age_9           S  FALSE   150   596
+10: age_10           S  FALSE   150   578
+11: age_11           S  FALSE   150   488
+12: age_12           S  FALSE   150   437
+13: age_13           S  FALSE   150   491
+14: age_14           S  FALSE   150   576
+15: age_15           S  FALSE   150   426
+16: age_16           S  FALSE   150   623
 ```
 
 
@@ -141,11 +169,11 @@ output$prevalence[time %between% c(10L, 20L)]
 ```
          age compartment    vax  time value
       <fctr>      <fctr> <lgcl> <int> <num>
-   1:  age_1           S  FALSE    10 15453
-   2:  age_2           S  FALSE    10 14014
-   3:  age_3           S  FALSE    10 12343
+   1:  age_1           S  FALSE    10 15452
+   2:  age_2           S  FALSE    10 14013
+   3:  age_3           S  FALSE    10 12342
    4:  age_4           S  FALSE    10 10777
-   5:  age_5           S  FALSE    10  9068
+   5:  age_5           S  FALSE    10  9070
   ---                                      
 2108: age_12           D   TRUE    20     0
 2109: age_13           D   TRUE    20     0
