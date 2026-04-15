@@ -525,7 +525,7 @@ public:
       internal.lambda_H[i - 1] = dust2::array::sum<real_type>(internal.lambda_Hu.data(), shared.dim.kappa_E, {i - 1, i - 1}, {0, shared.dim.kappa_E.dim[1] - 1}) + dust2::array::sum<real_type>(internal.lambda_Hv.data(), shared.dim.kappa_E, {i - 1, i - 1}, {0, shared.dim.kappa_E.dim[1] - 1});
     }
     for (size_t i = 1; i <= shared.dim.Su.size; ++i) {
-      internal.hospitalised[i - 1] = ((shared.hosp_prioritised ? (monty::math::min<real_type>(internal.hosp_required[i - 1], internal.hosp_rem[shared.n_age - i + 1 - 1])) : ((hosp_required_total > 0 ? (shared.hosp_capacity * internal.hosp_required[i - 1] / hosp_required_total) : 0))));
+      internal.hospitalised[i - 1] = (shared.hosp_prioritised ? monty::math::min<real_type>(internal.hosp_required[i - 1], internal.hosp_rem[shared.n_age - i + 1 - 1]) : ((hosp_required_total > 0 ? shared.hosp_capacity * internal.hosp_required[i - 1] / hosp_required_total : 0)));
     }
     for (size_t i = 1; i <= shared.dim.Su.size; ++i) {
       internal.p_Eu_exit[i - 1] = 1 - monty::math::exp<real_type>(-(shared.sigma_Eu[i - 1] + shared.eta_Eu[i - 1]) * dt);
@@ -546,7 +546,7 @@ public:
       internal.lambda_v[i - 1] = shared.p_trans * (1 - shared.vax_infection) * (internal.lambda_E[i - 1] + internal.lambda_C[i - 1] + internal.lambda_H[i - 1]);
     }
     for (size_t i = 1; i <= shared.dim.Su.size; ++i) {
-      internal.total_hosp_mortality[i - 1] = ((internal.hosp_required[i - 1] > 0 ? ((shared.hosp_mortality[i - 1] * internal.hospitalised[i - 1] + shared.unhosp_mortality[i - 1] * (internal.hosp_required[i - 1] - internal.hospitalised[i - 1])) / internal.hosp_required[i - 1]) : shared.hosp_mortality[i - 1]));
+      internal.total_hosp_mortality[i - 1] = (internal.hosp_required[i - 1] > 0 ? (shared.hosp_mortality[i - 1] * internal.hospitalised[i - 1] + shared.unhosp_mortality[i - 1] * (internal.hosp_required[i - 1] - internal.hospitalised[i - 1])) / internal.hosp_required[i - 1] : shared.hosp_mortality[i - 1]);
     }
     for (size_t i = 1; i <= shared.dim.Su.size; ++i) {
       internal.n_Eu_exit[i - 1] = monty::random::binomial<real_type>(rng_state, Eu[i - 1], internal.p_Eu_exit[i - 1]);
@@ -647,7 +647,7 @@ public:
       internal.n_Hv_to_Dv[i - 1] = internal.n_Hv_exit[i - 1] - internal.n_Hv_to_Rv[i - 1];
     }
     for (size_t i = 1; i <= shared.dim.Su.size; ++i) {
-      internal.vax_target[i - 1] = ((shared.vax_prioritised ? ((static_cast<int>(i) == shared.n_age ? monty::math::min<real_type>(internal.Su_after_inf[shared.n_age - 1], shared.vax_rate) : monty::math::min<real_type>(internal.Su_after_inf[i - 1], shared.vax_rate - internal.vax_rem[shared.n_age - i - 1]))) : ((Su_after_inf_total > 0 ? shared.vax_rate * internal.Su_after_inf[i - 1] / Su_after_inf_total : 0))));
+      internal.vax_target[i - 1] = (shared.vax_prioritised ? ((static_cast<int>(i) == shared.n_age ? monty::math::min<real_type>(internal.Su_after_inf[shared.n_age - 1], shared.vax_rate) : monty::math::min<real_type>(internal.Su_after_inf[i - 1], shared.vax_rate - internal.vax_rem[shared.n_age - i - 1]))) : ((Su_after_inf_total > 0 ? shared.vax_rate * internal.Su_after_inf[i - 1] / Su_after_inf_total : 0)));
     }
     for (size_t i = 1; i <= shared.dim.Su.size; ++i) {
       internal.p_Su_to_Sv[i - 1] = monty::math::min<real_type>(1, internal.vax_target[i - 1] / monty::math::max<real_type>(static_cast<real_type>(1e-10), internal.Su_after_inf[i - 1]));

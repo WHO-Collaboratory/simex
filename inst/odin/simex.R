@@ -1,7 +1,27 @@
 # simex: age-stratified SEIR with vaccination and hospital capacity
-# compartments per age: Su, Eu, Cu, Hu, Ru, Du, Sv, Ev, Cv, Hv, Rv, Dv
-# discrete-time stochastic
-# compare_data: cases ~ Poisson(incidence)
+# discrete-time stochastic. Poisson observation process for likelihood
+# calculation.
+#
+# Compartments:
+#   S  susceptible
+#   E  exposed (infectious, pre-symptomatic)
+#   C  community (infectious, symptomatic in community)
+#   H  hospital (infectious, symptomatic in hospital)
+#   R  recovered
+#   D  dead
+#
+# Vaccination suffix on each compartment name:
+#   ...u  unvaccinated (e.g. Su, Eu, …)
+#   ...v  vaccinated   (e.g. Sv, Ev, …)
+#
+# Age stratification: each state (e.g. Cu) is a vector of length n_age;
+# index i refers to age group..
+#
+# Incidence variables are given the subscript *_i  and accumulate flows
+# into the compartment over a reporting window. They are
+# declared with zero_every = 1 so the accumulator is reset every model
+# step — here that yields daily incidence. e.g. Eu_i is daily incidence
+# of unvaccinated exposed cases.
 
 # -------------------------------------------------------------------------
 # Parameters
@@ -79,29 +99,13 @@ hosp_rem[2:n_age] <- max(0, hosp_rem[i - 1] - hosp_required[n_age - i + 2])
 
 # assign remaining hospital capacity to each age group if prioritised,
 # otherwise assign equally
-hospitalised[] <- (
-  if (hosp_prioritised) (
-    min(hosp_required[i], hosp_rem[n_age - i + 1])
-  )
-  else (
-    if (hosp_required_total > 0) (
-      hosp_capacity * hosp_required[i] / hosp_required_total
-    )
-    else 0
-  )
-)
+# odin2: inline if/else only (no { } blocks)
+hospitalised[] <- if (hosp_prioritised) min(hosp_required[i], hosp_rem[n_age - i + 1]) else (if (hosp_required_total > 0) hosp_capacity * hosp_required[i] / hosp_required_total else 0)
 
 # calculate mortality of the H compartment as the weighted mean of
 # those requiring hospitalisation that are in fact hospitalised vs not
 # hospitalised
-total_hosp_mortality[] <- (
-  if (hosp_required[i] > 0) (
-    (
-      hosp_mortality[i] * hospitalised[i] + unhosp_mortality[i] * (hosp_required[i] - hospitalised[i])
-    ) / hosp_required[i]
-  )
-  else hosp_mortality[i]
-)
+total_hosp_mortality[] <- if (hosp_required[i] > 0) (hosp_mortality[i] * hospitalised[i] + unhosp_mortality[i] * (hosp_required[i] - hospitalised[i])) / hosp_required[i] else hosp_mortality[i]
 
 
 # -------------------------------------------------------------------------
@@ -208,16 +212,7 @@ vax_rem[1] <- min(Su_after_inf[n_age], vax_rate)
 vax_rem[2:n_age] <- vax_rem[i - 1] + min(Su_after_inf[n_age - i + 1], vax_rate - vax_rem[i - 1])
 
 # assign vaccination target by age
-vax_target[] <- (
-  if (vax_prioritised) (
-    if (i == n_age) min(Su_after_inf[n_age], vax_rate)
-    else min(Su_after_inf[i], vax_rate - vax_rem[n_age - i])
-  )
-  else (
-    if (Su_after_inf_total > 0) vax_rate * Su_after_inf[i] / Su_after_inf_total
-    else 0
-  )
-)
+vax_target[] <- if (vax_prioritised) (if (i == n_age) min(Su_after_inf[n_age], vax_rate) else min(Su_after_inf[i], vax_rate - vax_rem[n_age - i])) else (if (Su_after_inf_total > 0) vax_rate * Su_after_inf[i] / Su_after_inf_total else 0)
 
 # Probability to vaccinate: cap at 1, avoid div by zero
 p_Su_to_Sv[] <- min(1, vax_target[i] / max(1e-10, Su_after_inf[i]))
@@ -333,7 +328,7 @@ dim(
   frac_Eu_to_Cu, frac_Ev_to_Cv, frac_Cu_to_R,
   frac_Hu_to_R, frac_Cv_to_R, frac_Hv_to_R,
   # transitions counts
-  n_Su_to_Eu,  n_Sv_to_Ev, n_Eu_exit, n_Ev_exit, n_Eu_to_Cu, n_Eu_to_Hu,
+  n_Su_to_Eu, n_Sv_to_Ev, n_Eu_exit, n_Ev_exit, n_Eu_to_Cu, n_Eu_to_Hu,
   n_Ev_to_Cv, n_Ev_to_Hv, n_Cu_exit, n_Hu_exit, n_Cv_exit, n_Hv_exit, n_Cu_to_Ru,
   n_Cu_to_Du, n_Hu_to_Ru, n_Hu_to_Du, n_Cv_to_Rv, n_Cv_to_Dv, n_Hv_to_Rv,
   n_Hv_to_Dv, p_Su_to_Sv, n_Su_to_Sv,
