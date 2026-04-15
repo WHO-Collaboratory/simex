@@ -13,8 +13,8 @@ model with country-specific age demographics and contact rates. The
 simplest way to interact with the tool is to use the [Shiny
 App](https://portal.who.int/eios-colab/rconnect/simex).
 
-The transmission model is written in
-[**odin**](https://mrc-ide.github.io/odin/) (odin2 DSL) in
+The transmission model is written in the [**odin
+DSL**](https://mrc-ide.github.io/odin2/) in
 [`inst/odin/simex.R`](inst/odin/simex.R). That specification is compiled
 with [**dust2**](https://mrc-ide.github.io/dust2/) to C++ for fast
 discrete-time simulation (see the generated sources under `src/`). The
@@ -22,7 +22,7 @@ main R entry point that uses this backend is `run_simex()`.
 
 ## Installation
 
-To install the development version from github:
+To install the development version from GitHub:
 
 ``` r
 remotes::install_github("WHO-Collaboratory/simex")
@@ -85,29 +85,26 @@ you are simulating **one** underlying system (one epidemic process);
 only the layout of inputs differs.
 
 1.  **Single list from `get_parameters()`** — the same parameter values
-    apply for the whole simulation. Internally this is turned into a
-    one-column matrix whose column name is the first time in `time`.
+    apply for the whole simulation (internally coerced to a one-column
+    matrix keyed by `min(time)` from the `time` argument).
 
 2.  **Named list of parameter lists** — names must be **numeric
     strings** giving the **first model day** each parameter set applies
-    from (e.g. `"1"`, `"75"`). The list is coerced to a one-row matrix
-    with those names as column names. One name must correspond to the
-    start of the simulation (typically `"1"`).
+    from (e.g. `"1"`, `"75"`). One name must match the start of the
+    simulated period (usually `"1"`).
 
 3.  **Matrix of lists** — **columns** are the same time breaks as in
-    (2): each column is one parameter list for that segment. **Rows**
-    are **parallel runs** of the same calendar schedule (e.g. rows =
-    posterior draws). The simulator uses `dust2` groups so each row is
-    independent; outputs then include a **`sample`** column indexing the
-    row (parallel draw). With `n_particles > 1` you also get a
-    **`particle`** column for stochastic replicates within each run.
+    (2); each column is one parameter list for that segment. **Rows**
+    are **parallel runs** of the same calendar schedule (e.g. posterior
+    draws). Outputs include a **`sample`** column indexing the matrix
+    row. With `n_particles > 1`, a **`particle`** column indexes
+    stochastic replicates within each run.
 
-To compare **different scenarios as different models** (e.g. “no
-vaccine” vs “high vaccine”), run **`run_simex()` separately** for each
-scenario and collect the `simex` objects in a list, then pass that list
-to `vis_comparison()`. For example:
-`lapply(list_of_par_lists, run_simex, time = 1:200)` or, with
-**`purrr`**,
+To compare **different scenarios as different models** (e.g. no vaccine
+vs high vaccine), call **`run_simex()` separately** for each scenario,
+collect the `simex` objects in a list, and pass that list to
+`vis_comparison()`. For example:
+`lapply(list_of_par_lists, run_simex, time = 1:200)` or, with **purrr**,
 `purrr::map(list_of_par_lists, \(p) run_simex(p, time = 1:200))`.
 
 ### Running default settings
@@ -134,31 +131,18 @@ print(output)
      - Particles: 1
      - Samples: 1
 
-The **`print()`** summary lines mean: **Time** — range of simulated
-days; **Age categories** — factor levels in the output tables;
-**Compartments** — epidemic stages (`S` … `D`); **Particles** —
-stochastic replicates (`1` with the default single particle; larger when
-`n_particles > 1`); **Samples** — parallel parameter groups (`1` with a
-single-row `pars`; larger when `pars` has multiple matrix rows,
-e.g. posterior draws).
-
-In **`output$prevalence`** and **`output$incidence`** (both
-`data.table`s):
-
-- **`time`** — model day.
-- **`age`** — age stratum (`age_1`, …).
-- **`compartment`** — `S`, `E`, `C`, `H`, `R`, or `D`.
-- **`vax`** — `TRUE` / `FALSE` for vaccinated vs unvaccinated strata.
-- **`value`** — count in that stratum (or flow for incidence).
-- **`sample`** — present when `pars` is a matrix with **multiple rows**
-  (parallel draws); indexes the row of `pars`.
-- **`particle`** — present when `n_particles > 1`.
+**`print()`** summarises: **Time** (day range), **Age categories**
+(factor levels in the tables), **Compartments** (`S`–`D`), **Particles**
+(stochastic replicates; `1` with the default single particle), and
+**Samples** (parallel `pars` rows; `1` when `pars` has a single row).
+Detailed trajectories are in `output$prevalence` and `output$incidence`
+(see **Accessing outputs**).
 
 ### Visualising outputs
 
-To visualise the results, use the generic `plot` function defined for
-the `simex` class. Below, we first visualise prevalence and then
-incidence, specified using the `what` argument.
+To visualise the results, use the generic `plot()` method for the
+`simex` class. Below we visualise prevalence and then incidence via the
+`what` argument.
 
 ``` r
 # visualise prevalence
@@ -174,11 +158,11 @@ plot(output, what = "incidence")
 
 <img src="man/figures/unnamed-chunk-6-2.png" alt="" width="75%" style="display: block; margin: auto;" />
 
-Hospital capacity can be displayed by toggling the `show_hosp_capacity`
-argument.
+Hospital capacity can be displayed with `show_hosp_capacity = TRUE` when
+`what = "prevalence"`.
 
 ``` r
-# visualise prevalence with hospital capaciy
+# visualise prevalence with hospital capacity
 plot(output, what = "prevalence", show_hosp_capacity = TRUE)
 ```
 
@@ -186,17 +170,23 @@ plot(output, what = "prevalence", show_hosp_capacity = TRUE)
 
 ### Accessing outputs
 
-Objects returned by `run_simex()` have class `simex` and contain:
+Objects of class `simex` contain **`prevalence`** and **`incidence`**:
+long-format `data.table`s with these columns:
 
-- **`prevalence`** — long-format `data.table` (see column definitions
-  above).
-- **`incidence`** — same layout; **`value`** is the daily flow into each
-  compartment (see `?extract` for interpretation by letter).
-- **`pars`** — the `pars` object passed into `run_simex()` (often a
-  matrix of lists when using time-varying or multi-row input).
+- **`time`** — model day.
+- **`age`** — age stratum (`age_1`, …).
+- **`compartment`** — `S`, `E`, `C`, `H`, `R`, or `D`.
+- **`vax`** — logical (`TRUE` / `FALSE`), vaccinated vs unvaccinated
+  strata.
+- **`value`** — count in that stratum (or daily flow for `incidence`).
+- **`sample`** — present when `pars` has multiple matrix rows; indexes
+  the row of `pars`.
+- **`particle`** — present when `n_particles > 1`.
 
-Subset and aggregate with **`data.table`** syntax on `output$prevalence`
-or `output$incidence`:
+The **`pars`** object passed into `run_simex()` is stored as
+**`output$pars`**.
+
+Subset and aggregate with **`data.table`** syntax:
 
 ``` r
 # one day, one compartment, unvaccinated susceptible only
@@ -205,22 +195,22 @@ output$prevalence[time == 150L & compartment == "S" & !vax]
 
            age compartment    vax  time value
         <fctr>      <fctr> <lgcl> <int> <num>
-     1:  age_1           S  FALSE   150  2548
-     2:  age_2           S  FALSE   150   438
-     3:  age_3           S  FALSE   150   338
-     4:  age_4           S  FALSE   150   505
-     5:  age_5           S  FALSE   150  1075
-     6:  age_6           S  FALSE   150  1074
-     7:  age_7           S  FALSE   150   993
-     8:  age_8           S  FALSE   150   888
-     9:  age_9           S  FALSE   150   657
-    10: age_10           S  FALSE   150   588
-    11: age_11           S  FALSE   150   513
-    12: age_12           S  FALSE   150   457
-    13: age_13           S  FALSE   150   479
-    14: age_14           S  FALSE   150   582
-    15: age_15           S  FALSE   150   419
-    16: age_16           S  FALSE   150   627
+     1:  age_1           S  FALSE   150  2632
+     2:  age_2           S  FALSE   150   517
+     3:  age_3           S  FALSE   150   366
+     4:  age_4           S  FALSE   150   491
+     5:  age_5           S  FALSE   150  1166
+     6:  age_6           S  FALSE   150  1077
+     7:  age_7           S  FALSE   150  1021
+     8:  age_8           S  FALSE   150   890
+     9:  age_9           S  FALSE   150   604
+    10: age_10           S  FALSE   150   609
+    11: age_11           S  FALSE   150   520
+    12: age_12           S  FALSE   150   469
+    13: age_13           S  FALSE   150   516
+    14: age_14           S  FALSE   150   598
+    15: age_15           S  FALSE   150   425
+    16: age_16           S  FALSE   150   630
 
 ``` r
 # all strata between days 10 and 20 (inclusive)
@@ -229,11 +219,11 @@ output$prevalence[time %between% c(10L, 20L)]
 
              age compartment    vax  time value
           <fctr>      <fctr> <lgcl> <int> <num>
-       1:  age_1           S  FALSE    10 15452
-       2:  age_2           S  FALSE    10 14013
-       3:  age_3           S  FALSE    10 12343
-       4:  age_4           S  FALSE    10 10776
-       5:  age_5           S  FALSE    10  9069
+       1:  age_1           S  FALSE    10 15453
+       2:  age_2           S  FALSE    10 14015
+       3:  age_3           S  FALSE    10 12345
+       4:  age_4           S  FALSE    10 10777
+       5:  age_5           S  FALSE    10  9068
       ---                                      
     2108: age_12           D   TRUE    20     0
     2109: age_13           D   TRUE    20     0
@@ -259,41 +249,36 @@ output$prevalence[
       5:     3  FALSE            0
      ---                          
     396:   198   TRUE            0
-    397:   199  FALSE           10
+    397:   199  FALSE           18
     398:   199   TRUE            0
-    399:   200  FALSE           10
+    399:   200  FALSE           18
     400:   200   TRUE            0
 
-The **`extract()`** helper is still available for convenience
-(e.g. credible intervals when `sample` or `particle` are present); for
-simple shaping, prefer **`data.table`** on the stored tables as above.
+The **`extract()`** helper remains available (e.g. credible intervals
+when `sample` or `particle` are present); for simple shaping, prefer
+**`data.table`** as above.
 
 ### Modelling a single intervention
 
-We consider vaccination as an example intervention, using the `vax_rate`
-argument to specify the number of doses per day.
+Vaccination is controlled with **`vax_rate`** (doses per day, not a
+proportion of the population).
 
 ``` r
-# define vaccination rate (doses per day)
+# vaccination rate: doses per day
 pars <- get_parameters(vax_rate = 100)
 
-# run model
 output <- run_simex(pars, time = 1:200)
 
-# visualise prevalence
-plot(output)
+plot(output, what = "prevalence")
 ```
 
 <img src="man/figures/unnamed-chunk-11-1.png" alt="" width="75%" style="display: block; margin: auto;" />
 
-We can see that the daily increase in number of vaccinated individuals,
-as well as the impact on infection and disease severity.
-
 ### Timed interventions (single system, parameters change over time)
 
-Below, **one** epidemic is simulated with isolation adherence stepping
-to `0.5` from day 75. This uses a **named list** of parameter lists; a
-**one-row matrix** with column names `c("1", "75")` would be equivalent.
+One epidemic with isolation adherence stepping to `0.5` from day 75,
+using a **named list** of parameter lists (equivalent to a **one-row
+matrix** with column names `c("1", "75")`).
 
 ``` r
 pars_timed <- list(
@@ -310,13 +295,9 @@ plot(output_timed, what = "prevalence")
 
 ### Comparing different scenarios (separate runs)
 
-Here we simulate **two different scenarios** as **two calls** to
-`run_simex()` and collect two `simex` objects. That differs from a
-multi-column `pars` matrix, which varies parameters over time for
-**one** scenario with parallel draws across rows.
-
-`vis_comparison()` takes a **named list** of `simex` objects (one per
-scenario).
+Two **different** scenarios require two **`run_simex()`** calls, not a
+multi-row `pars` matrix (which is parallel draws for **one** schedule).
+Pass a **named list** of `simex` objects to **`vis_comparison()`**.
 
 ``` r
 scenario_pars <- list(
@@ -334,11 +315,10 @@ vis_comparison(outputs)
 
 <img src="man/figures/unnamed-chunk-13-1.png" alt="" width="75%" style="display: block; margin: auto;" />
 
-The same idea works with **`purrr::map()`** if you prefer a tidyverse
-style,
-e.g. `purrr::map(scenario_pars, \(p) run_simex(p, time = 1:200))`.
+The same pattern works with **`purrr::map()`**, e.g.
+`purrr::map(scenario_pars, \(p) run_simex(p, time = 1:200))`.
 
-## \### Contributors
+## Contributors
 
 - [Finlay Campbell](https://github.com/finlaycampbell)
   (<campbellf@who.int>)
@@ -346,7 +326,7 @@ e.g. `purrr::map(scenario_pars, \(p) run_simex(p, time = 1:200))`.
 
 **Maintainer:** Finlay Campbell
 
-### Licensing
+## Licensing
 
 The simex software is made available by Collaboratory (2024) under an
 [MIT license](LICENSE.md) ([citation file](CITATION.cff)).
