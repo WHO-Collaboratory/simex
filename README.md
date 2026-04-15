@@ -142,22 +142,22 @@ output$prevalence[time == 150L & compartment == "S" & !vax]
 ```
        age compartment    vax  time value
     <fctr>      <fctr> <lgcl> <int> <num>
- 1:  age_1           S  FALSE   150  2398
- 2:  age_2           S  FALSE   150   444
- 3:  age_3           S  FALSE   150   326
- 4:  age_4           S  FALSE   150   501
- 5:  age_5           S  FALSE   150  1027
- 6:  age_6           S  FALSE   150  1036
- 7:  age_7           S  FALSE   150  1005
- 8:  age_8           S  FALSE   150   763
- 9:  age_9           S  FALSE   150   596
-10: age_10           S  FALSE   150   578
-11: age_11           S  FALSE   150   488
-12: age_12           S  FALSE   150   437
-13: age_13           S  FALSE   150   491
-14: age_14           S  FALSE   150   576
-15: age_15           S  FALSE   150   426
-16: age_16           S  FALSE   150   623
+ 1:  age_1           S  FALSE   150  2431
+ 2:  age_2           S  FALSE   150   486
+ 3:  age_3           S  FALSE   150   279
+ 4:  age_4           S  FALSE   150   477
+ 5:  age_5           S  FALSE   150  1101
+ 6:  age_6           S  FALSE   150  1030
+ 7:  age_7           S  FALSE   150   956
+ 8:  age_8           S  FALSE   150   808
+ 9:  age_9           S  FALSE   150   579
+10: age_10           S  FALSE   150   579
+11: age_11           S  FALSE   150   416
+12: age_12           S  FALSE   150   474
+13: age_13           S  FALSE   150   496
+14: age_14           S  FALSE   150   552
+15: age_15           S  FALSE   150   429
+16: age_16           S  FALSE   150   632
 ```
 
 
@@ -169,11 +169,11 @@ output$prevalence[time %between% c(10L, 20L)]
 ```
          age compartment    vax  time value
       <fctr>      <fctr> <lgcl> <int> <num>
-   1:  age_1           S  FALSE    10 15452
-   2:  age_2           S  FALSE    10 14013
-   3:  age_3           S  FALSE    10 12342
-   4:  age_4           S  FALSE    10 10777
-   5:  age_5           S  FALSE    10  9070
+   1:  age_1           S  FALSE    10 15455
+   2:  age_2           S  FALSE    10 14012
+   3:  age_3           S  FALSE    10 12344
+   4:  age_4           S  FALSE    10 10778
+   5:  age_5           S  FALSE    10  9067
   ---                                      
 2108: age_12           D   TRUE    20     0
 2109: age_13           D   TRUE    20     0
@@ -185,7 +185,6 @@ output$prevalence[time %between% c(10L, 20L)]
 The **`extract()`** helper remains available (e.g. credible intervals when
 `sample` or `particle` are present); for simple shaping, prefer **`data.table`**
 as above.
-
 ```
 
 ### Passing parameters to `simex`
