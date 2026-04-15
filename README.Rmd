@@ -3,7 +3,7 @@
 
 [![MIT license](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE.md) [![Lifecycle: maturing](https://img.shields.io/badge/lifecycle-maturing-blue.svg)](https://lifecycle.r-lib.org/articles/stages.html#maturing)
 
-*simex* is an R package for simulating the spread of infectious diseases, as well as interventions such as social distancing measures, isolation and vaccination. It uses an age-structured SEIR compartmental model with country-specific age demographics and contact rates. The simplest way to interact with the tool is to use the [Shiny App](https://portal.who.int/eios-colab/rconnect/simex).
+*simex* is an R package for simulating the spread of infectious diseases, as well as interventions such as social distancing measures, isolation and vaccination. It uses an age-structured SEIR compartmental model with country-specific age demographics and contact rates.
 
 The transmission model is written in the [**odin DSL**](https://mrc-ide.github.io/odin2/) in [`inst/odin/simex.R`](inst/odin/simex.R). That specification is compiled with [**dust2**](https://mrc-ide.github.io/dust2/) to C++ for fast discrete-time simulation (see the generated sources under `src/`). The main R entry point that uses this backend is `run_simex()`.
 
@@ -58,50 +58,22 @@ default values are summarised below:
 
 ```{r, echo = FALSE, message = FALSE, warning = FALSE}
 simex:::get_arg_table("get_parameters", type = "kable")
-```
-
-### Passing parameters to `run_simex()`
-
-`run_simex()` accepts `pars` in three equivalent shapes. In each case you are
-simulating **one** underlying system; only the layout of inputs differs.
-
-1. **Single list from `get_parameters()`** — the same parameter values apply for
-   the whole simulation (internally coerced to a one-column matrix keyed by
-   `min(time)` from the `time` argument).
-
-2. **Named list of parameter lists** — names must be **numeric strings** giving
-   the **first model day** each parameter set applies from (e.g. `"1"`, `"75"`).
-   One name must match the start of the simulated period (usually `"1"`).
-
-3. **Matrix of lists** — **columns** are the same time breaks as in (2); **rows**
-   are **parallel runs** (e.g. posterior draws). Outputs include a **`sample`**
-   column indexing the matrix row; with `n_particles > 1`, a **`particle`**
-   column indexes stochastic replicates.
-
-For **different scenarios**, call **`run_simex()` separately** for each,
-collect `simex` objects in a list, and pass it to **`vis_comparison()`** (e.g.
-`lapply(list_of_par_lists, run_simex, time = 1:200)` or
-`purrr::map(list_of_par_lists, \(p) run_simex(p, time = 1:200))`).
 
 ### Running default settings
 
 Pass the list from `get_parameters()` to `run_simex()` and set `time` to the
-integer days you want (inclusive).
+integer days you want the simulation to run.
 
 ```{r, echo = TRUE}
 # set parameters using defaults
 pars <- get_parameters()
 
-# run odin/dust2 model (example: days 1–200)
+# run odin/dust2 model
 output <- run_simex(pars, time = 1:200)
 
 # look at output
 print(output)
 ```
-
-**`print()`** summarises **Time**, **Age categories**, **Compartments**
-(`S`–`D`), **Particles** (default `1`), and **Samples** (default `1` when
-`pars` has one row). See **Accessing outputs** for table columns.
 
 ### Visualising outputs
 
@@ -116,12 +88,6 @@ plot(output, what = "prevalence")
 plot(output, what = "incidence")
 ```
 
-Hospital capacity (when `what = "prevalence"`):
-
-```{r, echo = TRUE}
-plot(output, what = "prevalence", show_hosp_capacity = TRUE)
-```
-
 ### Accessing outputs
 
 Objects of class `simex` contain **`prevalence`** and **`incidence`**: long-format
@@ -132,10 +98,8 @@ Objects of class `simex` contain **`prevalence`** and **`incidence`**: long-form
 * **`compartment`** — model compartment: `S`, `E`, `C`, `H`, `R`, or `D`.
 * **`vax`** — logical indicating vaccination status.
 * **`value`** — number of individuals.
-* **`sample`** — present when `pars` has multiple matrix rows; indexes the row
-  of `pars`.
-* **`particle`** — present when `n_particles > 1`; indexes stochastic
-  replicates.
+* **`sample`** — indexes the row of `pars`
+* **`particle`** — indexes the repeated stochastic simulations
 
 The **`pars`** object passed into `run_simex()` is stored as **`output$pars`**.
 
@@ -151,18 +115,27 @@ output$prevalence[time == 150L & compartment == "S" & !vax]
 output$prevalence[time %between% c(10L, 20L)]
 ```
 
-```{r, echo = TRUE}
-# total in hospital by day and vaccination status
-output$prevalence[
-  compartment == "H",
-  .(hospitalised = sum(value)),
-  by = .(time, vax)
-]
-```
-
 The **`extract()`** helper remains available (e.g. credible intervals when
 `sample` or `particle` are present); for simple shaping, prefer **`data.table`**
 as above.
+
+```
+
+### Passing parameters to `simex`
+
+`run_simex()` accepts `pars` in three formats.
+
+1. **Single list from `get_parameters()`** — the same parameter values apply for
+   the whole simulation.
+
+2. **Named list of parameters** — names must be **numeric strings** giving
+   the **first model day** each parameter set applies from.
+
+3. **Matrix of parameters** — **columns** represent the time breaks as in
+   (2). **Rows** are **parallel runs** of the system with different
+   parameter values, for example when simulating across a posterior
+   distribution of parameters values.
+
 
 ### Modelling a single intervention
 
@@ -214,9 +187,6 @@ outputs <- lapply(scenario_pars, run_simex, time = 1:200)
 
 vis_comparison(outputs)
 ```
-
-The same pattern works with **`purrr::map()`**, e.g.
-`purrr::map(scenario_pars, \(p) run_simex(p, time = 1:200))`.
 
 ## Contributors
 
