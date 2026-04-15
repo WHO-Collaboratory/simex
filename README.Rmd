@@ -119,9 +119,8 @@ output$prevalence[time %between% c(10L, 20L)]
 The **`extract()`** helper remains available (e.g. credible intervals when
 `sample` or `particle` are present); for simple shaping, prefer **`data.table`**
 as above.
-```
 
-### Passing parameters to `simex`
+### Passing parameters to **run_simex()**
 
 `run_simex()` accepts `pars` in three formats.
 
