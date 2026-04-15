@@ -153,8 +153,7 @@ plot(output, what = "prevalence")
 ### Timed interventions (single system, parameters change over time)
 
 One epidemic with isolation adherence stepping to `0.5` from day 75, using a
-**named list** of parameter lists (equivalent to a **one-row matrix** with
-column names `c("1", "75")`).
+**named list** of parameters.
 
 ```{r, echo = TRUE}
 pars_timed <- list(
@@ -169,8 +168,7 @@ plot(output_timed, what = "prevalence")
 
 ### Comparing different scenarios (separate runs)
 
-Two **different** scenarios require two **`run_simex()`** calls, not a
-multi-row `pars` matrix. Pass a **named list** of `simex` objects to
+Two **different** scenarios require two **`run_simex()`** calls. Pass a **named list** of `simex` objects to
 **`vis_comparison()`**.
 
 ```{r, echo = TRUE}
