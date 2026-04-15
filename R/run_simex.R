@@ -27,14 +27,19 @@ run_simex <- function(pars,
 
   # convert into parameter matrix where rows represent parallel
   # parameter sets (e.g. posterior draws) and columns represent
-  # parameter sets applied to the same system over time.
+  # parameter sets applied to the same system over time. when a list
+  # is provided, assume the latter.
   if (is.null(dim(pars)) && length(pars) == length(get_parameters())) {
     pars <- matrix(list(pars), dimnames = list(NULL, min(time)))
   } else if (is.null(dim(pars))) {
-    pars <- matrix(pars, dimnames = list(NULL, min(time)))
+    if (is.null(names(pars))) stop("breaks must be provided as list names to pars")
+    pars <- matrix(pars, dimnames = list(NULL, names(pars)), nrow = 1)
   } else if (is.matrix(pars)) {
-    if (is.null(dimnames(pars)[[2]]))
-      stop("breaks must be provided as column names to pars")
+    if (is.null(dimnames(pars)[[2]])) {
+      # if 1 column provided, assume starting time is 1
+      if (dim(pars)[2] == 1) dimnames(pars)[[2]] <- "1"
+      else stop("breaks must be provided as column names to pars")
+    }
   }
 
   breaks <- c(as.numeric(dimnames(pars)[[2]]), max(time))
@@ -70,9 +75,10 @@ run_simex <- function(pars,
   dims <- c("state", "particle", "sample", "time")
   if (n_particles == 1) dims <- setdiff(dims, "particle")
   if (nrow(pars) == 1) dims <- setdiff(dims, "sample")
+  sample <- if (is.null(dimnames(pars)[[1]])) seq_len(dim(pars)[1]) else dimnames(pars)[[1]]
 
   # convert to simex and return
-  as.simex(sim, sys, pars, dims = dims, time = time)
+  as.simex(sim, sys, pars, dims = dims, time = time, sample = sample)
 
 }
 

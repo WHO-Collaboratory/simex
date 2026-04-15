@@ -62,7 +62,7 @@ documentation):
 | hosp_mortality | The probability of death given a case is admitted to hospital, either as a single value or as a vector of the same length as the number of age categories. The inverse of the number of cases admitted to hospital per death. | 1/seq(20, 5, length = 16) |
 | hosp_protection_death | Given a case requires hospitalisation, the proportion of deaths admission to hospital averts. | 0.75 |
 | hosp_duration | The mean duration of stay in the hospital in days, either as a single value or as a vector of the same length as the number of age categories. | seq(7, 21, length = 16) |
-| hosp_capacity | Total hospital bed capacity given as a proportion of the population. | 0.0025 |
+| hosp_capacity | Total hospital bed capacity given as a proportion of the population. | 100 |
 | comm_mortality | The probability of death of cases that remain in the community, either as a single value or as a vector of the same length as the number of age categories. | rep(0, 16) |
 | vax_rate | Number of vaccine doses administered per day (absolute count, not a proportion of the population). | 0 |
 | vax_infectiousness | The reduction (as a proportion) in infectioussness of an individual due to vaccination. | 0.3 |
@@ -78,11 +78,42 @@ documentation):
 | vax_prioritised | A logical indicating whether older age groups are vaccinated first. | TRUE |
 | hosp_prioritised | A logical indicating whether older age groups are hospitalised first when hospital capacity is exceeded. | TRUE |
 
+### Passing parameters to `run_simex()`
+
+`run_simex()` accepts `pars` in three equivalent shapes. In each case
+you are simulating **one** underlying system (one epidemic process);
+only the layout of inputs differs.
+
+1.  **Single list from `get_parameters()`** — the same parameter values
+    apply for the whole simulation. Internally this is turned into a
+    one-column matrix whose column name is the first time in `time`.
+
+2.  **Named list of parameter lists** — names must be **numeric
+    strings** giving the **first model day** each parameter set applies
+    from (e.g. `"1"`, `"75"`). The list is coerced to a one-row matrix
+    with those names as column names. One name must correspond to the
+    start of the simulation (typically `"1"`).
+
+3.  **Matrix of lists** — **columns** are the same time breaks as in
+    (2): each column is one parameter list for that segment. **Rows**
+    are **parallel runs** of the same calendar schedule (e.g. rows =
+    posterior draws). The simulator uses `dust2` groups so each row is
+    independent; outputs then include a **`sample`** column indexing the
+    row (parallel draw). With `n_particles > 1` you also get a
+    **`particle`** column for stochastic replicates within each run.
+
+To compare **different scenarios as different models** (e.g. “no
+vaccine” vs “high vaccine”), run **`run_simex()` separately** for each
+scenario and collect the `simex` objects in a list, then pass that list
+to `vis_comparison()`. For example:
+`lapply(list_of_par_lists, run_simex, time = 1:200)` or, with
+**`purrr`**,
+`purrr::map(list_of_par_lists, \(p) run_simex(p, time = 1:200))`.
+
 ### Running default settings
 
-To run the model using default settings, pass the list from
-`get_parameters()` to `run_simex()` and set `time` to the integer days
-you want (inclusive).
+Pass the list from `get_parameters()` to `run_simex()` and set `time` to
+the integer days you want (inclusive).
 
 ``` r
 # set parameters using defaults
@@ -100,8 +131,28 @@ print(output)
      - Time: 1 to 200
      - Age Categories: age_1 to age_16
      - Compartments: S | E | C | H | R | D
-     - Particles: 0
-     - Samples: 0
+     - Particles: 1
+     - Samples: 1
+
+The **`print()`** summary lines mean: **Time** — range of simulated
+days; **Age categories** — factor levels in the output tables;
+**Compartments** — epidemic stages (`S` … `D`); **Particles** —
+stochastic replicates (`1` with the default single particle; larger when
+`n_particles > 1`); **Samples** — parallel parameter groups (`1` with a
+single-row `pars`; larger when `pars` has multiple matrix rows,
+e.g. posterior draws).
+
+In **`output$prevalence`** and **`output$incidence`** (both
+`data.table`s):
+
+- **`time`** — model day.
+- **`age`** — age stratum (`age_1`, …).
+- **`compartment`** — `S`, `E`, `C`, `H`, `R`, or `D`.
+- **`vax`** — `TRUE` / `FALSE` for vaccinated vs unvaccinated strata.
+- **`value`** — count in that stratum (or flow for incidence).
+- **`sample`** — present when `pars` is a matrix with **multiple rows**
+  (parallel draws); indexes the row of `pars`.
+- **`particle`** — present when `n_particles > 1`.
 
 ### Visualising outputs
 
@@ -135,77 +186,53 @@ plot(output, what = "prevalence", show_hosp_capacity = TRUE)
 
 ### Accessing outputs
 
-Objects returned by `run_simex()` have class `simex` and are a list with
-at least:
+Objects returned by `run_simex()` have class `simex` and contain:
 
-- `prevalence` — long-format `data.table` with columns including `time`,
-  `age`, `compartment` (`S`, `E`, `C`, `H`, `R`, `D`), `vax`, and
-  `value`. Stochastic runs add `particle` and/or `sample` when relevant.
-- `incidence` — same layout for daily flows into each stage (see
-  `?extract`).
-- `pars` — parameter object(s) passed into `run_simex()`.
+- **`prevalence`** — long-format `data.table` (see column definitions
+  above).
+- **`incidence`** — same layout; **`value`** is the daily flow into each
+  compartment (see `?extract` for interpretation by letter).
+- **`pars`** — the `pars` object passed into `run_simex()` (often a
+  matrix of lists when using time-varying or multi-row input).
 
-Example: prevalence on day 150 for unvaccinated susceptibles:
+Subset and aggregate with **`data.table`** syntax on `output$prevalence`
+or `output$incidence`:
 
 ``` r
-subset(output$prevalence, time == 150 & compartment == "S" & vax == FALSE)
+# one day, one compartment, unvaccinated susceptible only
+output$prevalence[time == 150L & compartment == "S" & !vax]
 ```
 
            age compartment    vax  time value
         <fctr>      <fctr> <lgcl> <int> <num>
-     1:  age_1           S  FALSE   150  2493
-     2:  age_2           S  FALSE   150   421
-     3:  age_3           S  FALSE   150   326
-     4:  age_4           S  FALSE   150   455
-     5:  age_5           S  FALSE   150  1092
-     6:  age_6           S  FALSE   150  1029
-     7:  age_7           S  FALSE   150   931
-     8:  age_8           S  FALSE   150   877
-     9:  age_9           S  FALSE   150   619
-    10: age_10           S  FALSE   150   574
-    11: age_11           S  FALSE   150   444
-    12: age_12           S  FALSE   150   475
-    13: age_13           S  FALSE   150   503
-    14: age_14           S  FALSE   150   554
-    15: age_15           S  FALSE   150   424
-    16: age_16           S  FALSE   150   610
-
-Use `extract()` to aggregate over dimensions:
+     1:  age_1           S  FALSE   150  2548
+     2:  age_2           S  FALSE   150   438
+     3:  age_3           S  FALSE   150   338
+     4:  age_4           S  FALSE   150   505
+     5:  age_5           S  FALSE   150  1075
+     6:  age_6           S  FALSE   150  1074
+     7:  age_7           S  FALSE   150   993
+     8:  age_8           S  FALSE   150   888
+     9:  age_9           S  FALSE   150   657
+    10: age_10           S  FALSE   150   588
+    11: age_11           S  FALSE   150   513
+    12: age_12           S  FALSE   150   457
+    13: age_13           S  FALSE   150   479
+    14: age_14           S  FALSE   150   582
+    15: age_15           S  FALSE   150   419
+    16: age_16           S  FALSE   150   627
 
 ``` r
-# long-form prevalence (default stratification)
-extract(output, what = "prevalence")
-```
-
-              age compartment    vax  time value
-           <fctr>      <fctr> <lgcl> <int> <num>
-        1:  age_1           S  FALSE     1 15455
-        2:  age_2           S  FALSE     1 14015
-        3:  age_3           S  FALSE     1 12346
-        4:  age_4           S  FALSE     1 10778
-        5:  age_5           S  FALSE     1  9069
-       ---                                      
-    38396: age_12           D   TRUE   200     0
-    38397: age_13           D   TRUE   200     0
-    38398: age_14           D   TRUE   200     0
-    38399: age_15           D   TRUE   200     0
-    38400: age_16           D   TRUE   200     0
-
-``` r
-# restrict to a band of days
-days_from <- 10
-days_to <- 20
-df <- extract(output, what = "prevalence")
-df <- df[df$time %in% seq(days_from, days_to), ]
-df
+# all strata between days 10 and 20 (inclusive)
+output$prevalence[time %between% c(10L, 20L)]
 ```
 
              age compartment    vax  time value
           <fctr>      <fctr> <lgcl> <int> <num>
-       1:  age_1           S  FALSE    10 15454
-       2:  age_2           S  FALSE    10 14015
-       3:  age_3           S  FALSE    10 12346
-       4:  age_4           S  FALSE    10 10778
+       1:  age_1           S  FALSE    10 15452
+       2:  age_2           S  FALSE    10 14013
+       3:  age_3           S  FALSE    10 12343
+       4:  age_4           S  FALSE    10 10776
        5:  age_5           S  FALSE    10  9069
       ---                                      
     2108: age_12           D   TRUE    20     0
@@ -214,11 +241,37 @@ df
     2111: age_15           D   TRUE    20     0
     2112: age_16           D   TRUE    20     0
 
+``` r
+# total in hospital by day and vaccination status
+output$prevalence[
+  compartment == "H",
+  .(hospitalised = sum(value)),
+  by = .(time, vax)
+]
+```
+
+          time    vax hospitalised
+         <int> <lgcl>        <num>
+      1:     1  FALSE            0
+      2:     1   TRUE            0
+      3:     2  FALSE            0
+      4:     2   TRUE            0
+      5:     3  FALSE            0
+     ---                          
+    396:   198   TRUE            0
+    397:   199  FALSE           10
+    398:   199   TRUE            0
+    399:   200  FALSE           10
+    400:   200   TRUE            0
+
+The **`extract()`** helper is still available for convenience
+(e.g. credible intervals when `sample` or `particle` are present); for
+simple shaping, prefer **`data.table`** on the stored tables as above.
+
 ### Modelling a single intervention
 
-We use vaccination as an example intervention. The `vax_rate` argument
-is the number of doses per day (not a proportion of the population);
-here we use 100 doses per day.
+We consider vaccination as an example intervention, using the `vax_rate`
+argument to specify the number of doses per day.
 
 ``` r
 # define vaccination rate (doses per day)
@@ -236,58 +289,54 @@ plot(output)
 We can see that the daily increase in number of vaccinated individuals,
 as well as the impact on infection and disease severity.
 
-### Timed interventions, multiple interventions
+### Timed interventions (single system, parameters change over time)
 
-To change parameters part-way through a run, pass a one-row **matrix**
-of parameter lists whose **column names** are the first model day each
-block applies to (one column must start on day 1, matching the Shiny
-app). Below, isolation adherence becomes 0.5 from day 75 onward.
+Below, **one** epidemic is simulated with isolation adherence stepping
+to `0.5` from day 75. This uses a **named list** of parameter lists; a
+**one-row matrix** with column names `c("1", "75")` would be equivalent.
 
 ``` r
-# column names = first day each parameter set applies
-parlist <- matrix(
-  c(list(get_parameters()), list(get_parameters(isolation_adherence = 0.5))),
-  nrow = 1,
-  dimnames = list(NULL, c("1", "75"))
+pars_timed <- list(
+  "1" = get_parameters(),
+  "75" = get_parameters(isolation_adherence = 0.5)
 )
 
-output <- run_simex(parlist, time = 1:200)
+output_timed <- run_simex(pars_timed, time = 1:200)
 
-# visualise prevalence
-plot(output)
+plot(output_timed, what = "prevalence")
 ```
 
 <img src="man/figures/unnamed-chunk-12-1.png" alt="" width="75%" style="display: block; margin: auto;" />
 
-Comparing this figure with the first model run with no interventions
-shows a clear reduction in severe outcomes when isolation is introduced
-mid-outbreak.
+### Comparing different scenarios (separate runs)
 
-### Comparing scenarios
+Here we simulate **two different scenarios** as **two calls** to
+`run_simex()` and collect two `simex` objects. That differs from a
+multi-column `pars` matrix, which varies parameters over time for
+**one** scenario with parallel draws across rows.
 
-It is useful to directly compare different scenarios visually. The
-`vis_comparison()` function accepts a named list of `simex` objects. In
-the example below, the default scenario is compared with isolation from
-day 75.
+`vis_comparison()` takes a **named list** of `simex` objects (one per
+scenario).
 
 ``` r
-# define two scenarios, one without intervention and one with isolation
-parlists <- list(
+scenario_pars <- list(
   "No intervention" = get_parameters(),
-  "Isolation on day 75" = matrix(
-    c(list(get_parameters()), list(get_parameters(isolation_adherence = 0.5))),
-    nrow = 1,
-    dimnames = list(NULL, c("1", "75"))
+  "Isolation from day 75" = list(
+    "1" = get_parameters(),
+    "75" = get_parameters(isolation_adherence = 0.5)
   )
 )
 
-outputs <- lapply(parlists, run_simex, time = 1:200)
+outputs <- lapply(scenario_pars, run_simex, time = 1:200)
 
-# compare scenarios
 vis_comparison(outputs)
 ```
 
 <img src="man/figures/unnamed-chunk-13-1.png" alt="" width="75%" style="display: block; margin: auto;" />
+
+The same idea works with **`purrr::map()`** if you prefer a tidyverse
+style,
+e.g. `purrr::map(scenario_pars, \(p) run_simex(p, time = 1:200))`.
 
 ## \### Contributors
 

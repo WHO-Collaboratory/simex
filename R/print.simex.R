@@ -17,8 +17,8 @@ print.simex <- function(simex) {
   cat("\n - Time:", paste(min(times), "to", max(times)))
   cat("\n - Age Categories:", paste(ages[1], "to", ages[length(ages)]))
   cat("\n - Compartments:", paste0(levels(simex$incidence$compartment), collapse = " | "))
-  cat("\n - Particles:", particles)
-  cat("\n - Samples:", samples)
+  cat("\n - Particles:", ifelse(particles == 0, 1, particles))
+  cat("\n - Samples:", ifelse(samples == 0, 1, samples))
 
   cat("\n")
   cat("\n")
