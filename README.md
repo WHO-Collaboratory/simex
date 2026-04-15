@@ -18,7 +18,7 @@ To install the development version from GitHub:
 
 
 ``` r
-remotes::install_github("WHO-Collaboratory/simex")
+pak::pak("WHO-Collaboratory/simex@odin")
 ```
 
 Load the package using:
@@ -142,22 +142,22 @@ output$prevalence[time == 150L & compartment == "S" & !vax]
 ```
        age compartment    vax  time value
     <fctr>      <fctr> <lgcl> <int> <num>
- 1:  age_1           S  FALSE   150  2588
- 2:  age_2           S  FALSE   150   454
- 3:  age_3           S  FALSE   150   358
- 4:  age_4           S  FALSE   150   512
- 5:  age_5           S  FALSE   150  1121
- 6:  age_6           S  FALSE   150  1076
- 7:  age_7           S  FALSE   150   957
- 8:  age_8           S  FALSE   150   843
- 9:  age_9           S  FALSE   150   699
-10: age_10           S  FALSE   150   601
-11: age_11           S  FALSE   150   492
-12: age_12           S  FALSE   150   479
-13: age_13           S  FALSE   150   533
-14: age_14           S  FALSE   150   587
-15: age_15           S  FALSE   150   427
-16: age_16           S  FALSE   150   624
+ 1:  age_1           S  FALSE   150  2413
+ 2:  age_2           S  FALSE   150   405
+ 3:  age_3           S  FALSE   150   307
+ 4:  age_4           S  FALSE   150   442
+ 5:  age_5           S  FALSE   150  1007
+ 6:  age_6           S  FALSE   150  1039
+ 7:  age_7           S  FALSE   150   964
+ 8:  age_8           S  FALSE   150   789
+ 9:  age_9           S  FALSE   150   586
+10: age_10           S  FALSE   150   547
+11: age_11           S  FALSE   150   460
+12: age_12           S  FALSE   150   437
+13: age_13           S  FALSE   150   509
+14: age_14           S  FALSE   150   562
+15: age_15           S  FALSE   150   407
+16: age_16           S  FALSE   150   609
 ```
 
 
@@ -170,10 +170,10 @@ output$prevalence[time %between% c(10L, 20L)]
          age compartment    vax  time value
       <fctr>      <fctr> <lgcl> <int> <num>
    1:  age_1           S  FALSE    10 15454
-   2:  age_2           S  FALSE    10 14012
+   2:  age_2           S  FALSE    10 14009
    3:  age_3           S  FALSE    10 12344
    4:  age_4           S  FALSE    10 10778
-   5:  age_5           S  FALSE    10  9070
+   5:  age_5           S  FALSE    10  9068
   ---                                      
 2108: age_12           D   TRUE    20     0
 2109: age_13           D   TRUE    20     0

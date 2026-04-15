@@ -35,7 +35,7 @@ Installation
 To install the development version from GitHub:
 
 ```{r, eval = FALSE}
-remotes::install_github("WHO-Collaboratory/simex")
+pak::pak("WHO-Collaboratory/simex@odin")
 ```
 
 Load the package using:
