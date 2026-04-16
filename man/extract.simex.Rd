@@ -15,7 +15,7 @@
 )
 }
 \arguments{
-\item{simex}{A simex object returned by \code{run_model}.}
+\item{simex}{A simex object returned by \code{\link[=run_simex]{run_simex()}} (odin/dust2 backend).}
 
 \item{what}{What to plot: one of "prevalence" (number in each category per
 day), "deltas" (change in prevalence from one day to the next) and
@@ -25,6 +25,9 @@ day), "deltas" (change in prevalence from one day to the next) and
 
 \item{cri_alpha}{Width of the central credible interval (e.g. \code{0.75} for
 the 12.5\% to 87.5\% quantile band).}
+
+\item{filter}{Named list of column filters, e.g.
+\code{list(compartment = c("E", "C"))}, applied before aggregation.}
 
 \item{stratify_by}{Variables to stratify output but, must be one or more of
 "time", "age", "compartment", "vax".}

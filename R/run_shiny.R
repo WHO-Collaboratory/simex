@@ -684,15 +684,21 @@ run_shiny <- function() {
       if (!has_models && !can_plot_data) {
         return(NULL)
       }
-      vis_saved_outcomes_timeline(
+      cmpt <- c(
+        Cases = "E",
+        Hospitalisations = "H",
+        Deaths = "D"
+      )[[input$ehd_timeline_outcome]]
+      plot_simex(
         scenarios(),
-        outcome = input$ehd_timeline_outcome,
+        mode = "timeline",
+        renderer = "highcharter",
         what = tolower(input$ehd_timeline_what),
+        compartments = cmpt,
         stratify_by_age = isTRUE(input$ehd_stratify_age),
-        data = d,
-        use_absolute_numbers = TRUE,
         show_ribbon = TRUE,
-        period_days = 7L
+        period_days = 7L,
+        data = if (can_plot_data) d else NULL
       )
     })
 
@@ -768,16 +774,17 @@ run_shiny <- function() {
 
     output$summary_endpoint <- renderHighchart({
       req(length(scenarios()) > 0L)
-      vis_comparison(
+      plot_simex(
         scenarios(),
-        format = "endpoint",
-        type = "highchart",
-        use_absolute_numbers = TRUE,
-        show_compartment = c(
+        mode = "endpoint",
+        renderer = "highcharter",
+        compartments = c(
           Cases = "E",
           Hospitalisations = "H",
           Deaths = "D"
-        )[[input$summary_what]]
+        )[[input$summary_what]],
+        show_ribbon = TRUE,
+        period_days = 1L
       )
     })
 

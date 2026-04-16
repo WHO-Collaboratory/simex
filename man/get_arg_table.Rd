@@ -9,6 +9,8 @@ get_arg_table(fn_name, type = c("gt", "kable", "tibble"))
 \arguments{
 \item{fn_name}{A string describing the function name. This must be loaded
 into the namespace.}
+
+\item{type}{Output format: \code{"gt"}, \code{"kable"}, or \code{"tibble"}.}
 }
 \description{
 Generate table describing function arguments and their defauts.

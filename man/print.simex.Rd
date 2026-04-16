@@ -7,7 +7,7 @@
 \method{print}{simex}(simex)
 }
 \arguments{
-\item{simex}{A simex object returned by \code{run_model}.}
+\item{simex}{A simex object returned by \code{\link[=run_simex]{run_simex()}}.}
 }
 \description{
 Printing method for simex object.

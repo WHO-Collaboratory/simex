@@ -169,7 +169,7 @@ plot(output_timed, what = "prevalence")
 ### Comparing different scenarios (separate runs)
 
 Two **different** scenarios require two **`run_simex()`** calls. Pass a **named list** of `simex` objects to
-**`vis_comparison()`**.
+**`plot_simex()`**.
 
 ```{r, echo = TRUE}
 scenario_pars <- list(
@@ -182,7 +182,7 @@ scenario_pars <- list(
 
 outputs <- lapply(scenario_pars, run_simex, time = 1:200)
 
-vis_comparison(outputs)
+plot_simex(outputs, mode = "endpoint", renderer = "ggplot", compartments = "E")
 ```
 
 ## Contributors

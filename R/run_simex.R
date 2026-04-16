@@ -1,21 +1,23 @@
-#' Run the model using the odin2/dust2 backend (single parameter set only).
+#' Run the model using the odin2/dust2 backend
 #'
-#' Same interface as \code{run_model}: one call per run, no chaining of
-#' parameter sets. Time-varying parameters are to be added later inside the
-#' odin model.
+#' Runs one or more parameter regimes over time. For multiple parameter columns
+#' (change points), the dust system is updated and simulated in segments.
 #'
 #' Requires \code{odin2::odin_package(pkgroot)} to have been run so that the
 #' dust system is generated (e.g. \code{inst/dust}, \code{R/dust.R}).
 #'
-#' @param pars A single parameter set as returned by \code{get_parameters}.
-#' @param init_state Optional initial state matrix (age x compartment); same
-#'   format as for \code{run_model}.
-#' @param max_day Last day to simulate.
+#' @param pars A parameter set from \code{\link{get_parameters}}, or a
+#'   matrix/list layout as described in the package README.
+#' @param state Optional initial state passed to the dust system when not using
+#'   the model default.
+#' @param time Integer vector of times to simulate (inclusive range).
+#' @param n_particles Number of particles (stochastic replicates) per group.
 #' @return An object of class \code{simex} with \code{prevalence}, \code{deltas},
 #'   \code{incidence} (time x age x compartment), and \code{pars} (list with
 #'   one element).
 #'
 #' @importFrom magrittr divide_by
+#' @importFrom abind abind
 #' @importFrom dust2 dust_system_create dust_system_set_state_initial
 #'   dust_system_simulate
 #' @author Finlay Campbell, Prabasaj Paul
@@ -77,27 +79,45 @@ run_simex <- function(pars,
   if (nrow(pars) == 1) dims <- setdiff(dims, "sample")
   sample <- if (is.null(dimnames(pars)[[1]])) seq_len(dim(pars)[1]) else dimnames(pars)[[1]]
 
-  # convert to simex and return
-  as.simex(sim, sys, pars, dims = dims, time = time, sample = sample)
+  # generate index
+  index <- dust2::dust_unpack_index(sys)
+
+  # attach unpack index and age labels for as.simex()
+  attr(sim, "index") <- index
+  attr(sim, "age_groups") <- pars[[1L]]$age_groups
+
+  # convert to simex and attach parameter matrix for downstream plotters
+  sx <- as.simex(sim, dims = dims, time = time, sample = sample)
+  sx$pars <- pars
+  return(sx)
 
 }
 
-#' shape dust2 simulation outputs or monty trajectory samples into the
-#' simex format. dimensions names must be specified in dims, dimension
-#' values can be optionally passed via ...
+#' Coerce dust2 output or arrays into a \code{simex} object
+#'
+#' Reshapes simulation output using dimension names in \code{dims}. Optional
+#' named arguments in \code{...} supply index levels for dimensions (e.g.
+#' \code{time = 1:200}).
+#'
+#' @param x Numeric array with \code{attr(x, "index")} from the dust system.
+#' @param dims Character vector naming dimensions of \code{x} (length must match
+#'   \code{length(dim(x))}).
+#' @param ... Optional dimension level vectors, named to match entries in
+#'   \code{dims}.
+#'
 #' @export
-as.simex <- function(x, sys, pars, dims = c("state", "time"), ...) {
+as.simex <- function(x, dims = c("state", "time"), ...) {
 
-  # generate index
-  index <- dust2::dust_unpack_index(sys)
+  # get index
+  index <- attr(x, "index")
 
   # collect dimension values if provided
   args <- list(...)
 
   # index breakdown for model states
   args$state <- list(
-    age = pars[[1]]$age_groups,
-    compartment = unique(substr(names(index), 1, 1)),
+    age = attr(x, "age_groups"),
+    compartment = unique(substr(names(attr(x, "index")), 1, 1)),
     vax = c(FALSE, TRUE)
   )
 
@@ -105,7 +125,7 @@ as.simex <- function(x, sys, pars, dims = c("state", "time"), ...) {
   stopifnot(length(dims) == length(dim(x)))
 
   # is incidence vs prevalence
-  is_i <- grepl("_", names(index))
+  is_i <- grepl("_", names(attr(x, "index")))
 
   # get values for dimensions
   get_dimval <- function(name, ln, args) {
@@ -141,9 +161,6 @@ as.simex <- function(x, sys, pars, dims = c("state", "time"), ...) {
     )
   )
 
-  # add parameter states
-  out$pars <- pars
-
   # define as simex object class
   class(out) <- "simex"
 
@@ -152,19 +169,27 @@ as.simex <- function(x, sys, pars, dims = c("state", "time"), ...) {
 
 }
 
-#' Simulate forward from a snapshot
+#' Simulate forward from posterior samples
 #'
-#' @param start_from_snapshot If not NULL, an integer indicating which
-#'   snapshot to use as starting state.
+#' Unpacks parameters from a \code{monty} samples object (with \code{packer}
+#' attribute) and calls [run_simex()].
 #'
-#' @param start_time The model time the simulation starts from
+#' @param samples Object returned by [monty::monty_sample()] (must carry
+#'   \code{attr(samples, "packer")}).
+#' @param time Time indices to simulate, passed to [run_simex()].
+#' @param modification Optional list of parameter overrides applied after
+#'   unpacking (structure depends on \code{packer$groups}).
+#' @param start_from_snapshot If not \code{NULL}, index of a saved snapshot
+#'   used as the initial state instead of the default.
 #'
 #' @export
-#'
-simulate_from_samples <- function(gen, samples, packer,
-                                  time = 0:100,
-                                  start_from_snapshot = NULL,
-                                  modification = NULL) {
+run_simex_from_samples <- function(samples,
+                                   time = 0:200,
+                                   modification = NULL,
+                                   start_from_snapshot = NULL
+                                   ) {
+
+  packer <- attr(samples, "packer")
 
   if (is.null(packer$groups)) {
 
@@ -172,7 +197,8 @@ simulate_from_samples <- function(gen, samples, packer,
     # posterior samples of inferred parameters using the unpacker
     pars <- collapse_dim(samples$pars, keep = 1) |>
       apply(2, packer$unpack) |>
-      map(~ list_modify(.x, !!!modification))
+      map(~ list_modify(.x, !!!modification)) |>
+      matrix(ncol = 1)
 
     if (!is.null(start_from_snapshot))
       state <- collapse_dim(
@@ -198,6 +224,7 @@ simulate_from_samples <- function(gen, samples, packer,
     # collapse group dimension to map that of states
     pars <- map(packer$groups(), ~ map(pars, pluck, .x))
     pars <- do.call(c, pars)
+    pars <- matrix(pars, ncol = 1)
 
     if (!is.null(start_from_snapshot))
       state <- collapse_dim(
@@ -220,4 +247,14 @@ slice_dim <- function(x, idx, dim) {
   indices <- rep(list(quote(expr = )), k)  # select all dimensions
   indices[[dim]] <- idx                    # replace the target dimension
   do.call("[", c(list(x), indices, list(drop = FALSE)))
+}
+
+
+# collapse dimensions by specifying the ones to keep
+collapse_dim <- function(x, keep = 1) {
+  array(
+    x,
+    c(dim(x)[keep], prod(dim(x)[-keep])),
+    dimnames = c(dimnames(x)[keep], list(NULL))
+  )
 }

@@ -2,6 +2,7 @@
 #'
 #' @param fn_name A string describing the function name. This must be loaded
 #'   into the namespace.
+#' @param type Output format: \code{"gt"}, \code{"kable"}, or \code{"tibble"}.
 #'
 get_arg_table <- function(fn_name, type = c("gt", "kable", "tibble")) {
 
@@ -131,6 +132,8 @@ rd_find_tagged_section <- function(x, tag) {
 #' Extract default value call as string from formal.
 #'
 #' @param arg An argument returned by \code{formals}.
+#' @param what Return deparsed text (\code{"text"}) or evaluated value
+#'   (\code{"value"}).
 #'
 get_default <- function(arg, what = c("text", "value")) {
   what <- match.arg(what)

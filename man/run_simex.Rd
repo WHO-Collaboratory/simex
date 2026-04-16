@@ -2,17 +2,20 @@
 % Please edit documentation in R/run_simex.R
 \name{run_simex}
 \alias{run_simex}
-\title{Run the model using the odin2/dust2 backend (single parameter set only).}
+\title{Run the model using the odin2/dust2 backend}
 \usage{
 run_simex(pars, state = NULL, time = 0:200, n_particles = 1)
 }
 \arguments{
-\item{pars}{A single parameter set as returned by \code{get_parameters}.}
+\item{pars}{A parameter set from \code{\link{get_parameters}}, or a
+matrix/list layout as described in the package README.}
 
-\item{init_state}{Optional initial state matrix (age x compartment); same
-format as for \code{run_model}.}
+\item{state}{Optional initial state passed to the dust system when not using
+the model default.}
 
-\item{max_day}{Last day to simulate.}
+\item{time}{Integer vector of times to simulate (inclusive range).}
+
+\item{n_particles}{Number of particles (stochastic replicates) per group.}
 }
 \value{
 An object of class \code{simex} with \code{prevalence}, \code{deltas},
@@ -20,9 +23,8 @@ An object of class \code{simex} with \code{prevalence}, \code{deltas},
 one element).
 }
 \description{
-Same interface as \code{run_model}: one call per run, no chaining of
-parameter sets. Time-varying parameters are to be added later inside the
-odin model.
+Runs one or more parameter regimes over time. For multiple parameter columns
+(change points), the dust system is updated and simulated in segments.
 }
 \details{
 Requires \code{odin2::odin_package(pkgroot)} to have been run so that the

@@ -2,84 +2,21 @@
 % Please edit documentation in R/plot.simex.R
 \name{plot.simex}
 \alias{plot.simex}
-\title{Plot timeline of prevalence or incidence.}
+\title{Plot a simex object}
 \usage{
-\method{plot}{simex}(
-  simex,
-  data = NULL,
-  what = c("prevalence", "incidence"),
-  format = c("timeline", "summary", "fit"),
-  show_compartment = c("E", "D", "S", "C", "H", "R"),
-  stratify_by = c("compartment", "age"),
-  type = c("ggplot", "highchart"),
-  log = FALSE,
-  freescales = TRUE,
-  show_hosp_capacity = TRUE,
-  show_ribbon = FALSE,
-  use_absolute_numbers = TRUE,
-  split_vax = FALSE,
-  stratify_fit_by_age = TRUE,
-  cri_alpha = 0.75,
-  base_size = 11,
-  period_days = 1L
-)
+\method{plot}{simex}(x, y = NULL, ...)
 }
 \arguments{
-\item{simex}{The solved system of equations as returned by \code{run_model}.}
+\item{x}{A \code{simex} object from \code{\link[=run_simex]{run_simex()}}.}
 
-\item{what}{What to plot: one of "prevalence" (number in each category per
-day), "deltas" (change in prevalence from one day to the next) and
-"incidence" (new additions to that compartment per day).}
+\item{y}{Ignored; present for compatibility with \code{plot()}.}
 
-\item{format}{One of "timeline" (shows a timeline stratified by compartment
-and vaccination status), "summary" (sum across time of incidence, with
-same stratification options as timeline), or "fit" (compare model C+H
-incidence to \code{data}; requires \code{data} with columns
-\code{time}, \code{age}, \code{value}).}
-
-\item{show_compartment}{The compartment to show when using
-\code{format = "summary"} (age stratification) or when
-\code{format = "timeline"}, \code{type = "highchart"} and
-\code{stratify_by = "age"}.}
-
-\item{stratify_by}{When \code{type = "highchart"} and \code{format =
-  "timeline"} or \code{format = "summary"}, either \code{"compartment"}
-(all compartments, ages summed) or \code{"age"} (single compartment
-given by \code{show_compartment}, stratified by age).}
-
-\item{type}{"ggplot" will return a static ggplot figure, "highchart" will
-return a dynamic figure.}
-
-\item{log}{Logical indicating whether a log scale should be used.}
-
-\item{freescales}{Logical indicating whether the different comparments should
-use different y-axes.}
-
-\item{show_hosp_capacity}{Logical indicating whether hospital
-capacity should be displayed in the "H" compartment (only
-possible when what = "prevalence").}
-
-\item{use_absolute_numbers}{Logical indicating whether absolute absolute
-numbers (in terms of individuals) should be shown or relative to population
-size.}
-
-\item{split_vax}{When \code{stratify_by = "compartment"}, if \code{TRUE}
-(default) series are split by vaccination status; if \code{FALSE},
-vaccination is not stratified.}
-
-\item{stratify_fit_by_age}{When \code{format = "fit"}, if \code{TRUE}
-(default) model and data are stratified by age (one series per age, by
-colour); if \code{FALSE}, model and data are summed over age.}
-
-\item{base_size}{Base size passed to theme_*.}
-
-\item{period_days}{Passed to \code{\link[=extract]{extract()}} for \code{what = "incidence"} in
-\code{format = "timeline"} and \code{format = "fit"} (default \code{1L} for daily
-values). Ignored for \code{format = "summary"} and for prevalence timelines.}
+\item{...}{Arguments passed to \code{\link[=plot_simex]{plot_simex()}}.}
+}
+\value{
+Value from \code{\link[=plot_simex]{plot_simex()}}.
 }
 \description{
-Plot timeline of prevalence or incidence.
-}
-\author{
-Finlay Campbell
+Dispatches to \code{\link[=plot_simex]{plot_simex()}} so you can call the generic \code{plot()} on results
+from \code{\link[=run_simex]{run_simex()}}.
 }

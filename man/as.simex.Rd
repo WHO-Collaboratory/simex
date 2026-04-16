@@ -2,14 +2,21 @@
 % Please edit documentation in R/run_simex.R
 \name{as.simex}
 \alias{as.simex}
-\title{shape dust2 simulation outputs or monty trajectory samples into the
-simex format. dimensions names must be specified in dims, dimension
-values can be optionally passed via ...}
+\title{Coerce dust2 output or arrays into a \code{simex} object}
 \usage{
-as.simex(x, sys, pars, dims = c("state", "time"), ...)
+as.simex(x, dims = c("state", "time"), ...)
+}
+\arguments{
+\item{x}{Numeric array with \code{attr(x, "index")} from the dust system.}
+
+\item{dims}{Character vector naming dimensions of \code{x} (length must match
+\code{length(dim(x))}).}
+
+\item{...}{Optional dimension level vectors, named to match entries in
+\code{dims}.}
 }
 \description{
-shape dust2 simulation outputs or monty trajectory samples into the
-simex format. dimensions names must be specified in dims, dimension
-values can be optionally passed via ...
+Reshapes simulation output using dimension names in \code{dims}. Optional
+named arguments in \code{...} supply index levels for dimensions (e.g.
+\code{time = 1:200}).
 }

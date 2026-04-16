@@ -25,12 +25,14 @@ aggregate_incidence_period_dt <- function(dt, period_days) {
 
 #' Extract formatted dataframes from simex object.
 #'
-#' @param simex A simex object returned by \code{run_model}.
+#' @param simex A simex object returned by [run_simex()] (odin/dust2 backend).
 #'
 #' @param what What to plot: one of "prevalence" (number in each category per
 #'   day), "deltas" (change in prevalence from one day to the next) and
 #'   "incidence" (new additions to that compartment per day).
 #'
+#' @param filter Named list of column filters, e.g.
+#'   `list(compartment = c("E", "C"))`, applied before aggregation.
 #' @param stratify_by Variables to stratify output but, must be one or more of
 #'   "time", "age", "compartment", "vax".
 #'
@@ -113,8 +115,12 @@ extract.simex <- function(simex,
 
 }
 
-#' Define generic extract method.
+#' Generic extract method for simex objects
+#'
+#' Dispatches to [extract.simex()] when `x` inherits from `"simex"`.
+#'
+#' @param x Object to extract from.
+#' @param ... Further arguments passed to methods.
 #'
 #' @export
-#'
 extract <- function(x, ...) UseMethod("extract", x)

@@ -1,6 +1,6 @@
 #' Printing method for simex object.
 #'
-#' @param simex A simex object returned by \code{run_model}.
+#' @param simex A simex object returned by [run_simex()].
 #'
 #' @importFrom stringr str_remove
 #'

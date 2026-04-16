@@ -1,3 +1,7 @@
+#' @importFrom RColorBrewer brewer.pal
+#' @keywords internal
+NULL
+
 #' Get age categories used in analysis.
 #'
 get_age_cat <- function() {
@@ -39,7 +43,7 @@ scenario_colors_dark2 <- function(names_in_order) {
     return(stats::setNames(character(0), character(0)))
   }
   pal_n <- max(3L, n, 1L)
-  cols <- RColorBrewer::brewer.pal(pal_n, "Dark2")[seq_len(n)]
+  cols <- brewer.pal(pal_n, "Dark2")[seq_len(n)]
   stats::setNames(cols, nms)
 }
 

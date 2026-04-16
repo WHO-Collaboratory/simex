@@ -7,7 +7,7 @@
 \method{summary}{simex}(simex, day = dim(simex$prevalence)[1])
 }
 \arguments{
-\item{simex}{The solved system of equations as returned by \code{run_model}.}
+\item{simex}{A simex object returned by \code{\link[=run_simex]{run_simex()}}.}
 
 \item{day}{What day of the outbreak to summarise to}
 }

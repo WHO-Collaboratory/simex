@@ -16,7 +16,7 @@ get_parameters(
   hosp_mortality = 1/seq(20, 5, length = 16),
   hosp_protection_death = 0.75,
   hosp_duration = seq(7, 21, length = 16),
-  hosp_capacity = 0.0025,
+  hosp_capacity = 100,
   comm_mortality = rep(0, 16),
   vax_rate = 0,
   vax_infectiousness = 0.3,
@@ -67,12 +67,11 @@ proportion of deaths admission to hospital averts.}
 either as a single value or as a vector of the same length as the number of
 age categories.}
 
-\item{hosp_capacity}{Total hospital bed capacity given as a proportion of the
-population.}
+\item{hosp_capacity}{Total hospital bed capacity given as number of beds.}
 
-\item{comm_mortality}{The probability of death of cases that remain in the
-community, either as a single value or as a vector of the same length as the
-number of age categories.}
+\item{comm_mortality}{The probability of death of cases that remain
+in the community, either as a single value or as a vector of the
+same length as the number of age categories.}
 
 \item{vax_rate}{Number of vaccine doses administered per day (absolute
 count, not a proportion of the population).}

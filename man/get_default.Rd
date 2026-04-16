@@ -8,6 +8,9 @@ get_default(arg, what = c("text", "value"))
 }
 \arguments{
 \item{arg}{An argument returned by \code{formals}.}
+
+\item{what}{Return deparsed text (\code{"text"}) or evaluated value
+(\code{"value"}).}
 }
 \description{
 Extract default value call as string from formal.

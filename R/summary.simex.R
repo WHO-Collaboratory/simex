@@ -1,6 +1,6 @@
 #' Generate summary statistics for a simex object.
 #'
-#' @param simex The solved system of equations as returned by \code{run_model}.
+#' @param simex A simex object returned by [run_simex()].
 #'
 #' @param day What day of the outbreak to summarise to
 #'
