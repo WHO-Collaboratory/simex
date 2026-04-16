@@ -17,7 +17,7 @@
 #'
 #' @export
 get_settings <- function(n_particles = 200,
-                         n_steps = 10000,
+                         n_steps = 1e4,
                          n_chains = 4,
                          n_samples = 1000,
                          burnin = 1000,
@@ -27,7 +27,7 @@ get_settings <- function(n_particles = 200,
                          save_trajectories = TRUE,
                          snapshots = NULL,
                          groups = NULL,
-                         deterministic = FALSE) {
+                         deterministic = TRUE) {
   out <- mget(names(formals()), environment())
   out$thinning_factor <- floor(n_steps / (n_samples / n_chains))
   n_cores_available <- as.integer(Sys.getenv("CONTEXT_CORES", 1))

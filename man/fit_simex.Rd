@@ -14,7 +14,9 @@ fit_simex(
 }
 \arguments{
 \item{data}{A \code{data.frame} with columns \code{time}, \code{age}, \code{compartment}, and
-\code{value} (incidence counts).}
+\code{value} (incidence counts). Rows with \code{time <= 0} are dropped (dust expects
+strictly increasing times from first observation). \code{age} is coerced to an
+ordered factor via \code{\link[forcats:fct_inorder]{forcats::fct_inorder()}}.}
 
 \item{parameters}{Named list of fixed model parameters; defaults to
 \code{\link[=get_parameters]{get_parameters()}}. Entries named in \code{priors$parameters} are treated as

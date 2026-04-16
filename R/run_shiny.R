@@ -6,6 +6,7 @@
 #' @importFrom shinyWidgets setBackgroundColor switchInput radioGroupButtons
 #' @importFrom waiter waiter_preloader spin_3
 #' @importFrom stringr str_to_title
+#' @importFrom monty monty_dsl_distributions
 #'
 #' @author Finlay Campbell
 #'
@@ -171,6 +172,64 @@ run_shiny <- function() {
     out <- t(as.matrix(out))
   }
 
+  ## Single-tab parameters for the Fitting panel (ids: fit__*).
+  shiny_to_simex_single <- function(input, tab_id) {
+    pars <- reactiveValuesToList(input)
+    prefix <- paste0("^", tab_id, "__")
+    pars <- pars[grepl(prefix, names(pars))]
+    if (length(pars) == 0L) {
+      return(NULL)
+    }
+    par <- pars
+    names(par) <- map_chr(strsplit(names(par), "__"), pluck, 2)
+
+    par$social_distancing <- setNames(
+      as.numeric(unlist(par$social_distancing)),
+      tolower(colnames(par$social_distancing))
+    )
+
+    agestrat <- setNames(
+      map(data.frame(par$agestrat), as.numeric), agestrat_nms
+    )
+    par$agestrat <- NULL
+    par <- c(par, agestrat)
+
+    vax <- setNames(map(data.frame(par$vax), as.numeric), vax_nms)
+    par$vax <- NULL
+    par <- c(par, vax)
+
+    for (i in percent_nms) par[[i]] <- par[[i]] / 100
+    par$hosp_capacity <- par$hosp_capacity / 1e5
+
+    par[setdiff(names(par), names(simex_defaults))] <- NULL
+
+    do.call(get_parameters, par)
+  }
+
+  ## Build get_settings() call from fitset__* inputs (snapshots/groups fixed).
+  collect_fit_settings <- function(input) {
+    defs <- map(formals(get_settings), get_default, "value")
+    nm <- setdiff(names(defs), c("snapshots", "groups"))
+    args <- list()
+    for (f in nm) {
+      id <- paste0("fitset__", f)
+      v <- input[[id]]
+      if (is.null(v)) {
+        return(NULL)
+      }
+      if (is.logical(defs[[f]])) {
+        args[[f]] <- isTRUE(v)
+      } else {
+        nv <- as.numeric(v)
+        if (length(nv) != 1L || is.na(nv)) {
+          return(NULL)
+        }
+        args[[f]] <- nv
+      }
+    }
+    do.call(get_settings, args)
+  }
+
   ## function for extracting active values of a parameter
   extract_active_par <- function(input, name, active_par) {
     x <- unlist(reactiveValuesToList(input)[grep(name, names(input))])
@@ -212,6 +271,22 @@ run_shiny <- function() {
   ## define color palette
   background_col <- "#ffffff"
   sidebar_col <- "#fefae0"
+
+  ## Monty prior distribution names and fit settings inputs (built once).
+  prior_dist_names <- monty::monty_dsl_distributions()$name
+  fit_settings_defaults <- map(formals(get_settings), get_default, "value")
+  fit_setting_ids <- setdiff(names(fit_settings_defaults), c("snapshots", "groups"))
+  fit_settings_ui <- tagList(lapply(fit_setting_ids, function(f) {
+    val <- fit_settings_defaults[[f]]
+    id <- paste0("fitset__", f)
+    lbl <- str_to_title(gsub("_", " ", f, fixed = TRUE))
+    if (is.logical(val)) {
+      checkboxInput(id, lbl, value = isTRUE(val))
+    } else {
+      st <- if (identical(f, "proposal_sd")) 0.001 else 1
+      numericInput(id, lbl, value = as.numeric(val)[[1]], min = 0, step = st)
+    }
+  }))
 
   # Define the UI
   ui <- page_sidebar(
@@ -276,7 +351,9 @@ run_shiny <- function() {
           strong("Changing parameter values over time"),
           p("The settings so far run a single set of parameters over the entire time period. To simulate a scenario where the parameters change at a given point in the pandemic, use the ", em("Add Period"), "button. This will add a new set of parameters, associated with a given start day. Try adding a new period and changing the reproduction number from 3 to 5 with a start day of 75. Then run the scenario and see how the increased reproduction number (e.g. due to the introduction of a new variant) changes the course of the pandemic. You can add as many periods as you would like, and can navigate between the parameter settings of each period by clicking on the respective tabs. You can also delete a period using the ", em("Remove Period"), "button."),
           strong("Comparing different scenarios"),
-          p("Use ", em("Run Scenario"), " to add a simulation or overwrite one with the same name (each call re-runs the model with current parameters). Under ", em("Scenario"), ", pick a saved run or type a new name; remove a saved run with the ", em("\u00d7"), " button. ", em("Timeline"), " shows one outcome at a time; with ", em("Incidence"), ", uploaded data can be shown alone or with saved models. CSV columns: ", strong("time"), ", ", strong("age"), ", ", strong("compartment"), " (E, H, or D), ", strong("value"), ".")
+          p("Use ", em("Run Scenario"), " to add a simulation or overwrite one with the same name (each call re-runs the model with current parameters). Under ", em("Scenario"), ", pick a saved run or type a new name; remove a saved run with the ", em("\u00d7"), " button. ", em("Timeline"), " shows one outcome at a time; with ", em("Incidence"), ", uploaded data can be shown alone or with saved models. CSV columns: ", strong("time"), ", ", strong("age"), ", ", strong("compartment"), " (E, H, or D), ", strong("value"), "."),
+          strong("Bayesian fitting"),
+          p("The ", em("Fitting"), " tab runs ", strong("fit_simex()"), " on uploaded incidence using the same long CSV format. Rows with ", strong("compartment = E"), " are required (reported exposure/incidence channel used by the filter). Set fixed model parameters, choose a Monty prior on ", strong("p_trans"), ", adjust sampler settings, then ", em("Run fit"), ". View the posterior trajectory against the data on the ", em("Fit"), " plot tab.")
         ),
         nav_panel(
           title = "Parameters",
@@ -343,6 +420,42 @@ run_shiny <- function() {
             )
           ),
           navset_card_underline(id = "parameters_panel")
+        ),
+        nav_panel(
+          title = "Fitting",
+          strong("Data"),
+          fileInput(
+            inputId = "fitting_data_file",
+            label = NULL,
+            accept = c(".csv", "text/csv"),
+            buttonLabel = "Browse...",
+            width = "100%"
+          ),
+          hr(),
+          strong("Parameters"),
+          div(
+            style = "margin-left: 10px; margin-right: 10px",
+            tagList(simex_to_shiny(simex_defaults, "fit"))
+          ),
+          hr(),
+          strong("Priors"),
+          selectInput(
+            inputId = "prior_p_trans_dist",
+            label = "Distribution",
+            choices = prior_dist_names,
+            selected = "Beta"
+          ),
+          uiOutput("prior_p_trans_args_ui"),
+          hr(),
+          strong("Settings"),
+          fit_settings_ui,
+          hr(),
+          actionButton(
+            inputId = "run_fit",
+            label = "Run fit",
+            width = "100%",
+            class = "btn-primary"
+          )
         )
       )
     ),
@@ -396,6 +509,34 @@ run_shiny <- function() {
         ),
         uiOutput("summary_plot_container")
       ),
+      nav_panel(
+        title = "Fit",
+        fluidRow(
+          column(
+            width = 12,
+            div(
+              style = "display: inline-block; vertical-align: top; margin-right: 12px;",
+              radioGroupButtons(
+                inputId = "fit_plot_outcome",
+                selected = "Cases",
+                label = NULL,
+                choices = c("Cases", "Hospitalisations", "Deaths"),
+                size = "sm"
+              )
+            ),
+            div(
+              style = "display: inline-block; vertical-align: middle; margin-right: 12px;",
+              shinyWidgets::materialSwitch(
+                inputId = "fit_stratify_age",
+                label = "Stratify by age",
+                value = FALSE,
+                status = "primary"
+              )
+            )
+          )
+        ),
+        uiOutput("fit_plot_container")
+      )
     ),
 
     # start up loading spinner
@@ -616,6 +757,9 @@ run_shiny <- function() {
     ## Parsed incidence table (persists when Timeline file input is not in DOM)
     timeline_data_rv <- reactiveVal(NULL)
 
+    ## Fitting tab: uploaded CSV (separate from Timeline uploads).
+    fitting_data_rv <- reactiveVal(NULL)
+
     read_timeline_csv <- function(fi) {
       if (is.null(fi)) {
         return(NULL)
@@ -659,6 +803,169 @@ run_shiny <- function() {
         }
       },
       ignoreNULL = TRUE
+    )
+
+    observeEvent(
+      input$fitting_data_file,
+      {
+        df <- read_timeline_csv(input$fitting_data_file)
+        if (!is.null(df)) {
+          fitting_data_rv(df)
+        }
+      },
+      ignoreNULL = TRUE
+    )
+
+    ## Monty prior argument inputs for p_trans (rebuilt when distribution changes).
+    output$prior_p_trans_args_ui <- renderUI({
+      dist_nm <- input$prior_p_trans_dist
+      if (is.null(dist_nm) || !nzchar(as.character(dist_nm))) {
+        return(NULL)
+      }
+      ref <- monty::monty_dsl_distributions()
+      idx <- match(dist_nm, ref$name)
+      if (is.na(idx)) {
+        return(p("Unknown distribution.", class = "text-danger"))
+      }
+      argnms <- ref$args[[idx]]
+      if (length(argnms) == 0L) {
+        return(NULL)
+      }
+      default_for_arg <- function(dist, argnm) {
+        if (identical(dist, "Beta") && argnm %in% c("a", "b")) {
+          return(1)
+        }
+        if (identical(dist, "Normal") && identical(argnm, "mean")) {
+          return(0)
+        }
+        if (identical(dist, "Normal") && identical(argnm, "sd")) {
+          return(1)
+        }
+        1
+      }
+      do.call(
+        tagList,
+        c(
+          list(p("Prior hyperparameters:")),
+          lapply(argnms, function(a) {
+            numericInput(
+              paste0("prior_p_trans__", a),
+              label = as.character(a),
+              value = default_for_arg(dist_nm, a),
+              step = 0.05
+            )
+          })
+        )
+      )
+    })
+
+    ## Posterior fit state for the Fit plot tab.
+    fitted_samples_rv <- reactiveVal(NULL)
+    fitted_simex_rv <- reactiveVal(NULL)
+
+    observeEvent(
+      input$run_fit,
+      {
+        df <- fitting_data_rv()
+        if (is.null(df) || !is.data.frame(df) || nrow(df) == 0L) {
+          showNotification("Upload fitting data (CSV) first.", type = "warning")
+          return()
+        }
+        need_cols <- c("time", "age", "compartment", "value")
+        if (!all(need_cols %in% names(df))) {
+          showNotification("CSV needs columns: time, age, compartment, value.", type = "warning")
+          return()
+        }
+        cmp <- toupper(trimws(as.character(df$compartment)))
+        if (!any(cmp == "E")) {
+          showNotification(
+            "Fitting requires rows with compartment = E (see Introduction).",
+            type = "warning"
+          )
+          return()
+        }
+
+        parameters <- shiny_to_simex_single(input, "fit")
+        if (is.null(parameters)) {
+          showNotification("Could not read model parameters from inputs.", type = "warning")
+          return()
+        }
+
+        settings <- collect_fit_settings(input)
+        if (is.null(settings)) {
+          showNotification("Check sampler / filter settings inputs.", type = "warning")
+          return()
+        }
+
+        dist_nm <- input$prior_p_trans_dist
+        ref <- monty::monty_dsl_distributions()
+        idx <- match(dist_nm, ref$name)
+        if (is.na(idx)) {
+          showNotification("Invalid prior distribution.", type = "warning")
+          return()
+        }
+        argnms <- ref$args[[idx]]
+        pri_list <- list(dist = as.character(dist_nm))
+        for (a in argnms) {
+          ida <- paste0("prior_p_trans__", a)
+          if (is.null(input[[ida]])) {
+            showNotification(
+              paste("Missing prior argument:", a),
+              type = "warning"
+            )
+            return()
+          }
+          pri_list[[a]] <- as.numeric(input[[ida]])
+        }
+        priors <- tryCatch(
+          get_priors(p_trans = pri_list),
+          error = function(e) {
+            showNotification(conditionMessage(e), type = "error")
+            NULL
+          }
+        )
+        if (is.null(priors)) {
+          return()
+        }
+
+        fit_df <- as.data.frame(df)[, need_cols, drop = FALSE]
+        fit_df <- fit_df[as.numeric(fit_df$time) > 0, , drop = FALSE]
+        if (nrow(fit_df) == 0L) {
+          showNotification("No rows with time > 0.", type = "warning")
+          return()
+        }
+        fit_df$age <- forcats::fct_inorder(as.factor(as.character(fit_df$age)))
+        tseq <- seq(
+          as.integer(floor(min(as.numeric(fit_df$time), na.rm = TRUE))),
+          as.integer(ceiling(max(as.numeric(fit_df$time), na.rm = TRUE)))
+        )
+
+        samples <- tryCatch(
+          fit_simex(fit_df, parameters, priors, settings),
+          error = function(e) {
+            showNotification(conditionMessage(e), type = "error")
+            NULL
+          }
+        )
+        if (is.null(samples)) {
+          return()
+        }
+
+        sx <- tryCatch(
+          run_simex_from_samples(samples, time = tseq, modification = NULL),
+          error = function(e) {
+            showNotification(conditionMessage(e), type = "error")
+            NULL
+          }
+        )
+        if (is.null(sx)) {
+          return()
+        }
+
+        fitted_samples_rv(samples)
+        fitted_simex_rv(sx)
+        showNotification("Fit finished. See the Fit plot tab.", type = "message")
+      }
     )
 
     timeline_obs_data <- reactive({
@@ -786,6 +1093,73 @@ run_shiny <- function() {
         show_ribbon = TRUE,
         period_days = 1L
       )
+    })
+
+    ## Fit tab: posterior trajectory vs uploaded fitting data.
+    fit_plot_result <- reactive({
+      sx <- fitted_simex_rv()
+      d <- fitting_data_rv()
+      if (is.null(sx) || is.null(d)) {
+        return(NULL)
+      }
+      req(input$fit_plot_outcome)
+      cmpt <- c(
+        Cases = "E",
+        Hospitalisations = "H",
+        Deaths = "D"
+      )[[input$fit_plot_outcome]]
+      plot_simex(
+        sx,
+        mode = "timeline",
+        renderer = "highcharter",
+        what = "incidence",
+        compartments = cmpt,
+        stratify_by_age = isTRUE(input$fit_stratify_age),
+        show_ribbon = TRUE,
+        period_days = 7L,
+        data = as.data.frame(d)
+      )
+    })
+
+    output$fit_plot_container <- renderUI({
+      if (is.null(fitted_simex_rv())) {
+        return(div(
+          class = "text-muted",
+          p(
+            "Run a fit from the ",
+            strong("Fitting"),
+            " tab in the sidebar, then open this tab to see incidence vs data."
+          )
+        ))
+      }
+      res <- fit_plot_result()
+      if (is.null(res)) {
+        return(div())
+      }
+      if (inherits(res, "highchart")) {
+        highchartOutput("fit_plot_single", height = "100vh")
+      } else {
+        fluidRow(lapply(seq_along(res), function(i) {
+          column(6, highchartOutput(paste0("fit_plot_", i), height = "350px"))
+        }))
+      }
+    })
+
+    observe({
+      res <- fit_plot_result()
+      if (is.null(res)) {
+        return()
+      }
+      if (inherits(res, "highchart")) {
+        output$fit_plot_single <- renderHighchart(res)
+      } else {
+        for (i in seq_along(res)) {
+          local({
+            ii <- i
+            output[[paste0("fit_plot_", ii)]] <- renderHighchart(res[[ii]])
+          })
+        }
+      }
     })
 
     output$compartments_description <- renderText({

@@ -4,7 +4,9 @@
 #' Monty prior model from [get_priors()], and runs [monty::monty_sample()].
 #'
 #' @param data A `data.frame` with columns `time`, `age`, `compartment`, and
-#'   `value` (incidence counts).
+#'   `value` (incidence counts). Rows with `time <= 0` are dropped (dust expects
+#'   strictly increasing times from first observation). `age` is coerced to an
+#'   ordered factor via [forcats::fct_inorder()].
 #' @param parameters Named list of fixed model parameters; defaults to
 #'   [get_parameters()]. Entries named in `priors$parameters` are treated as
 #'   fitted scalars instead.
@@ -17,7 +19,8 @@
 #' @return A `monty` samples object with attribute `packer` (Monty packer
 #'   mapping fitted names to the dust likelihood).
 #'
-#' @importFrom data.table dcast
+#' @importFrom data.table as.data.table dcast
+#' @importFrom forcats fct_inorder
 #' @export
 fit_simex <- function(data,
                       parameters = get_parameters(),
@@ -27,8 +30,20 @@ fit_simex <- function(data,
                       settings = get_settings(),
                       samples = NULL) {
 
+  # data.table::dcast requires a data.table (e.g. Shiny / read.csv give data.frames)
+  dt <- as.data.table(data)
+
+  ## Dust filters require observation times > 0 (no duplicate / invalid step at 0).
+  dt <- dt[as.numeric(time) > 0]
+  if (nrow(dt) == 0L) {
+    stop("No rows with time > 0 after filtering; check your data.", call. = FALSE)
+  }
+
+  ## Stable age level order for the filter (matches typical dplyr workflow).
+  dt[, age := fct_inorder(as.factor(as.character(age)))]
+
   # shape fitting data
-  fitting_data <- dcast(data, time + age ~ compartment, value.var = "value")
+  fitting_data <- dcast(dt, time + age ~ compartment, value.var = "value")
   fitting_data <- fitting_data[, .(E_reported = list(E)), by = time]
   data.table::setkey(fitting_data, NULL)
 
