@@ -3,7 +3,7 @@
 #' @importFrom brochure brochureApp server_redirect
 #' @importFrom cachem cache_mem
 #' @importFrom shinyMatrix matrixInput
-#' @importFrom shinyjs click disable enable useShinyjs
+#' @importFrom shinyjs click disable enable hide show useShinyjs
 #' @importFrom shiny icon showNotification
 #' @importFrom shinyWidgets setBackgroundColor switchInput radioGroupButtons
 #' @importFrom waiter waiter_preloader spin_3
@@ -116,6 +116,81 @@ run_shiny <- function() {
     return(shiny_output)
   }
 
+  ## Turn get_parameters()-style argument lists into the same structure
+  ## simex_to_shiny() uses (percents * 100, matrices, column order).
+  args_to_simex_shiny_shape <- function(raw_args) {
+    simex_input <- utils::modifyList(as.list(simex_defaults), as.list(raw_args))
+    simex_input[setdiff(names(simex_input), names(simex_defaults))] <- NULL
+
+    for (i in percent_nms) {
+      if (i %in% names(simex_input)) {
+        simex_input[[i]] <- simex_input[[i]] * 100
+      }
+    }
+    if ("hosp_capacity" %in% names(simex_input)) {
+      simex_input$hosp_capacity <- simex_input$hosp_capacity * 1e5
+    }
+
+    agestrat <- lengths(simex_input) == nrow(cdat[[1]]$pop)
+    if (any(agestrat)) {
+      simex_input$agestrat <- do.call(cbind, simex_input[agestrat])
+      dimnames(simex_input$agestrat) <- list(
+        "Age" = get_age_cat(),
+        "Variable" = labs[colnames(simex_input$agestrat)]
+      )
+      simex_input[agestrat] <- NULL
+    }
+
+    simex_input$social_distancing <- matrix(
+      simex_input$social_distancing,
+      nrow = 1,
+      dimnames = list(
+        "Reduction (%)",
+        str_to_title(names(simex_input$social_distancing))
+      )
+    )
+
+    simex_input$vax <- matrix(
+      unlist(simex_input[vax_nms]),
+      nrow = 1,
+      dimnames = list("Protection (%)", labs[vax_nms])
+    )
+    simex_input[vax_nms] <- NULL
+
+    simex_input <- simex_input[order(match(names(simex_input), names(labs)))]
+    simex_input
+  }
+
+  ## Map a simex_to_shiny section name to get_parameters / unpack argument names.
+  scenario_section_to_argnames <- function(sec) {
+    if (identical(sec, "agestrat")) {
+      return(agestrat_nms)
+    }
+    if (identical(sec, "vax")) {
+      return(vax_nms)
+    }
+    if (identical(sec, "social_distancing")) {
+      return("social_distancing")
+    }
+    sec
+  }
+
+  ## Named choices for scen_section_select (values = section ids).
+  scenario_section_choice_labels <- function(ids) {
+    stats::setNames(
+      ids,
+      vapply(ids, function(s) {
+        if (s %in% names(labs)) {
+          z <- as.character(labs[[s]])[[1L]]
+          if (!is.na(z) && nzchar(z)) {
+            return(z)
+          }
+        }
+        s
+      }, character(1))
+    )
+  }
+
   ## shape shiny parameter to fit simex model input
   shiny_to_simex <- function(input, active_par) {
     ## so we have a modifieable list
@@ -174,8 +249,8 @@ run_shiny <- function() {
     out <- t(as.matrix(out))
   }
 
-  ## Single-tab parameters for the Fitting panel (ids: fit__*).
-  shiny_to_simex_single <- function(input, tab_id) {
+  ## Single-tab Shiny inputs -> get_parameters() argument list (not expanded).
+  shiny_to_get_parameters_args_from_tab <- function(input, tab_id) {
     pars <- reactiveValuesToList(input)
     prefix <- paste0("^", tab_id, "__")
     pars <- pars[grepl(prefix, names(pars))]
@@ -185,26 +260,62 @@ run_shiny <- function() {
     par <- pars
     names(par) <- map_chr(strsplit(names(par), "__"), pluck, 2)
 
-    par$social_distancing <- setNames(
-      as.numeric(unlist(par$social_distancing)),
-      tolower(colnames(par$social_distancing))
-    )
+    ## Only expand grouped inputs when that widget is present (scenario tab may
+    ## send a single section; empty matrixInput can yield length-0 values with
+    ## non-zero colnames and break setNames()).
+    if ("social_distancing" %in% names(par)) {
+      sd <- par$social_distancing
+      sd_vals <- as.numeric(unlist(sd))
+      sd_nms <- tolower(colnames(sd))
+      if (length(sd_vals) > 0L && length(sd_vals) == length(sd_nms)) {
+        par$social_distancing <- setNames(sd_vals, sd_nms)
+      } else {
+        par$social_distancing <- NULL
+      }
+    }
 
-    agestrat <- setNames(
-      map(data.frame(par$agestrat), as.numeric), agestrat_nms
-    )
-    par$agestrat <- NULL
-    par <- c(par, agestrat)
+    if ("agestrat" %in% names(par)) {
+      ag_cols <- map(data.frame(par$agestrat), as.numeric)
+      if (length(ag_cols) == length(agestrat_nms)) {
+        agestrat <- setNames(ag_cols, agestrat_nms)
+        par$agestrat <- NULL
+        par <- c(par, agestrat)
+      } else {
+        par$agestrat <- NULL
+      }
+    }
 
-    vax <- setNames(map(data.frame(par$vax), as.numeric), vax_nms)
-    par$vax <- NULL
-    par <- c(par, vax)
+    if ("vax" %in% names(par)) {
+      vx_cols <- map(data.frame(par$vax), as.numeric)
+      if (length(vx_cols) == length(vax_nms)) {
+        vax <- setNames(vx_cols, vax_nms)
+        par$vax <- NULL
+        par <- c(par, vax)
+      } else {
+        par$vax <- NULL
+      }
+    }
 
-    for (i in percent_nms) par[[i]] <- par[[i]] / 100
-    par$hosp_capacity <- par$hosp_capacity / 1e5
+    for (i in percent_nms) {
+      if (i %in% names(par)) {
+        par[[i]] <- par[[i]] / 100
+      }
+    }
+    if ("hosp_capacity" %in% names(par)) {
+      par$hosp_capacity <- par$hosp_capacity / 1e5
+    }
 
     par[setdiff(names(par), names(simex_defaults))] <- NULL
 
+    return(par)
+  }
+
+  ## Single-tab parameters for the Fitting panel (ids: fit__*).
+  shiny_to_simex_single <- function(input, tab_id) {
+    par <- shiny_to_get_parameters_args_from_tab(input, tab_id)
+    if (is.null(par)) {
+      return(NULL)
+    }
     do.call(get_parameters, par)
   }
 
@@ -253,20 +364,32 @@ run_shiny <- function() {
 
   ## function for generating an input panel for one panel ID
   make_input <- function(value, name, id) {
+    ## Scenarios tab: section title is already in the Parameter dropdown — no label.
+    input_lbl <- function(nm) {
+      if (identical(id, "scen")) {
+        return(NULL)
+      }
+      labs[[nm]]
+    }
     if (name == "iso3") {
-      selectInput(rn(name, id), labs[name], names(cdat), selected = value)
+      selectInput(rn(name, id), input_lbl(name), names(cdat), selected = value)
     } ## else if(name == "hosp_capacity") numericInput(rn(name, id), labs[name], value*1e5)
     else if (is.numeric(value)) {
       if (is.matrix(value)) {
-        matrixInput(rn(name, id), labs[name], value)
+        matrixInput(rn(name, id), input_lbl(name), value)
       } else if (!is.null(names(value))) {
         do.call(
           fluidRow,
-          unname(imap(value, ~ column(2, numericInput(rn(.y, id), labs[.y], .x))))
+          unname(imap(value, ~ column(
+            2,
+            numericInput(rn(.y, id), input_lbl(.y), .x)
+          )))
         )
-      } else if (length(value) == 1) numericInput(rn(name, id), labs[name], value)
+      } else if (length(value) == 1) {
+        numericInput(rn(name, id), input_lbl(name), value)
+      }
     } else if (is.logical(value)) {
-      checkboxInput(rn(name, id), labs[name], value)
+      checkboxInput(rn(name, id), input_lbl(name), value)
     }
   }
 
@@ -318,6 +441,10 @@ run_shiny <- function() {
   tip_fit_run <- paste0(
     "Match the model to your uploaded series; when it finishes, open Timeline ",
     "to see the fit and your data together."
+  )
+  tip_fit_scenario <- paste0(
+    "Name for this scenario run. Pick an existing name to replace it, or type ",
+    "a new one to add another saved result."
   )
 
   ## Left sidebar: Exploration vs Fitting (single column; details in tooltips).
@@ -445,12 +572,93 @@ run_shiny <- function() {
         width = "100%",
         class = "btn-primary",
         title = tip_fit_run
+      ),
+      ## Indeterminate progress while fit_simex / post-fit sim run (no caption text).
+      tags$div(
+        id = "fit_progress_container",
+        style = "display: none; margin-top: 10px;",
+        tags$div(
+          class = "progress rounded-pill",
+          style = "height: 5px; background-color: #e9ecef;",
+          tags$div(
+            class = paste0(
+              "progress-bar progress-bar-striped progress-bar-animated ",
+              "bg-primary"
+            ),
+            style = "width: 100%;",
+            role = "progressbar",
+            `aria-valuenow` = 100,
+            `aria-valuemin` = 0,
+            `aria-valuemax` = 100
+          )
+        )
+      )
+    )
+    scenarios_panel <- tagList(
+      ## Empty-state only; controls stay in static HTML so they are not rebuilt
+      ## when Calibration inputs change (that was resetting the dropdown/fields).
+      uiOutput("fitting_scenarios_status"),
+      tags$label(
+        `for` = "fitting_scenario_select",
+        class = "control-label",
+        title = tip_fit_scenario,
+        style = "cursor: help;",
+        "Scenario"
+      ),
+      div(
+        style = paste0(
+          "display: flex; flex-direction: row; align-items: center; gap: 10px;"
+        ),
+        div(
+          style = "flex: 1; min-width: 0;",
+          selectizeInput(
+            inputId = "fitting_scenario_select",
+            label = NULL,
+            choices = character(0),
+            selected = "Default",
+            options = list(
+              placeholder = "Name this run",
+              create = TRUE,
+              createOnBlur = TRUE
+            )
+          )
+        ),
+        actionButton(
+          inputId = "fitting_remove_saved_scenario",
+          label = NULL,
+          icon = icon("times"),
+          title = "Drop the selected saved run from this session.",
+          class = "btn-danger",
+          style = "padding: 6px 12px; flex-shrink: 0;"
+        )
+      ),
+      hr(),
+      selectInput(
+        inputId = "scen_section_select",
+        label = "Parameter",
+        choices = c("…" = ""),
+        selected = "",
+        width = "100%"
+      ),
+      uiOutput("scenario_section_inputs"),
+      actionButton(
+        inputId = "scen_add_patch",
+        label = "Save scenario",
+        width = "100%",
+        class = "btn-secondary"
+      ),
+      hr(),
+      actionButton(
+        inputId = "scen_run",
+        label = "Run scenario",
+        width = "100%",
+        class = "btn-primary"
       )
     )
     navset_card_underline(
       id = "fitting_sidebar_tabs",
       nav_panel(title = "Calibration", calibration_panel),
-      nav_panel(title = "Scenarios", div(style = "min-height: 6rem;"))
+      nav_panel(title = "Scenarios", scenarios_panel)
     )
   }
 
@@ -859,67 +1067,73 @@ run_shiny <- function() {
   br_upload_server <- function(input, output, session) {
     ## One-shot gate so this observer does not re-run on every reactive flush.
     br_upload_checked <- reactiveVal(FALSE)
-    observe({
-      if (isTRUE(br_upload_checked())) {
-        return()
-      }
-      url_q <- session$clientData$url_search
-      if (is.null(url_q)) {
-        return()
-      }
-      qs <- shiny::parseQueryString(sub("^\\?", "", url_q))
-      tok <- qs[["cache_tok"]]
-      if (is.null(tok) || !nzchar(tok) || !isTRUE(simex_br_cache$exists(tok))) {
+    observe(
+      {
+        if (isTRUE(br_upload_checked())) {
+          return()
+        }
+        url_q <- session$clientData$url_search
+        if (is.null(url_q)) {
+          return()
+        }
+        qs <- shiny::parseQueryString(sub("^\\?", "", url_q))
+        tok <- qs[["cache_tok"]]
+        if (is.null(tok) || !nzchar(tok) || !isTRUE(simex_br_cache$exists(tok))) {
+          br_upload_checked(TRUE)
+          brochure::server_redirect("/", session = session)
+          return()
+        }
+        ent <- simex_br_cache$get(tok)
+        if (!identical(ent$app_mode, "Fitting")) {
+          br_upload_checked(TRUE)
+          brochure::server_redirect("/", session = session)
+          return()
+        }
         br_upload_checked(TRUE)
-        brochure::server_redirect("/", session = session)
-        return()
-      }
-      ent <- simex_br_cache$get(tok)
-      if (!identical(ent$app_mode, "Fitting")) {
-        br_upload_checked(TRUE)
-        brochure::server_redirect("/", session = session)
-        return()
-      }
-      br_upload_checked(TRUE)
-    }, priority = 10L)
+      },
+      priority = 10L
+    )
 
     ## After a valid CSV is chosen, continue to `/app` (same checks as before).
-    observeEvent(input$br_incidence_file, {
-      url_q <- session$clientData$url_search
-      if (is.null(url_q)) {
-        showNotification("Please start again from the home screen.", type = "warning")
-        return()
-      }
-      qs <- shiny::parseQueryString(sub("^\\?", "", url_q))
-      tok <- qs[["cache_tok"]]
-      if (is.null(tok) || !nzchar(tok) || !isTRUE(simex_br_cache$exists(tok))) {
-        showNotification("That link is no longer valid. Head home and try again.", type = "warning")
-        return()
-      }
-      ent <- simex_br_cache$get(tok)
-      if (!identical(ent$app_mode, "Fitting")) {
-        brochure::server_redirect("/", session = session)
-        return()
-      }
-      df <- parse_uploaded_csv(input$br_incidence_file)
-      if (is.null(df)) {
-        return()
-      }
-      cmp <- toupper(trimws(as.character(df$compartment)))
-      if (!any(cmp == "E")) {
-        showNotification(
-          "This dataset needs exposed-case rows for a fit to run.",
-          type = "warning"
+    observeEvent(input$br_incidence_file,
+      {
+        url_q <- session$clientData$url_search
+        if (is.null(url_q)) {
+          showNotification("Please start again from the home screen.", type = "warning")
+          return()
+        }
+        qs <- shiny::parseQueryString(sub("^\\?", "", url_q))
+        tok <- qs[["cache_tok"]]
+        if (is.null(tok) || !nzchar(tok) || !isTRUE(simex_br_cache$exists(tok))) {
+          showNotification("That link is no longer valid. Head home and try again.", type = "warning")
+          return()
+        }
+        ent <- simex_br_cache$get(tok)
+        if (!identical(ent$app_mode, "Fitting")) {
+          brochure::server_redirect("/", session = session)
+          return()
+        }
+        df <- parse_uploaded_csv(input$br_incidence_file)
+        if (is.null(df)) {
+          return()
+        }
+        cmp <- toupper(trimws(as.character(df$compartment)))
+        if (!any(cmp == "E")) {
+          showNotification(
+            "This dataset needs exposed-case rows for a fit to run.",
+            type = "warning"
+          )
+          return()
+        }
+        ent$fitting_df <- df
+        simex_br_cache$set(tok, ent)
+        brochure::server_redirect(
+          paste0("/app?cache_tok=", utils::URLencode(tok, reserved = TRUE)),
+          session = session
         )
-        return()
-      }
-      ent$fitting_df <- df
-      simex_br_cache$set(tok, ent)
-      brochure::server_redirect(
-        paste0("/app?cache_tok=", utils::URLencode(tok, reserved = TRUE)),
-        session = session
-      )
-    }, ignoreNULL = TRUE)
+      },
+      ignoreNULL = TRUE
+    )
   }
 
   ## FRAC SYMP DOESNT SEEM TO BE WORKING? ##
@@ -995,74 +1209,82 @@ run_shiny <- function() {
 
     ## Hydrate mode and optional fitting data from brochure cache (see landing).
     brochure_hydrated <- reactiveVal(FALSE)
-    observe({
-      if (isTRUE(brochure_hydrated())) {
-        return()
-      }
-      url_q <- session$clientData$url_search
-      if (is.null(url_q)) {
-        return()
-      }
-      qs <- shiny::parseQueryString(sub("^\\?", "", url_q))
-      tok <- qs[["cache_tok"]]
-      if (is.null(tok) || !nzchar(tok)) {
-        brochure::server_redirect("/", session = session)
-        brochure_hydrated(TRUE)
-        return()
-      }
-      if (!isTRUE(simex_br_cache$exists(tok))) {
-        brochure::server_redirect("/", session = session)
-        brochure_hydrated(TRUE)
-        return()
-      }
-      ent <- simex_br_cache$get(tok)
-      mode <- ent$app_mode
-      df <- ent$fitting_df
-      if (identical(mode, "Fitting") &&
-            (is.null(df) || !is.data.frame(df) || nrow(df) == 0L)) {
-        brochure::server_redirect(
-          paste0(
-            "/fitting-data?cache_tok=",
-            utils::URLencode(tok, reserved = TRUE)
-          ),
-          session = session
+    observe(
+      {
+        if (isTRUE(brochure_hydrated())) {
+          return()
+        }
+        url_q <- session$clientData$url_search
+        if (is.null(url_q)) {
+          return()
+        }
+        qs <- shiny::parseQueryString(sub("^\\?", "", url_q))
+        tok <- qs[["cache_tok"]]
+        if (is.null(tok) || !nzchar(tok)) {
+          brochure::server_redirect("/", session = session)
+          brochure_hydrated(TRUE)
+          return()
+        }
+        if (!isTRUE(simex_br_cache$exists(tok))) {
+          brochure::server_redirect("/", session = session)
+          brochure_hydrated(TRUE)
+          return()
+        }
+        ent <- simex_br_cache$get(tok)
+        mode <- ent$app_mode
+        df <- ent$fitting_df
+        if (identical(mode, "Fitting") &&
+          (is.null(df) || !is.data.frame(df) || nrow(df) == 0L)) {
+          brochure::server_redirect(
+            paste0(
+              "/fitting-data?cache_tok=",
+              utils::URLencode(tok, reserved = TRUE)
+            ),
+            session = session
+          )
+          brochure_hydrated(TRUE)
+          return()
+        }
+        shinyWidgets::updateRadioGroupButtons(
+          session,
+          inputId = "app_mode",
+          selected = mode
         )
+        if (!is.null(df) && is.data.frame(df) && nrow(df) > 0L) {
+          fitting_data_rv(df)
+        }
+        cache_app_mode(mode)
         brochure_hydrated(TRUE)
-        return()
-      }
-      shinyWidgets::updateRadioGroupButtons(
-        session,
-        inputId = "app_mode",
-        selected = mode
-      )
-      if (!is.null(df) && is.data.frame(df) && nrow(df) > 0L) {
-        fitting_data_rv(df)
-      }
-      cache_app_mode(mode)
-      brochure_hydrated(TRUE)
-    }, priority = 10L)
+      },
+      priority = 10L
+    )
 
     ## Only reset Exploration tabs when switching from Fitting (not on hydrate).
-    observeEvent(input$app_mode, {
-      req(!is.null(input$app_mode))
-      cur <- as.character(input$app_mode[[1L]])
-      prev <- app_mode_prev()
-      if (identical(cur, "Exploration") && identical(prev, "Fitting")) {
-        n_par(0L)
-        active_par(character())
-        total_par(0L)
-        exploration_periods_seeded(FALSE)
-        exploration_default_run_done(FALSE)
-        cache_app_mode("Exploration")
-        ## Drop calibration-only outputs from the shared scenario list.
-        sc <- scenarios()
-        if ("Fitted" %in% names(sc)) {
-          sc[["Fitted"]] <- NULL
-          scenarios(sc)
+    observeEvent(input$app_mode,
+      {
+        req(!is.null(input$app_mode))
+        cur <- as.character(input$app_mode[[1L]])
+        prev <- app_mode_prev()
+        if (identical(cur, "Exploration") && identical(prev, "Fitting")) {
+          n_par(0L)
+          active_par(character())
+          total_par(0L)
+          exploration_periods_seeded(FALSE)
+          exploration_default_run_done(FALSE)
+          cache_app_mode("Exploration")
+          ## Drop calibration-only outputs from the shared scenario list.
+          sc <- scenarios()
+          if ("Fitted" %in% names(sc)) {
+            sc[["Fitted"]] <- NULL
+            scenarios(sc)
+          }
+          scenario_patches_rv(list())
         }
-      }
-      app_mode_prev(cur)
-    }, ignoreNULL = TRUE, ignoreInit = TRUE)
+        app_mode_prev(cur)
+      },
+      ignoreNULL = TRUE,
+      ignoreInit = TRUE
+    )
 
     ## Single sidebar nav tree so inputIds are not duplicated across modes.
     output$sidebar_mode_nav <- renderUI({
@@ -1254,6 +1476,65 @@ run_shiny <- function() {
       }
     })
 
+    ## Fitting / Scenarios tab: same selectize + delete pattern as Exploration.
+    observe({
+      req(is_fitting())
+      nms <- names(scenarios())
+      sel <- scenario_sel_str(isolate(input$fitting_scenario_select))
+      if (length(nms) == 0L) {
+        updateSelectizeInput(
+          session,
+          "fitting_scenario_select",
+          choices = character(0),
+          selected = "Default",
+          server = TRUE
+        )
+      } else {
+        new_sel <- if (nzchar(sel) && sel %in% nms) {
+          sel
+        } else if (nzchar(sel) && !sel %in% nms) {
+          sel
+        } else {
+          nms[[length(nms)]]
+        }
+        ch <- unique(c(nms, if (nzchar(new_sel) && !new_sel %in% nms) new_sel))
+        ch <- ch[vapply(ch, nzchar, logical(1))]
+        updateSelectizeInput(
+          session,
+          "fitting_scenario_select",
+          choices = stats::setNames(ch, ch),
+          selected = new_sel,
+          server = TRUE
+        )
+      }
+    })
+
+    observeEvent(input$fitting_remove_saved_scenario, {
+      req(is_fitting())
+      nm <- scenario_sel_str(input$fitting_scenario_select)
+      if (!nzchar(nm)) {
+        showNotification("Pick a saved run to remove.", type = "warning")
+        return()
+      }
+      cur <- scenarios()
+      if (!nm %in% names(cur)) {
+        return()
+      }
+      cur[[nm]] <- NULL
+      scenarios(cur)
+    })
+
+    observe({
+      req(is_fitting())
+      nms <- names(scenarios())
+      nm <- scenario_sel_str(input$fitting_scenario_select)
+      if (length(nms) == 0L || !nzchar(nm) || !nm %in% nms) {
+        disable("fitting_remove_saved_scenario")
+      } else {
+        enable("fitting_remove_saved_scenario")
+      }
+    })
+
     ## reset
     observeEvent(
       input$reset,
@@ -1310,6 +1591,36 @@ run_shiny <- function() {
     ## Posterior fit state (Fitted scenario on Timeline in Fitting mode).
     fitted_samples_rv <- reactiveVal(NULL)
     fitted_simex_rv <- reactiveVal(NULL)
+    ## Time indices from the last successful fit (scenario runs reuse).
+    fitting_time_seq_rv <- reactiveVal(NULL)
+    ## Names of fitted (Monty) parameters — sections touching these are hidden.
+    fitted_par_names_rv <- reactiveVal(character())
+    ## Lists of partial arg lists from shiny_to_get_parameters_args_from_tab(...,"scen").
+    scenario_patches_rv <- reactiveVal(list())
+
+    ## Calibration args shaped like simex_to_shiny() input (for scenario defaults).
+    calibration_args_shaped <- reactive({
+      req(is_fitting())
+      a <- shiny_to_get_parameters_args_from_tab(input, "fit")
+      if (is.null(a)) {
+        a <- as.list(simex_defaults)
+      }
+      args_to_simex_shiny_shape(a)
+    })
+
+    ## Section ids (iso3, agestrat, vax, …) excluding anything that overlaps fitted pars.
+    scenario_section_choice_ids <- reactive({
+      req(is_fitting())
+      shaped <- calibration_args_shaped()
+      fitnms <- fitted_par_names_rv()
+      nms <- names(shaped)
+      if (length(fitnms) > 0L) {
+        nms <- nms[vapply(nms, function(sec) {
+          !any(scenario_section_to_argnames(sec) %in% fitnms)
+        }, logical(1))]
+      }
+      nms
+    })
 
     observeEvent(
       input$run_fit,
@@ -1382,6 +1693,7 @@ run_shiny <- function() {
         if (is.null(priors)) {
           return()
         }
+        fitted_par_names_rv(priors$parameters)
 
         fit_df <- as.data.frame(df)[, need_cols, drop = FALSE]
         fit_df <- fit_df[as.numeric(fit_df$time) > 0, , drop = FALSE]
@@ -1394,6 +1706,10 @@ run_shiny <- function() {
           as.integer(floor(min(as.numeric(fit_df$time), na.rm = TRUE))),
           as.integer(ceiling(max(as.numeric(fit_df$time), na.rm = TRUE)))
         )
+        fitting_time_seq_rv(tseq)
+
+        shinyjs::show("fit_progress_container", anim = FALSE)
+        on.exit(shinyjs::hide("fit_progress_container", anim = FALSE), add = TRUE)
 
         samples <- tryCatch(
           fit_simex(fit_df, parameters, priors, settings),
@@ -1429,6 +1745,136 @@ run_shiny <- function() {
         )
       }
     )
+
+    ## Scenarios tab: empty-state message only (controls are static in sidebar UI).
+    output$fitting_scenarios_status <- renderUI({
+      if (!is_fitting()) {
+        return(NULL)
+      }
+      ids <- scenario_section_choice_ids()
+      if (length(ids) > 0L) {
+        return(NULL)
+      }
+      p(
+        class = "text-muted small",
+        paste0(
+          "No parameters are available for scenario steps ",
+          "(all overlap fitted parameters)."
+        )
+      )
+    })
+
+    ## Keep scen_section_select in sync without recreating the input (avoids reset).
+    observe({
+      req(is_fitting())
+      ids <- scenario_section_choice_ids()
+      if (length(ids) == 0L) {
+        updateSelectInput(
+          session,
+          "scen_section_select",
+          choices = c("—" = ""),
+          selected = ""
+        )
+        shinyjs::disable("scen_section_select")
+        return()
+      }
+      shinyjs::enable("scen_section_select")
+      ch <- scenario_section_choice_labels(ids)
+      cur <- isolate(input$scen_section_select)
+      sel <- if (!is.null(cur) && nzchar(cur) && cur %in% ids) {
+        cur
+      } else {
+        ids[[1L]]
+      }
+      updateSelectInput(
+        session,
+        "scen_section_select",
+        choices = ch,
+        selected = sel
+      )
+    })
+
+    output$scenario_section_inputs <- renderUI({
+      if (!is_fitting()) {
+        return(NULL)
+      }
+      sec <- input$scen_section_select
+      if (is.null(sec) || !nzchar(sec)) {
+        return(NULL)
+      }
+      ## Only re-build widgets when the section changes, not when Calibration edits
+      ## change calibration_args_shaped() (that was wiping scenario field values).
+      shaped <- isolate(calibration_args_shaped())
+      if (!sec %in% names(shaped)) {
+        return(NULL)
+      }
+      make_input(shaped[[sec]], sec, "scen")
+    })
+
+    observeEvent(input$scen_add_patch, {
+      req(is_fitting())
+      patch <- shiny_to_get_parameters_args_from_tab(input, "scen")
+      if (is.null(patch) || length(patch) == 0L) {
+        showNotification("Adjust the fields for this parameter, then save.", type = "warning")
+        return()
+      }
+      cur <- scenario_patches_rv()
+      scenario_patches_rv(c(cur, list(patch)))
+    })
+
+    observeEvent(input$scen_run, {
+      req(is_fitting())
+      samples <- fitted_samples_rv()
+      if (is.null(samples)) {
+        showNotification("Run a calibration fit first.", type = "warning")
+        return()
+      }
+      patches <- scenario_patches_rv()
+      if (length(patches) == 0L) {
+        showNotification("Save at least one scenario step first.", type = "warning")
+        return()
+      }
+      tseq <- fitting_time_seq_rv()
+      if (is.null(tseq) || length(tseq) == 0L) {
+        showNotification("Run a fit first so a time grid is available.", type = "warning")
+        return()
+      }
+      modification <- Reduce(
+        function(a, b) utils::modifyList(a, b),
+        patches,
+        init = list()
+      )
+      sx <- tryCatch(
+        run_simex_from_samples(
+          samples,
+          time = tseq,
+          modification = modification
+        ),
+        error = function(e) {
+          showNotification(conditionMessage(e), type = "error")
+          NULL
+        }
+      )
+      if (is.null(sx)) {
+        return()
+      }
+      nm <- scenario_sel_str(input$fitting_scenario_select)
+      if (!nzchar(nm)) {
+        nm <- if (length(scenarios()) == 0L) {
+          "Default"
+        } else {
+          paste0("Saved_", length(scenarios()) + 1L)
+        }
+      }
+      sc <- scenarios()
+      sc[[nm]] <- sx
+      scenarios(sc)
+      nav_select(
+        id = "main_plots_nav",
+        select = "Timeline",
+        session = session
+      )
+    })
 
     ## Overlay data for Timeline: only in Fitting mode (incidence rule in plot block).
     timeline_plot_data <- reactive({
@@ -1540,7 +1986,6 @@ run_shiny <- function() {
         period_days = 1L
       )
     })
-
   }
 
   ## Run the multi-page Shiny app ({brochure}: `/`, `/fitting-data`, `/app`).

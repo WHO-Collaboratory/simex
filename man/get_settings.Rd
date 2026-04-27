@@ -6,10 +6,10 @@
 \usage{
 get_settings(
   n_particles = 200,
-  n_steps = 10000,
+  n_steps = 1000,
   n_chains = 4,
-  n_samples = 1000,
-  burnin = 1000,
+  n_samples = 100,
+  burnin = 800,
   rerun_every = 100,
   proposal_sd = 0.02,
   save_state = TRUE,

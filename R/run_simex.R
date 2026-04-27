@@ -26,7 +26,6 @@ run_simex <- function(pars,
                       state = NULL,
                       time = 0:200,
                       n_particles = 1) {
-
   # convert into parameter matrix where rows represent parallel
   # parameter sets (e.g. posterior draws) and columns represent
   # parameter sets applied to the same system over time. when a list
@@ -39,8 +38,11 @@ run_simex <- function(pars,
   } else if (is.matrix(pars)) {
     if (is.null(dimnames(pars)[[2]])) {
       # if 1 column provided, assume starting time is 1
-      if (dim(pars)[2] == 1) dimnames(pars)[[2]] <- "1"
-      else stop("breaks must be provided as column names to pars")
+      if (dim(pars)[2] == 1) {
+        dimnames(pars)[[2]] <- "1"
+      } else {
+        stop("breaks must be provided as column names to pars")
+      }
     }
   }
 
@@ -90,7 +92,6 @@ run_simex <- function(pars,
   sx <- as.simex(sim, dims = dims, time = time, sample = sample)
   sx$pars <- pars
   return(sx)
-
 }
 
 #' Coerce dust2 output or arrays into a \code{simex} object
@@ -107,7 +108,6 @@ run_simex <- function(pars,
 #'
 #' @export
 as.simex <- function(x, dims = c("state", "time"), ...) {
-
   # get index
   index <- attr(x, "index")
 
@@ -129,8 +129,11 @@ as.simex <- function(x, dims = c("state", "time"), ...) {
 
   # get values for dimensions
   get_dimval <- function(name, ln, args) {
-    if (name %in% names(args)) args[[name]]
-    else seq_len(ln)
+    if (name %in% names(args)) {
+      args[[name]]
+    } else {
+      seq_len(ln)
+    }
   }
 
   # run across dimensions
@@ -166,7 +169,6 @@ as.simex <- function(x, dims = c("state", "time"), ...) {
 
   # return
   return(out)
-
 }
 
 #' Simulate forward from posterior samples
@@ -186,13 +188,10 @@ as.simex <- function(x, dims = c("state", "time"), ...) {
 run_simex_from_samples <- function(samples,
                                    time = 0:200,
                                    modification = NULL,
-                                   start_from_snapshot = NULL
-                                   ) {
-
+                                   start_from_snapshot = NULL) {
   packer <- attr(samples, "packer")
 
   if (is.null(packer$groups)) {
-
     # generate full parameter sets (i.e. fitted + fixed pars) from
     # posterior samples of inferred parameters using the unpacker
     pars <- collapse_dim(samples$pars, keep = 1) |>
@@ -200,18 +199,17 @@ run_simex_from_samples <- function(samples,
       map(~ list_modify(.x, !!!modification)) |>
       matrix(ncol = 1)
 
-    if (!is.null(start_from_snapshot))
+    if (!is.null(start_from_snapshot)) {
       state <- collapse_dim(
         samples$observations$snapshots[, start_from_snapshot, , ],
         keep = 1
       )
-    else
+    } else {
       state <- NULL
+    }
 
     run_simex(pars, state, time)
-
   } else {
-
     # collapse chain dimesion
     pars <- collapse_dim(samples$pars, keep = 1) |>
       # unpack to generate full parameter set
@@ -226,26 +224,25 @@ run_simex_from_samples <- function(samples,
     pars <- do.call(c, pars)
     pars <- matrix(pars, ncol = 1)
 
-    if (!is.null(start_from_snapshot))
+    if (!is.null(start_from_snapshot)) {
       state <- collapse_dim(
         samples$observations$snapshots[, , start_from_snapshot, , ],
         keep = 1
       )
-    else
+    } else {
       state <- NULL
+    }
 
     run_simex(pars, state, time)
-
   }
-
 }
 
 
 # slice into a given dimension without knowing number of dimensions
 slice_dim <- function(x, idx, dim) {
   k <- length(dim(x))
-  indices <- rep(list(quote(expr = )), k)  # select all dimensions
-  indices[[dim]] <- idx                    # replace the target dimension
+  indices <- rep(list(quote(expr = )), k) # select all dimensions
+  indices[[dim]] <- idx # replace the target dimension
   do.call("[", c(list(x), indices, list(drop = FALSE)))
 }
 
