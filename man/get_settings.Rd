@@ -16,7 +16,7 @@ get_settings(
   save_trajectories = TRUE,
   snapshots = NULL,
   groups = NULL,
-  deterministic = FALSE
+  deterministic = TRUE
 )
 }
 \arguments{

@@ -1,5 +1,7 @@
 #' This function launches the simex Shiny app .
 #'
+#' @importFrom brochure brochureApp server_redirect
+#' @importFrom cachem cache_mem
 #' @importFrom shinyMatrix matrixInput
 #' @importFrom shinyjs click disable enable useShinyjs
 #' @importFrom shiny icon showNotification
@@ -288,15 +290,176 @@ run_shiny <- function() {
     }
   }))
 
-  # Define the UI
-  ui <- page_sidebar(
+  ## Tooltip copy (HTML title): former Introduction text, kept off the page.
+  tip_explore_scenario <- paste0(
+    "Name for this run. Pick an existing name to replace it, or type a new one ",
+    "to add another saved scenario."
+  )
+  tip_explore_run <- paste0(
+    "Simulate with the numbers on the open parameter tab and store the result ",
+    "under the scenario name. Open Timeline or Summary to view charts."
+  )
+  tip_explore_add_period <- paste0(
+    "Add another time segment with its own settings (for example when an ",
+    "intervention starts). One segment must begin on day 1."
+  )
+  tip_explore_remove_period <- "Remove the time segment you are currently editing."
+  tip_explore_reset <- "Restore defaults for the open time segment."
+  tip_explore_n_particles <- paste0(
+    "How many stochastic runs to average; more gives smoother bands but takes ",
+    "longer."
+  )
+  tip_fit_params <- paste0(
+    "Epidemic and programme settings held fixed while the fit runs; open each ",
+    "field to adjust."
+  )
+  tip_fit_priors <- "How strongly the model believes transmission sits before seeing your data."
+  tip_fit_settings <- "Sampler and filter choices for the Bayesian run."
+  tip_fit_run <- paste0(
+    "Match the model to your uploaded series; when it finishes, open Timeline ",
+    "to see the fit and your data together."
+  )
+
+  ## Left sidebar: Exploration vs Fitting (single column; details in tooltips).
+  sidebar_ui_exploration <- function() {
+    tagList(
+      tags$label(
+        `for` = "scenario_select",
+        class = "control-label",
+        title = tip_explore_scenario,
+        style = "cursor: help;",
+        "Scenario"
+      ),
+      div(
+        style = "display: flex; flex-direction: row; align-items: center; gap: 10px;",
+        div(
+          style = "flex: 1; min-width: 0;",
+          selectizeInput(
+            inputId = "scenario_select",
+            label = NULL,
+            choices = character(0),
+            selected = "Default",
+            options = list(
+              placeholder = "Name this run",
+              create = TRUE,
+              createOnBlur = TRUE
+            )
+          )
+        ),
+        actionButton(
+          inputId = "remove_saved_scenario",
+          label = NULL,
+          icon = icon("times"),
+          title = "Drop the selected saved run from this session.",
+          class = "btn-danger",
+          style = "padding: 6px 12px; flex-shrink: 0;"
+        )
+      ),
+      div(
+        style = "display: flex; align-items: stretch; margin-top: 0px",
+        actionButton(
+          inputId = "run_scenario",
+          label = "Run Scenario",
+          width = "100%",
+          title = tip_explore_run,
+          style = "margin-right:2px; margin-left: 2px"
+        )
+      ),
+      div(
+        style = "display: flex; align-items: stretch; margin-top: -20px",
+        actionButton(
+          inputId = "add_period",
+          label = "Add Period",
+          width = "33%",
+          title = tip_explore_add_period,
+          style = "margin-right:2px; margin-left: 2px"
+        ),
+        actionButton(
+          inputId = "remove_period",
+          label = "Remove Period",
+          width = "33%",
+          title = tip_explore_remove_period,
+          style = "margin-right:2px; margin-left: 2px"
+        ),
+        actionButton(
+          inputId = "reset",
+          label = "Reset",
+          width = "33%",
+          title = tip_explore_reset,
+          style = "margin-right:2px; margin-left: 2px"
+        )
+      ),
+      tags$div(
+        style = "margin-top: 8px; cursor: help;",
+        title = tip_explore_n_particles,
+        numericInput(
+          inputId = "n_particles",
+          label = "Simulations",
+          value = 50L,
+          min = 1L,
+          step = 1L
+        )
+      ),
+      navset_card_underline(id = "parameters_panel")
+    )
+  }
+
+  sidebar_ui_fitting <- function() {
+    calibration_panel <- tagList(
+      tags$div(
+        class = "mb-2",
+        title = tip_fit_params,
+        style = "cursor: help;",
+        tags$strong("Parameters")
+      ),
+      div(
+        style = "margin-left: 10px; margin-right: 10px",
+        tagList(simex_to_shiny(simex_defaults, "fit"))
+      ),
+      hr(),
+      tags$div(
+        class = "mb-1",
+        title = tip_fit_priors,
+        style = "cursor: help;",
+        tags$strong("Priors")
+      ),
+      selectInput(
+        inputId = "prior_p_trans_dist",
+        label = "Distribution",
+        choices = prior_dist_names,
+        selected = "Beta"
+      ),
+      uiOutput("prior_p_trans_args_ui"),
+      hr(),
+      tags$div(
+        class = "mb-1",
+        title = tip_fit_settings,
+        style = "cursor: help;",
+        tags$strong("Settings")
+      ),
+      fit_settings_ui,
+      hr(),
+      actionButton(
+        inputId = "run_fit",
+        label = "Run fit",
+        width = "100%",
+        class = "btn-primary",
+        title = tip_fit_run
+      )
+    )
+    navset_card_underline(
+      id = "fitting_sidebar_tabs",
+      nav_panel(title = "Calibration", calibration_panel),
+      nav_panel(title = "Scenarios", div(style = "min-height: 6rem;"))
+    )
+  }
+
+  ## Main model UI (served at /app via brochure; top-level page_sidebar).
+  main_simex_ui <- page_sidebar(
     useShinyjs(),
     setBackgroundColor(background_col),
     tags$head(tags$style(HTML(paste(
       paste0("#sidebar{background-color:", sidebar_col, "}"),
-
-      ## Run / period / reset: same edge as shinyMatrix cells (1px gray = #808080);
-      ## Bootstrap --bs-border-color (#dee2e6) is lighter than those inputs
       paste0(
         "#run_scenario,#add_period,#remove_period,#reset{",
         "background-color:#fff!important;color:#212529!important;",
@@ -309,8 +472,6 @@ run_shiny <- function() {
         "background-color:#e9ecef!important;color:#000!important;",
         "border-color:#808080!important;}"
       ),
-
-      ## Default shinyWidgets toggles: explicit white on unselected options
       paste0(
         "#main_plots_nav .radio-group-buttons button.radiobtn:not(.active){",
         "background-color:#fff!important;}"
@@ -323,141 +484,53 @@ run_shiny <- function() {
       ".csv-upload-dropzone .shiny-input-container{width:100%;max-width:520px;margin:16px auto 0;}",
       ".csv-upload-dropzone .input-group{margin:auto;}"
     )))),
-
-    ### next two lines for class - use class attribute (.inline instead of #inline)
     tags$head(
       tags$style(
         type = "text/css",
         ".inline label{ display: table-cell; text-align: left; vertical-align: middle; } .inline .form-group { display: table-row;} p.indent {margin-right: 10px}"
       )
     ),
-    title = h4(strong(
-      em("simex:"),
-      "simulating outbreaks and public health interventions"
-    )),
+    title = tags$div(
+      style = paste0(
+        "display:flex;justify-content:space-between;align-items:center;",
+        "width:100%;gap:0.75rem;flex-wrap:wrap;"
+      ),
+      tags$img(
+        src = "simex/img/simex_logo.png",
+        alt = "simex",
+        style = paste0(
+          "max-height: 2.75rem; width: auto; flex: 0 0 auto;",
+          "object-fit: contain;"
+        )
+      ),
+      tags$a(
+        href = "/",
+        class = "btn btn-sm btn-outline-secondary border-0 rounded-circle",
+        style = paste0(
+          "flex-shrink:0;text-decoration:none;width:2.25rem;",
+          "height:2.25rem;padding:0;display:inline-flex;",
+          "align-items:center;justify-content:center;"
+        ),
+        title = "Home",
+        `aria-label` = "Home",
+        icon("home")
+      )
+    ),
+    window_title = "simex",
     sidebar = sidebar(
       width = "40%",
-      navset_card_underline(
-        nav_panel(
-          title = "Introduction",
-          strong("Introduction to simex"),
-          p("simex is a simulation excercise tool for epidemic and pandemic preparedness that lets you explore different outbreak scenarios and the effect of different public health interventions. The text below will give a brief overview of how to use the tool."),
-          strong("Running a default scenario"),
-          p("A typical workflow: upload observed incidence on ", em("Timeline"), " or ", em("Summary"), " (drag and drop or browse), with ", em("Incidence"), " selected on Timeline to explore the data. Adjust parameters under ", em("Parameters"), ", then use ", em("Run Scenario"), " to run the model, store the result under the selected scenario name, and compare it with the data on the Timeline. ", em("Summary"), " compares saved scenarios. The compartments are as follows:"),
-          htmlOutput("compartments_description"),
-          p("The subscript u and v correspond to unvaccinated and vaccinated populations, respectively. You can toggle whether you want to see prevalence or incidence using the buttons above the plot, and you can toggle whether you want to hide/show the vaccinated and unvaccinated populations using the buttons in the bottom right."),
-          strong("Running a custom scenario"),
-          p("To run a scenario under your own parameter settings, simply change any of the values in the parameter tab as you desire and press ", em("Run Scenario"), " again and the plot on the right will update."),
-          strong("Changing parameter values over time"),
-          p("The settings so far run a single set of parameters over the entire time period. To simulate a scenario where the parameters change at a given point in the pandemic, use the ", em("Add Period"), "button. This will add a new set of parameters, associated with a given start day. Try adding a new period and changing the reproduction number from 3 to 5 with a start day of 75. Then run the scenario and see how the increased reproduction number (e.g. due to the introduction of a new variant) changes the course of the pandemic. You can add as many periods as you would like, and can navigate between the parameter settings of each period by clicking on the respective tabs. You can also delete a period using the ", em("Remove Period"), "button."),
-          strong("Comparing different scenarios"),
-          p("Use ", em("Run Scenario"), " to add a simulation or overwrite one with the same name (each call re-runs the model with current parameters). Under ", em("Scenario"), ", pick a saved run or type a new name; remove a saved run with the ", em("\u00d7"), " button. ", em("Timeline"), " shows one outcome at a time; with ", em("Incidence"), ", uploaded data can be shown alone or with saved models. CSV columns: ", strong("time"), ", ", strong("age"), ", ", strong("compartment"), " (E, H, or D), ", strong("value"), "."),
-          strong("Bayesian fitting"),
-          p("The ", em("Fitting"), " tab runs ", strong("fit_simex()"), " on uploaded incidence using the same long CSV format. Rows with ", strong("compartment = E"), " are required (reported exposure/incidence channel used by the filter). Set fixed model parameters, choose a Monty prior on ", strong("p_trans"), ", adjust sampler settings, then ", em("Run fit"), ". View the posterior trajectory against the data on the ", em("Fit"), " plot tab.")
-        ),
-        nav_panel(
-          title = "Parameters",
-          tags$label(`for` = "scenario_select", class = "control-label", "Scenario"),
-          div(
-            style = "display: flex; flex-direction: row; align-items: center; gap: 10px;",
-            div(
-              style = "flex: 1; min-width: 0;",
-              selectizeInput(
-                inputId = "scenario_select",
-                label = NULL,
-                choices = character(0),
-                selected = "Default",
-                options = list(
-                  placeholder = "Select saved or type a new name",
-                  create = TRUE,
-                  createOnBlur = TRUE
-                )
-              )
-            ),
-            actionButton(
-              inputId = "remove_saved_scenario",
-              label = NULL,
-              icon = icon("times"),
-              title = "Remove selected scenario",
-              class = "btn-danger",
-              style = "padding: 6px 12px; flex-shrink: 0;"
-            )
-          ),
-          div(
-            style = "display: flex; align-items: stretch; margin-top: 0px",
-            actionButton(
-              "run_scenario", "Run Scenario",
-              width = "100%",
-              style = "margin-right:2px; margin-left: 2px"
-            )
-          ),
-          div(
-            style = "display: flex; align-items: stretch; margin-top: -20px",
-            actionButton(
-              "add_period", "Add Period",
-              width = "33%",
-              style = "margin-right:2px; margin-left: 2px"
-            ),
-            actionButton(
-              "remove_period", "Remove Period",
-              width = "33%",
-              style = "margin-right:2px; margin-left: 2px"
-            ),
-            actionButton(
-              "reset", "Reset",
-              width = "33%",
-              style = "margin-right:2px; margin-left: 2px"
-            )
-          ),
-          div(
-            style = "margin-top: 8px",
-            numericInput(
-              "n_particles",
-              "Number of simulations",
-              value = 50L,
-              min = 1L,
-              step = 1L
-            )
-          ),
-          navset_card_underline(id = "parameters_panel")
-        ),
-        nav_panel(
-          title = "Fitting",
-          strong("Data"),
-          fileInput(
-            inputId = "fitting_data_file",
-            label = NULL,
-            accept = c(".csv", "text/csv"),
-            buttonLabel = "Browse...",
-            width = "100%"
-          ),
-          hr(),
-          strong("Parameters"),
-          div(
-            style = "margin-left: 10px; margin-right: 10px",
-            tagList(simex_to_shiny(simex_defaults, "fit"))
-          ),
-          hr(),
-          strong("Priors"),
-          selectInput(
-            inputId = "prior_p_trans_dist",
-            label = "Distribution",
-            choices = prior_dist_names,
-            selected = "Beta"
-          ),
-          uiOutput("prior_p_trans_args_ui"),
-          hr(),
-          strong("Settings"),
-          fit_settings_ui,
-          hr(),
-          actionButton(
-            inputId = "run_fit",
-            label = "Run fit",
-            width = "100%",
-            class = "btn-primary"
-          )
+      ## Mode comes from brochure landing + cache only (hydrated server-side).
+      shinyjs::hidden(tags$div(
+        id = "app_mode_hidden_wrap",
+        shinyWidgets::radioGroupButtons(
+          inputId = "app_mode",
+          label = NULL,
+          choices = c("Exploration", "Fitting"),
+          selected = "Exploration",
+          justified = TRUE
         )
-      )
+      )),
+      uiOutput("sidebar_mode_nav")
     ),
     navset_card_underline(
       id = "main_plots_nav",
@@ -508,42 +581,12 @@ run_shiny <- function() {
           choices = c("Cases", "Hospitalisations", "Deaths")
         ),
         uiOutput("summary_plot_container")
-      ),
-      nav_panel(
-        title = "Fit",
-        fluidRow(
-          column(
-            width = 12,
-            div(
-              style = "display: inline-block; vertical-align: top; margin-right: 12px;",
-              radioGroupButtons(
-                inputId = "fit_plot_outcome",
-                selected = "Cases",
-                label = NULL,
-                choices = c("Cases", "Hospitalisations", "Deaths"),
-                size = "sm"
-              )
-            ),
-            div(
-              style = "display: inline-block; vertical-align: middle; margin-right: 12px;",
-              shinyWidgets::materialSwitch(
-                inputId = "fit_stratify_age",
-                label = "Stratify by age",
-                value = FALSE,
-                status = "primary"
-              )
-            )
-          )
-        ),
-        uiOutput("fit_plot_container")
       )
     ),
-
-    # start up loading spinner
     waiter::waiter_preloader(
       html = tagList(
         tags$img(
-          src = "simex/img/collaboratory_logo.jpg",
+          src = "simex/img/collaboratory_log.jpg",
           width = 600,
           style = "padding: 20px;"
         ),
@@ -554,6 +597,330 @@ run_shiny <- function() {
     )
   )
 
+  ## Brochure: each route is a new Shiny session; use an in-memory cache keyed
+  ## by `cache_tok` in the query string to pass mode choice and uploaded CSV.
+  simex_br_cache <- cachem::cache_mem(max_size = 512 * 1024^2, max_n = 2000L)
+
+  ## cache_mem keys must be lowercase letters and digits only (see ?cache_mem).
+  new_simex_br_token <- function() {
+    paste0(sample(c(letters, as.character(0:9)), 24L, replace = TRUE), collapse = "")
+  }
+
+  ## Shared CSV reader for incidence uploads (landing/upload/main app).
+  parse_uploaded_csv <- function(fi) {
+    if (is.null(fi)) {
+      return(NULL)
+    }
+    df <- tryCatch(
+      utils::read.csv(fi$datapath, check.names = FALSE),
+      error = function(e) {
+        showNotification("That file could not be read.", type = "warning")
+        NULL
+      }
+    )
+    if (is.null(df)) {
+      return(NULL)
+    }
+    need_cols <- c("time", "age", "compartment", "value")
+    if (!all(need_cols %in% names(df))) {
+      showNotification(
+        "This file does not look like the expected table layout.",
+        type = "warning"
+      )
+      return(NULL)
+    }
+    df[, need_cols, drop = FALSE]
+  }
+
+  ## Route `/`: pick Exploration vs Fitting, then redirect with a cache token.
+  ## Logo is served from `inst/assets/` via `simex` resource path (see zzz.R).
+  br_landing_ui <- page_fillable(
+    padding = c("2.5rem", "1.25rem"),
+    fillable = FALSE,
+    setBackgroundColor(background_col),
+    div(
+      class = "container",
+      style = "max-width: 720px; margin-left: auto; margin-right: auto;",
+      div(
+        class = "d-flex justify-content-end mb-2",
+        tags$a(
+          href = "https://github.com/WHO-Collaboratory/simex",
+          class = paste0(
+            "text-decoration-none text-body d-inline-flex align-items-center ",
+            "gap-2 small"
+          ),
+          target = "_blank",
+          rel = "noopener noreferrer",
+          title = "simex source repository (GitHub)",
+          icon("github"),
+          tags$span("GitHub")
+        )
+      ),
+      div(
+        class = "text-center mb-2",
+        tags$img(
+          src = "simex/img/simex_logo.png",
+          alt = "simex",
+          style = "max-width: min(100%, 320px); height: auto;"
+        )
+      ),
+      p(
+        class = "text-center text-muted lead mb-4",
+        style = paste0(
+          "font-size: 1.1rem; max-width: 28rem; ",
+          "margin-left: auto; margin-right: auto;"
+        ),
+        "An outbreak simulation tool for decision-making"
+      ),
+      div(
+        class = "d-flex flex-wrap gap-2 align-items-stretch mb-2",
+        style = "width: 100%;",
+        div(
+          style = "flex: 1 1 240px; min-width: 0;",
+          actionButton(
+            inputId = "br_go_explore",
+            label = tags$span(
+              class = paste0(
+                "d-flex w-100 align-items-center justify-content-between gap-2 ",
+                "text-start"
+              ),
+              tags$span(
+                tagList(tags$strong("Explore"), " without data")
+              ),
+              icon("arrow-right")
+            ),
+            class = "btn btn-primary btn-lg py-3",
+            width = "100%"
+          )
+        ),
+        div(
+          style = "flex: 1 1 240px; min-width: 0;",
+          actionButton(
+            inputId = "br_go_fitting",
+            label = tags$span(
+              class = paste0(
+                "d-flex w-100 align-items-center justify-content-between gap-2 ",
+                "text-start"
+              ),
+              tags$span(
+                tagList(tags$strong("Calibrate"), " with data")
+              ),
+              icon("arrow-right")
+            ),
+            class = "btn btn-primary btn-lg py-3",
+            width = "100%"
+          )
+        )
+      ),
+      card(
+        class = "mb-2 mt-5 border-0 shadow-sm",
+        style = paste0(
+          "border-radius: 14px; overflow: hidden;",
+          "background: linear-gradient(180deg, #f8fafc 0%, #ffffff 48%);",
+          "border: 1px solid #e9ecef !important;"
+        ),
+        card_header(
+          class = "border-0 pt-4 px-4 pb-2 bg-transparent",
+          tags$div(
+            class = "text-uppercase small fw-semibold text-muted",
+            style = "letter-spacing: 0.06em;",
+            "Features"
+          )
+        ),
+        card_body(
+          class = "pt-2 pb-4 px-4",
+          do.call(
+            layout_column_wrap,
+            c(
+              list(width = 1 / 2, gap = "0.75rem"),
+              {
+                ## Must not use name `labs` here — it would overwrite parameter
+                ## labels for the whole `run_shiny()` closure.
+                landing_feature_labs <- c(
+                  "Country-specific demographics",
+                  "Hospital capacity",
+                  "Vaccination campaigns",
+                  "Flexible pathogen characteristics",
+                  "Flexible disease progression",
+                  "Stochastic simulation",
+                  "Bayesian model calibration",
+                  "Scenario modelling"
+                )
+                lapply(landing_feature_labs, function(lab) {
+                  tags$div(
+                    class = paste0(
+                      "rounded-3 px-3 py-3 small fw-semibold ",
+                      "text-body border bg-white"
+                    ),
+                    style = paste0(
+                      "border-color: #e2e8f0 !important;",
+                      "box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);"
+                    ),
+                    lab
+                  )
+                })
+              }
+            )
+          )
+        )
+      ),
+      tags$div(
+        class = "text-center mt-5 pt-4 border-top",
+        tags$p(class = "text-muted small mb-2", "Developed by"),
+        tags$a(
+          href = "https://collaboratory.who.int",
+          class = "d-inline-block text-decoration-none",
+          target = "_blank",
+          rel = "noopener noreferrer",
+          title = "WHO Collaboratory",
+          tags$img(
+            src = "simex/img/collaboratory_log.jpg",
+            alt = "Collaboratory",
+            style = "max-width: 220px; width: 100%; height: auto;"
+          )
+        )
+      )
+    )
+  )
+
+  br_landing_server <- function(input, output, session) {
+    observeEvent(input$br_go_explore, {
+      tok <- new_simex_br_token()
+      simex_br_cache$set(tok, list(app_mode = "Exploration", fitting_df = NULL))
+      brochure::server_redirect(
+        paste0("/app?cache_tok=", utils::URLencode(tok, reserved = TRUE)),
+        session = session
+      )
+    })
+    observeEvent(input$br_go_fitting, {
+      tok <- new_simex_br_token()
+      simex_br_cache$set(tok, list(app_mode = "Fitting", fitting_df = NULL))
+      brochure::server_redirect(
+        paste0(
+          "/fitting-data?cache_tok=",
+          utils::URLencode(tok, reserved = TRUE)
+        ),
+        session = session
+      )
+    })
+  }
+
+  ## Route `/fitting-data`: CSV upload for Fitting only, then continue to /app.
+  br_upload_ui <- page_fillable(
+    padding = c("2rem", "1.25rem"),
+    fillable = FALSE,
+    shinyjs::useShinyjs(),
+    setBackgroundColor(background_col),
+    div(
+      class = "container",
+      style = "max-width: 640px; margin-left: auto; margin-right: auto;",
+      div(
+        style = paste0(
+          "display:flex;justify-content:space-between;",
+          "align-items:flex-start;gap:1rem;margin-bottom:1rem;"
+        ),
+        div(
+          tags$img(
+            src = "simex/img/simex_logo.png",
+            alt = "simex",
+            style = paste0(
+              "max-height: 2.5rem; width: auto; object-fit: contain;",
+              "display:block;"
+            )
+          ),
+          h3(style = "margin:0.35rem 0 0 0;", strong("Upload data"))
+        ),
+        tags$a(
+          href = "/",
+          class = "btn btn-sm btn-outline-secondary border-0 rounded-circle",
+          style = paste0(
+            "flex-shrink:0;text-decoration:none;width:2.25rem;",
+            "height:2.25rem;padding:0;display:inline-flex;",
+            "align-items:center;justify-content:center;"
+          ),
+          title = "Home",
+          `aria-label` = "Home",
+          icon("home")
+        )
+      ),
+      card(
+        fileInput(
+          inputId = "br_incidence_file",
+          label = NULL,
+          buttonLabel = icon("folder-open"),
+          placeholder = "Choose file…",
+          accept = c("text/csv", ".csv"),
+          width = "100%"
+        )
+      )
+    )
+  )
+
+  br_upload_server <- function(input, output, session) {
+    ## One-shot gate so this observer does not re-run on every reactive flush.
+    br_upload_checked <- reactiveVal(FALSE)
+    observe({
+      if (isTRUE(br_upload_checked())) {
+        return()
+      }
+      url_q <- session$clientData$url_search
+      if (is.null(url_q)) {
+        return()
+      }
+      qs <- shiny::parseQueryString(sub("^\\?", "", url_q))
+      tok <- qs[["cache_tok"]]
+      if (is.null(tok) || !nzchar(tok) || !isTRUE(simex_br_cache$exists(tok))) {
+        br_upload_checked(TRUE)
+        brochure::server_redirect("/", session = session)
+        return()
+      }
+      ent <- simex_br_cache$get(tok)
+      if (!identical(ent$app_mode, "Fitting")) {
+        br_upload_checked(TRUE)
+        brochure::server_redirect("/", session = session)
+        return()
+      }
+      br_upload_checked(TRUE)
+    }, priority = 10L)
+
+    ## After a valid CSV is chosen, continue to `/app` (same checks as before).
+    observeEvent(input$br_incidence_file, {
+      url_q <- session$clientData$url_search
+      if (is.null(url_q)) {
+        showNotification("Please start again from the home screen.", type = "warning")
+        return()
+      }
+      qs <- shiny::parseQueryString(sub("^\\?", "", url_q))
+      tok <- qs[["cache_tok"]]
+      if (is.null(tok) || !nzchar(tok) || !isTRUE(simex_br_cache$exists(tok))) {
+        showNotification("That link is no longer valid. Head home and try again.", type = "warning")
+        return()
+      }
+      ent <- simex_br_cache$get(tok)
+      if (!identical(ent$app_mode, "Fitting")) {
+        brochure::server_redirect("/", session = session)
+        return()
+      }
+      df <- parse_uploaded_csv(input$br_incidence_file)
+      if (is.null(df)) {
+        return()
+      }
+      cmp <- toupper(trimws(as.character(df$compartment)))
+      if (!any(cmp == "E")) {
+        showNotification(
+          "This dataset needs exposed-case rows for a fit to run.",
+          type = "warning"
+        )
+        return()
+      }
+      ent$fitting_df <- df
+      simex_br_cache$set(tok, ent)
+      brochure::server_redirect(
+        paste0("/app?cache_tok=", utils::URLencode(tok, reserved = TRUE)),
+        session = session
+      )
+    }, ignoreNULL = TRUE)
+  }
 
   ## FRAC SYMP DOESNT SEEM TO BE WORKING? ##
   ## Maybe something odd with hospital admissions when shortening gentime?
@@ -571,11 +938,11 @@ run_shiny <- function() {
         parlist <- shiny_to_simex(input, active_par())
         start_days <- as.numeric(colnames(parlist))
         if (!any(start_days == 1)) {
-          showNotification("One period must start on day 1!", type = "warning")
+          showNotification("Keep one segment starting on day 1.", type = "warning")
           return(NULL)
         }
         if (!all(table(start_days) == 1)) {
-          showNotification("Periods can't have the same start day!", type = "warning")
+          showNotification("Each segment needs a different start day.", type = "warning")
           return(NULL)
         }
       }
@@ -600,15 +967,154 @@ run_shiny <- function() {
     ## total number of parameters
     total_par <- reactiveVal(0)
 
-    ## initiate server with clicking add_period button
-    o <- observe({
-      click("add_period")
-      o$destroy()
+    ## After switching to Exploration, seed one period tab once `add_period`
+    ## exists (avoids onFlushed racing the renderUI sidebar).
+    exploration_periods_seeded <- reactiveVal(FALSE)
+
+    ## After defaults are on-screen, run once so Timeline/Summary are warm.
+    exploration_default_run_done <- reactiveVal(FALSE)
+
+    ## Exploration vs Fitting: default Exploration when app_mode is briefly NULL.
+    is_exploration <- reactive({
+      m <- input$app_mode
+      is.null(m) || identical(as.character(m[[1L]]), "Exploration")
     })
+
+    is_fitting <- reactive({
+      !is.null(input$app_mode) &&
+        identical(as.character(input$app_mode[[1L]]), "Fitting")
+    })
+
+    ## Parsed incidence for fitting (uploaded on `/fitting-data` in brochure).
+    fitting_data_rv <- reactiveVal(NULL)
+
+    ## Mode taken from brochure cache (avoids racing `input$app_mode` on load).
+    cache_app_mode <- reactiveVal(NULL)
+    ## Previous `app_mode` value (see observeEvent below).
+    app_mode_prev <- reactiveVal(NULL)
+
+    ## Hydrate mode and optional fitting data from brochure cache (see landing).
+    brochure_hydrated <- reactiveVal(FALSE)
+    observe({
+      if (isTRUE(brochure_hydrated())) {
+        return()
+      }
+      url_q <- session$clientData$url_search
+      if (is.null(url_q)) {
+        return()
+      }
+      qs <- shiny::parseQueryString(sub("^\\?", "", url_q))
+      tok <- qs[["cache_tok"]]
+      if (is.null(tok) || !nzchar(tok)) {
+        brochure::server_redirect("/", session = session)
+        brochure_hydrated(TRUE)
+        return()
+      }
+      if (!isTRUE(simex_br_cache$exists(tok))) {
+        brochure::server_redirect("/", session = session)
+        brochure_hydrated(TRUE)
+        return()
+      }
+      ent <- simex_br_cache$get(tok)
+      mode <- ent$app_mode
+      df <- ent$fitting_df
+      if (identical(mode, "Fitting") &&
+            (is.null(df) || !is.data.frame(df) || nrow(df) == 0L)) {
+        brochure::server_redirect(
+          paste0(
+            "/fitting-data?cache_tok=",
+            utils::URLencode(tok, reserved = TRUE)
+          ),
+          session = session
+        )
+        brochure_hydrated(TRUE)
+        return()
+      }
+      shinyWidgets::updateRadioGroupButtons(
+        session,
+        inputId = "app_mode",
+        selected = mode
+      )
+      if (!is.null(df) && is.data.frame(df) && nrow(df) > 0L) {
+        fitting_data_rv(df)
+      }
+      cache_app_mode(mode)
+      brochure_hydrated(TRUE)
+    }, priority = 10L)
+
+    ## Only reset Exploration tabs when switching from Fitting (not on hydrate).
+    observeEvent(input$app_mode, {
+      req(!is.null(input$app_mode))
+      cur <- as.character(input$app_mode[[1L]])
+      prev <- app_mode_prev()
+      if (identical(cur, "Exploration") && identical(prev, "Fitting")) {
+        n_par(0L)
+        active_par(character())
+        total_par(0L)
+        exploration_periods_seeded(FALSE)
+        exploration_default_run_done(FALSE)
+        cache_app_mode("Exploration")
+        ## Drop calibration-only outputs from the shared scenario list.
+        sc <- scenarios()
+        if ("Fitted" %in% names(sc)) {
+          sc[["Fitted"]] <- NULL
+          scenarios(sc)
+        }
+      }
+      app_mode_prev(cur)
+    }, ignoreNULL = TRUE, ignoreInit = TRUE)
+
+    ## Single sidebar nav tree so inputIds are not duplicated across modes.
+    output$sidebar_mode_nav <- renderUI({
+      if (is_exploration()) {
+        sidebar_ui_exploration()
+      } else {
+        sidebar_ui_fitting()
+      }
+    })
+
+    ## First period tab: runs when Exploration UI is up and `add_period` exists.
+    observe({
+      req(is_exploration())
+      req(!is.null(input$add_period))
+      if (isTRUE(exploration_periods_seeded())) {
+        return()
+      }
+      req(n_par() == 0L)
+      exploration_periods_seeded(TRUE)
+      click("add_period")
+    })
+
+    ## One automatic Default scenario from packaged defaults (Exploration only).
+    observe(
+      {
+        req(isTRUE(brochure_hydrated()))
+        req(identical(cache_app_mode(), "Exploration"))
+        req(!isTRUE(exploration_default_run_done()))
+        req(n_par() >= 1L)
+        req(any(grepl("agestrat", names(input))))
+        req(!is.null(input$n_particles))
+        out <- run_model_from_inputs()
+        if (is.null(out)) {
+          return()
+        }
+        cur <- scenarios()
+        cur[["Default"]] <- out
+        scenarios(cur)
+        exploration_default_run_done(TRUE)
+        nav_select(
+          id = "main_plots_nav",
+          select = "Timeline",
+          session = session
+        )
+      },
+      priority = -10L
+    )
 
     observeEvent(
       input$add_period,
       {
+        req(is_exploration())
         ## add new id and update number of parameters
         active_par(c(active_par(), paste0(sample(letters, 10, TRUE), collapse = "")))
         n_par(n_par() + 1)
@@ -630,17 +1136,12 @@ run_shiny <- function() {
                 style = "margin-left: 10px; margin-right: 10px",
                 headerPanel(""),
                 numericInput(rn("day", last(active_par())), "Start day", start_day),
-                ## generate shiny UI for newest tab, taking defaults from most recent tab
                 simex_to_shiny(
-                  ## if no tabs existent yet, use defaults simex values
                   if (length(days) == 0) {
                     simex_defaults
-                  } ## otherwise use most recent tab (have to remove last active tab
-                  ## because it hasn't been initialised yet)
-                  else {
+                  } else {
                     last_period_pars(shiny_to_simex(input, head(active_par(), -1)))
                   },
-                  ## assign tab ID
                   tab_id = last(active_par())
                 )
               )
@@ -658,6 +1159,7 @@ run_shiny <- function() {
 
     ## remove a tab
     observeEvent(input$remove_period, {
+      req(is_exploration())
       if (n_par() != 1) {
         ## remove parameter set
         active_par(setdiff(active_par(), input$parameters_panel))
@@ -673,6 +1175,7 @@ run_shiny <- function() {
 
     ## Run scenario: fresh run_simex; store under selected name (overwrites same name)
     observeEvent(input$run_scenario, {
+      req(is_exploration())
       out <- run_model_from_inputs()
       if (is.null(out)) {
         return()
@@ -692,9 +1195,10 @@ run_shiny <- function() {
 
     ## Drop selected scenario from the saved list
     observeEvent(input$remove_saved_scenario, {
+      req(is_exploration())
       nm <- scenario_sel_str(input$scenario_select)
       if (!nzchar(nm)) {
-        showNotification("Select a scenario to remove.", type = "warning")
+        showNotification("Pick a saved run to remove.", type = "warning")
         return()
       }
       cur <- scenarios()
@@ -707,6 +1211,7 @@ run_shiny <- function() {
 
     ## Scenario select: saved names plus optional typed (not-yet-saved) name
     observe({
+      req(is_exploration())
       nms <- names(scenarios())
       sel <- scenario_sel_str(isolate(input$scenario_select))
       if (length(nms) == 0L) {
@@ -739,6 +1244,7 @@ run_shiny <- function() {
 
     ## Remove only when the current value is a saved scenario name
     observe({
+      req(is_exploration())
       nms <- names(scenarios())
       nm <- scenario_sel_str(input$scenario_select)
       if (length(nms) == 0L || !nzchar(nm) || !nm %in% nms) {
@@ -751,73 +1257,15 @@ run_shiny <- function() {
     ## reset
     observeEvent(
       input$reset,
-      session$reload()
-    )
-
-    ## Parsed incidence table (persists when Timeline file input is not in DOM)
-    timeline_data_rv <- reactiveVal(NULL)
-
-    ## Fitting tab: uploaded CSV (separate from Timeline uploads).
-    fitting_data_rv <- reactiveVal(NULL)
-
-    read_timeline_csv <- function(fi) {
-      if (is.null(fi)) {
-        return(NULL)
-      }
-      df <- tryCatch(
-        utils::read.csv(fi$datapath, check.names = FALSE),
-        error = function(e) {
-          showNotification("Could not read that CSV.", type = "warning")
-          NULL
-        }
-      )
-      if (is.null(df)) {
-        return(NULL)
-      }
-      need_cols <- c("time", "age", "compartment", "value")
-      if (!all(need_cols %in% names(df))) {
-        showNotification(
-          "CSV needs columns: time, age, compartment, value.",
-          type = "warning"
-        )
-        return(NULL)
-      }
-      df[, need_cols, drop = FALSE]
-    }
-
-    observeEvent(input$fit_data_file,
       {
-        df <- read_timeline_csv(input$fit_data_file)
-        if (!is.null(df)) {
-          timeline_data_rv(df)
-        }
-      },
-      ignoreNULL = TRUE
-    )
-
-    observeEvent(input$fit_data_summary,
-      {
-        df <- read_timeline_csv(input$fit_data_summary)
-        if (!is.null(df)) {
-          timeline_data_rv(df)
-        }
-      },
-      ignoreNULL = TRUE
-    )
-
-    observeEvent(
-      input$fitting_data_file,
-      {
-        df <- read_timeline_csv(input$fitting_data_file)
-        if (!is.null(df)) {
-          fitting_data_rv(df)
-        }
-      },
-      ignoreNULL = TRUE
+        req(is_exploration())
+        session$reload()
+      }
     )
 
     ## Monty prior argument inputs for p_trans (rebuilt when distribution changes).
     output$prior_p_trans_args_ui <- renderUI({
+      req(is_fitting())
       dist_nm <- input$prior_p_trans_dist
       if (is.null(dist_nm) || !nzchar(as.character(dist_nm))) {
         return(NULL)
@@ -859,27 +1307,34 @@ run_shiny <- function() {
       )
     })
 
-    ## Posterior fit state for the Fit plot tab.
+    ## Posterior fit state (Fitted scenario on Timeline in Fitting mode).
     fitted_samples_rv <- reactiveVal(NULL)
     fitted_simex_rv <- reactiveVal(NULL)
 
     observeEvent(
       input$run_fit,
       {
+        req(is_fitting())
         df <- fitting_data_rv()
         if (is.null(df) || !is.data.frame(df) || nrow(df) == 0L) {
-          showNotification("Upload fitting data (CSV) first.", type = "warning")
+          showNotification(
+            "Add a dataset from the upload step first (home, then Fitting).",
+            type = "warning"
+          )
           return()
         }
         need_cols <- c("time", "age", "compartment", "value")
         if (!all(need_cols %in% names(df))) {
-          showNotification("CSV needs columns: time, age, compartment, value.", type = "warning")
+          showNotification(
+            "That dataset is not in the shape this app expects.",
+            type = "warning"
+          )
           return()
         }
         cmp <- toupper(trimws(as.character(df$compartment)))
         if (!any(cmp == "E")) {
           showNotification(
-            "Fitting requires rows with compartment = E (see Introduction).",
+            "That dataset needs exposed-case rows for a fit to run.",
             type = "warning"
           )
           return()
@@ -887,13 +1342,13 @@ run_shiny <- function() {
 
         parameters <- shiny_to_simex_single(input, "fit")
         if (is.null(parameters)) {
-          showNotification("Could not read model parameters from inputs.", type = "warning")
+          showNotification("Check the parameter fields on the left.", type = "warning")
           return()
         }
 
         settings <- collect_fit_settings(input)
         if (is.null(settings)) {
-          showNotification("Check sampler / filter settings inputs.", type = "warning")
+          showNotification("Check the settings fields on the left.", type = "warning")
           return()
         }
 
@@ -901,7 +1356,7 @@ run_shiny <- function() {
         ref <- monty::monty_dsl_distributions()
         idx <- match(dist_nm, ref$name)
         if (is.na(idx)) {
-          showNotification("Invalid prior distribution.", type = "warning")
+          showNotification("Pick another prior distribution.", type = "warning")
           return()
         }
         argnms <- ref$args[[idx]]
@@ -931,7 +1386,7 @@ run_shiny <- function() {
         fit_df <- as.data.frame(df)[, need_cols, drop = FALSE]
         fit_df <- fit_df[as.numeric(fit_df$time) > 0, , drop = FALSE]
         if (nrow(fit_df) == 0L) {
-          showNotification("No rows with time > 0.", type = "warning")
+          showNotification("The series needs at least one time point after day 0.", type = "warning")
           return()
         }
         fit_df$age <- forcats::fct_inorder(as.factor(as.character(fit_df$age)))
@@ -964,30 +1419,42 @@ run_shiny <- function() {
 
         fitted_samples_rv(samples)
         fitted_simex_rv(sx)
-        showNotification("Fit finished. See the Fit plot tab.", type = "message")
+        sc <- scenarios()
+        sc[["Fitted"]] <- sx
+        scenarios(sc)
+        nav_select(
+          id = "main_plots_nav",
+          select = "Timeline",
+          session = session
+        )
       }
     )
 
-    timeline_obs_data <- reactive({
-      timeline_data_rv()
+    ## Overlay data for Timeline: only in Fitting mode (incidence rule in plot block).
+    timeline_plot_data <- reactive({
+      if (!is_fitting()) {
+        return(NULL)
+      }
+      fitting_data_rv()
     })
 
-    ## Valid incidence table in memory (hide upload UI after first successful CSV)
-    has_uploaded_data <- reactive({
-      d <- timeline_data_rv()
-      !is.null(d) &&
+    ## Named list for Timeline / Summary: includes Fitted after a successful fit
+    ## (stored in scenarios() alongside Exploration runs).
+    timeline_plot_scenarios <- reactive({
+      scenarios()
+    })
+
+    ## Timeline: saved scenarios (+ Fitted in Fitting mode) and optional data overlay.
+    ehd_plot_result <- reactive({
+      req(!is.null(input$ehd_timeline_outcome))
+      d <- timeline_plot_data()
+      has_cols <- !is.null(d) &&
         is.data.frame(d) &&
         nrow(d) > 0L &&
         all(c("time", "age", "compartment", "value") %in% names(d))
-    })
-
-    ## Timeline: models and/or incidence data (data-only when no saved scenarios)
-    ehd_plot_result <- reactive({
-      d <- timeline_obs_data()
-      has_cols <- !is.null(d) &&
-        all(c("time", "age", "compartment", "value") %in% names(d))
       can_plot_data <- has_cols && tolower(input$ehd_timeline_what) == "incidence"
-      has_models <- length(scenarios()) > 0L
+      scen <- timeline_plot_scenarios()
+      has_models <- length(scen) > 0L
       if (!has_models && !can_plot_data) {
         return(NULL)
       }
@@ -997,7 +1464,7 @@ run_shiny <- function() {
         Deaths = "D"
       )[[input$ehd_timeline_outcome]]
       plot_simex(
-        scenarios(),
+        scen,
         mode = "timeline",
         renderer = "highcharter",
         what = tolower(input$ehd_timeline_what),
@@ -1012,22 +1479,7 @@ run_shiny <- function() {
     output$ehd_plot_container <- renderUI({
       res <- ehd_plot_result()
       if (is.null(res)) {
-        if (!has_uploaded_data()) {
-          return(tagList(
-            div(
-              class = "csv-upload-dropzone",
-              p(style = "margin-bottom:10px;", strong("Upload Data")),
-              fileInput(
-                inputId = "fit_data_file",
-                label = NULL,
-                accept = c(".csv", "text/csv"),
-                buttonLabel = "Browse...",
-                width = "100%"
-              )
-            )
-          ))
-        }
-        return(div())
+        return(div(class = "ehd-timeline-empty", style = "min-height: 70vh;"))
       }
       if (inherits(res, "highchart")) {
         highchartOutput("ehd_plot_single", height = "100vh")
@@ -1055,26 +1507,20 @@ run_shiny <- function() {
       }
     })
 
-    ## Summary: upload only before first valid CSV; chart uses full viewport height
+    ## Summary: scenarios only (no CSV upload); mode-specific empty copy.
     output$summary_plot_container <- renderUI({
       has_scen <- length(scenarios()) > 0L
       if (!has_scen) {
-        if (!has_uploaded_data()) {
-          return(tagList(
-            div(
-              class = "csv-upload-dropzone",
-              p(style = "margin-bottom:10px;", strong("Upload Data")),
-              fileInput(
-                inputId = "fit_data_summary",
-                label = NULL,
-                accept = c(".csv", "text/csv"),
-                buttonLabel = "Browse...",
-                width = "100%"
-              )
-            )
+        if (is_exploration()) {
+          return(div(
+            class = "text-muted",
+            p("Save at least one scenario with ", em("Run Scenario"), " to compare here.")
           ))
         }
-        return(div())
+        return(div(
+          class = "text-muted",
+          p("Save scenarios or finish a fit to compare endpoints here.")
+        ))
       }
       highchartOutput("summary_endpoint", height = "100vh")
     })
@@ -1095,85 +1541,24 @@ run_shiny <- function() {
       )
     })
 
-    ## Fit tab: posterior trajectory vs uploaded fitting data.
-    fit_plot_result <- reactive({
-      sx <- fitted_simex_rv()
-      d <- fitting_data_rv()
-      if (is.null(sx) || is.null(d)) {
-        return(NULL)
-      }
-      req(input$fit_plot_outcome)
-      cmpt <- c(
-        Cases = "E",
-        Hospitalisations = "H",
-        Deaths = "D"
-      )[[input$fit_plot_outcome]]
-      plot_simex(
-        sx,
-        mode = "timeline",
-        renderer = "highcharter",
-        what = "incidence",
-        compartments = cmpt,
-        stratify_by_age = isTRUE(input$fit_stratify_age),
-        show_ribbon = TRUE,
-        period_days = 7L,
-        data = as.data.frame(d)
-      )
-    })
-
-    output$fit_plot_container <- renderUI({
-      if (is.null(fitted_simex_rv())) {
-        return(div(
-          class = "text-muted",
-          p(
-            "Run a fit from the ",
-            strong("Fitting"),
-            " tab in the sidebar, then open this tab to see incidence vs data."
-          )
-        ))
-      }
-      res <- fit_plot_result()
-      if (is.null(res)) {
-        return(div())
-      }
-      if (inherits(res, "highchart")) {
-        highchartOutput("fit_plot_single", height = "100vh")
-      } else {
-        fluidRow(lapply(seq_along(res), function(i) {
-          column(6, highchartOutput(paste0("fit_plot_", i), height = "350px"))
-        }))
-      }
-    })
-
-    observe({
-      res <- fit_plot_result()
-      if (is.null(res)) {
-        return()
-      }
-      if (inherits(res, "highchart")) {
-        output$fit_plot_single <- renderHighchart(res)
-      } else {
-        for (i in seq_along(res)) {
-          local({
-            ii <- i
-            output[[paste0("fit_plot_", ii)]] <- renderHighchart(res[[ii]])
-          })
-        }
-      }
-    })
-
-    output$compartments_description <- renderText({
-      format_html_list(c(
-        "S: susceptible",
-        "E: exposed but not symptomatic",
-        "C: symptomatic in the community",
-        "H: symptomatic in the hospital",
-        "R: recovered",
-        "D: dead"
-      ))
-    })
   }
 
-  ## Run the Shiny app
-  shinyApp(ui = ui, server = server)
+  ## Run the multi-page Shiny app ({brochure}: `/`, `/fitting-data`, `/app`).
+  brochure::brochureApp(
+    brochure::page(
+      href = "/",
+      ui = br_landing_ui,
+      server = br_landing_server
+    ),
+    brochure::page(
+      href = "/fitting-data",
+      ui = br_upload_ui,
+      server = br_upload_server
+    ),
+    brochure::page(
+      href = "/app",
+      ui = main_simex_ui,
+      server = server
+    )
+  )
 }

@@ -25,7 +25,11 @@ Suggests:
     usethis,
     knitr,
     pkgload
+Remotes:
+    ColinFay/brochure
 Imports: 
+    brochure,
+    cachem,
     dplyr,
     dust2,
     ggplot2,

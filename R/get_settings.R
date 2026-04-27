@@ -17,10 +17,10 @@
 #'
 #' @export
 get_settings <- function(n_particles = 200,
-                         n_steps = 1e4,
+                         n_steps = 1000,
                          n_chains = 4,
-                         n_samples = 1000,
-                         burnin = 1000,
+                         n_samples = 100,
+                         burnin = 800,
                          rerun_every = 100,
                          proposal_sd = 0.02,
                          save_state = TRUE,
@@ -32,8 +32,9 @@ get_settings <- function(n_particles = 200,
   out$thinning_factor <- floor(n_steps / (n_samples / n_chains))
   n_cores_available <- as.integer(Sys.getenv("CONTEXT_CORES", 1))
   out$n_workers <- min(n_chains, n_cores_available)
-  if (!is.null(out$groups) && length(out$groups) == 1)
+  if (!is.null(out$groups) && length(out$groups) == 1) {
     stop("There must be at least two groups")
+  }
   return(out)
 }
 
@@ -49,11 +50,13 @@ get_vcv <- function(parameters, settings, samples = NULL) {
     stopifnot(all.equal(colnames(vcv), parameters))
     return(vcv)
   } else {
-    if (length(settings$proposal_sd) == 1)
+    if (length(settings$proposal_sd) == 1) {
       diag(settings$proposal_sd^2, length(parameters))
-    else if (length(settings$proposal_sd) == length(parameters))
+    } else if (length(settings$proposal_sd) == length(parameters)) {
       diag(settings$proposal_sd)
-    else stop("propsal_sd must be length 1 or length of fitted parameters")
+    } else {
+      stop("propsal_sd must be length 1 or length of fitted parameters")
+    }
   }
 }
 
