@@ -1,5 +1,11 @@
 
-## *simex*: a disease modelling tool for decision makers
+<p align="center">
+<img src="inst/assets/img/simex_logo.png" alt="simex" width="320" />
+</p>
+
+<p align="center">An outbreak simulation tool for decision-making</p>
+
+---
 
 [![MIT
 license](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE.md)

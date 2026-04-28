@@ -2,12 +2,12 @@
 #'
 #' @importFrom brochure brochureApp server_redirect
 #' @importFrom cachem cache_mem
-#' @importFrom shinyMatrix matrixInput
-#' @importFrom shinyjs click disable enable hide show useShinyjs
+#' @importFrom shinyMatrix matrixInput updateMatrixInput
+#' @importFrom shinyjs disable enable hide show useShinyjs
 #' @importFrom shiny icon showNotification
 #' @importFrom shinyWidgets setBackgroundColor switchInput radioGroupButtons
 #' @importFrom waiter waiter_preloader spin_3
-#' @importFrom stringr str_to_title
+#' @importFrom stringr str_match str_to_title
 #' @importFrom monty monty_dsl_distributions
 #'
 #' @author Finlay Campbell
@@ -30,7 +30,7 @@ run_shiny <- function() {
     hosp_mortality = "Proportion of hospitalisations that die (%)",
     hosp_protection_death = "Proportion of deaths averted by hospitalisation (%)",
     hosp_duration = "Duration of hospitalisation (days)",
-    hosp_capacity = "Hospital capacity (per 100k population)",
+    hosp_capacity = "Hospital capacity (beds)",
     comm_mortality = "Proportions of community infections that die (%)",
     vax_rate = "Vaccination rate (doses per day)",
     vax = "Vaccination protection",
@@ -81,14 +81,14 @@ run_shiny <- function() {
 
     ## adjust units
     for (i in percent_nms) simex_input[[i]] <- simex_input[[i]] * 100
-    simex_input$hosp_capacity <- simex_input$hosp_capacity * 1e5
 
     ## collapse age-stratified parameters into one matrix
     agestrat <- lengths(simex_input) == nrow(cdat[[1]]$pop)
     simex_input$agestrat <- do.call(cbind, simex_input[agestrat])
+    ## Row labels must be human-readable ages (vector values), not age_* names.
     dimnames(simex_input$agestrat) <- list(
-      "Age" = get_age_cat(),
-      "Variable" = labs[colnames(simex_input$agestrat)]
+      unname(as.character(get_age_cat())),
+      as.character(labs[colnames(simex_input$agestrat)])
     )
     simex_input[agestrat] <- NULL
 
@@ -127,16 +127,12 @@ run_shiny <- function() {
         simex_input[[i]] <- simex_input[[i]] * 100
       }
     }
-    if ("hosp_capacity" %in% names(simex_input)) {
-      simex_input$hosp_capacity <- simex_input$hosp_capacity * 1e5
-    }
-
     agestrat <- lengths(simex_input) == nrow(cdat[[1]]$pop)
     if (any(agestrat)) {
       simex_input$agestrat <- do.call(cbind, simex_input[agestrat])
       dimnames(simex_input$agestrat) <- list(
-        "Age" = get_age_cat(),
-        "Variable" = labs[colnames(simex_input$agestrat)]
+        unname(as.character(get_age_cat())),
+        as.character(labs[colnames(simex_input$agestrat)])
       )
       simex_input[agestrat] <- NULL
     }
@@ -234,7 +230,6 @@ run_shiny <- function() {
 
         ## adjust units
         for (i in percent_nms) par[[i]] <- par[[i]] / 100
-        par$hosp_capacity <- par$hosp_capacity / 1e5
 
         ## remove input values that are not arguments of get_parameters
         par[setdiff(names(par), names(simex_defaults))] <- NULL
@@ -301,10 +296,6 @@ run_shiny <- function() {
         par[[i]] <- par[[i]] / 100
       }
     }
-    if ("hosp_capacity" %in% names(par)) {
-      par$hosp_capacity <- par$hosp_capacity / 1e5
-    }
-
     par[setdiff(names(par), names(simex_defaults))] <- NULL
 
     return(par)
@@ -353,13 +344,29 @@ run_shiny <- function() {
   ## rename function
   rn <- function(name, i) paste0(i, "__", name)
 
-  get_tabname <- function(n) {
-    x <- if (n <= 26) {
-      LETTERS[n]
-    } else {
-      apply(expand.grid(LETTERS, LETTERS), 1, paste0, collapse = "")[n]
-    }
-    paste("Period", x)
+  ## Tab title text: always "Period 1", "Period 2", … by position in the scenario.
+  exploration_period_label <- function(i) {
+    paste("Period", as.integer(i))
+  }
+
+  ## Trailing nav tab used to insert new periods (always last; never in active_par).
+  period_plus_value <- ".__period_plus__."
+
+  ## Period tab label with an inline close control (handled via JS + input).
+  period_nav_title <- function(period_label, tab_id) {
+    shiny::tags$span(
+      class = "d-inline-flex align-items-center gap-1",
+      shiny::tags$span(class = "simex-period-tab-label", period_label),
+      shiny::tags$span(
+        class = "simex-period-tab-close",
+        `data-tab-id` = tab_id,
+        style = paste0(
+          "cursor:pointer;opacity:0.65;line-height:1;",
+          "font-size:0.85em;padding:0 0.2rem;border-radius:2px;"
+        ),
+        shiny::HTML("&#215;")
+      )
+    )
   }
 
   ## function for generating an input panel for one panel ID
@@ -373,8 +380,17 @@ run_shiny <- function() {
     }
     if (name == "iso3") {
       selectInput(rn(name, id), input_lbl(name), names(cdat), selected = value)
-    } ## else if(name == "hosp_capacity") numericInput(rn(name, id), labs[name], value*1e5)
-    else if (is.numeric(value)) {
+    } else if (is.logical(value) ||
+      (name %in% c("vax_prioritised", "hosp_prioritised") &&
+        is.numeric(value) && length(value) == 1L)) {
+      ## get_parameters() stores these as integer 0/1; still render as checkboxes.
+      chk <- if (is.logical(value)) {
+        isTRUE(value)
+      } else {
+        as.numeric(value)[[1L]] != 0
+      }
+      checkboxInput(rn(name, id), input_lbl(name), value = chk)
+    } else if (is.numeric(value)) {
       if (is.matrix(value)) {
         matrixInput(rn(name, id), input_lbl(name), value)
       } else if (!is.null(names(value))) {
@@ -388,8 +404,6 @@ run_shiny <- function() {
       } else if (length(value) == 1) {
         numericInput(rn(name, id), input_lbl(name), value)
       }
-    } else if (is.logical(value)) {
-      checkboxInput(rn(name, id), input_lbl(name), value)
     }
   }
 
@@ -413,20 +427,24 @@ run_shiny <- function() {
     }
   }))
 
+  ## `navset_card_underline(id = "calib_tabs")` value per Calibration step (order matters).
+  calib_tab_order <- c(
+    "calib_params",
+    "calib_priors",
+    "calib_settings",
+    "calib_run"
+  )
+
   ## Tooltip copy (HTML title): former Introduction text, kept off the page.
   tip_explore_scenario <- paste0(
-    "Name for this run. Pick an existing name to replace it, or type a new one ",
-    "to add another saved scenario."
+    "Pick a saved scenario to load its parameters into the period tabs, or use ",
+    "Add to name a new run before you adjust parameters and Save."
   )
   tip_explore_run <- paste0(
-    "Simulate with the numbers on the open parameter tab and store the result ",
-    "under the scenario name. Open Timeline or Summary to view charts."
+    "Run the simulation and save results under the selected scenario name ",
+    "(save icon). Open Timeline or Summary to view charts. Add periods with ",
+    "the + tab; remove a period from the x on its tab (keep at least one)."
   )
-  tip_explore_add_period <- paste0(
-    "Add another time segment with its own settings (for example when an ",
-    "intervention starts). One segment must begin on day 1."
-  )
-  tip_explore_remove_period <- "Remove the time segment you are currently editing."
   tip_explore_reset <- "Restore defaults for the open time segment."
   tip_explore_n_particles <- paste0(
     "How many stochastic runs to average; more gives smoother bands but takes ",
@@ -443,77 +461,49 @@ run_shiny <- function() {
     "to see the fit and your data together."
   )
   tip_fit_scenario <- paste0(
-    "Name for this scenario run. Pick an existing name to replace it, or type ",
-    "a new one to add another saved result."
+    "Pick a saved scenario to load its parameters into Calibration, or use ",
+    "Add to name a new run; use Save to run from samples and store the result."
   )
 
   ## Left sidebar: Exploration vs Fitting (single column; details in tooltips).
   sidebar_ui_exploration <- function() {
     tagList(
-      tags$label(
-        `for` = "scenario_select",
-        class = "control-label",
-        title = tip_explore_scenario,
-        style = "cursor: help;",
-        "Scenario"
+      selectizeInput(
+        inputId = "scenario_select",
+        label = tags$span(
+          class = "control-label",
+          style = "cursor: help;",
+          title = tip_explore_scenario,
+          "Scenario"
+        ),
+        choices = character(0),
+        selected = NULL,
+        width = "100%",
+        options = list(placeholder = "Select scenario")
       ),
       div(
-        style = "display: flex; flex-direction: row; align-items: center; gap: 10px;",
-        div(
-          style = "flex: 1; min-width: 0;",
-          selectizeInput(
-            inputId = "scenario_select",
-            label = NULL,
-            choices = character(0),
-            selected = "Default",
-            options = list(
-              placeholder = "Name this run",
-              create = TRUE,
-              createOnBlur = TRUE
-            )
-          )
+        class = "d-flex flex-row gap-2 align-items-stretch simex-scenario-actions",
+        style = "margin-top: 0.35rem;",
+        actionButton(
+          inputId = "explore_add_scenario",
+          label = shiny::tagList(shiny::icon("plus"), " Add"),
+          title = "Add scenario (name in dialog), then adjust parameters and save.",
+          class = "btn-secondary flex-fill",
+          style = "min-width: 0;"
         ),
         actionButton(
           inputId = "remove_saved_scenario",
-          label = NULL,
-          icon = icon("times"),
-          title = "Drop the selected saved run from this session.",
-          class = "btn-danger",
-          style = "padding: 6px 12px; flex-shrink: 0;"
-        )
-      ),
-      div(
-        style = "display: flex; align-items: stretch; margin-top: 0px",
+          label = shiny::tagList(shiny::icon("minus"), " Remove"),
+          title = "Remove the selected scenario (saved or not yet saved).",
+          class = "btn-secondary flex-fill",
+          style = "min-width: 0;"
+        ),
         actionButton(
           inputId = "run_scenario",
-          label = "Run Scenario",
-          width = "100%",
+          label = shiny::tagList(shiny::icon("save"), " Save"),
           title = tip_explore_run,
-          style = "margin-right:2px; margin-left: 2px"
-        )
-      ),
-      div(
-        style = "display: flex; align-items: stretch; margin-top: -20px",
-        actionButton(
-          inputId = "add_period",
-          label = "Add Period",
-          width = "33%",
-          title = tip_explore_add_period,
-          style = "margin-right:2px; margin-left: 2px"
-        ),
-        actionButton(
-          inputId = "remove_period",
-          label = "Remove Period",
-          width = "33%",
-          title = tip_explore_remove_period,
-          style = "margin-right:2px; margin-left: 2px"
-        ),
-        actionButton(
-          inputId = "reset",
-          label = "Reset",
-          width = "33%",
-          title = tip_explore_reset,
-          style = "margin-right:2px; margin-left: 2px"
+          class = "btn-secondary flex-fill",
+          style = "min-width: 0;"
         )
       ),
       tags$div(
@@ -527,69 +517,120 @@ run_shiny <- function() {
           step = 1L
         )
       ),
-      navset_card_underline(id = "parameters_panel")
+      navset_card_underline(
+        id = "parameters_panel",
+        nav_panel(
+          title = shiny::tags$span(
+            style = "font-weight:700;font-size:1.05rem;line-height:1;",
+            "+"
+          ),
+          value = period_plus_value,
+          shiny::tags$div(class = "simex-period-plus-panel")
+        )
+      ),
+      div(
+        style = "display: flex; align-items: stretch; margin-top: 8px;",
+        actionButton(
+          inputId = "reset",
+          label = "Reset",
+          width = "100%",
+          title = tip_explore_reset,
+          style = "margin-right:2px; margin-left: 2px"
+        )
+      )
     )
   }
 
   sidebar_ui_fitting <- function() {
+    ## Calibration: same nav style as Calibration vs Scenarios (`navset_card_underline`).
     calibration_panel <- tagList(
-      tags$div(
-        class = "mb-2",
-        title = tip_fit_params,
-        style = "cursor: help;",
-        tags$strong("Parameters")
-      ),
-      div(
-        style = "margin-left: 10px; margin-right: 10px",
-        tagList(simex_to_shiny(simex_defaults, "fit"))
-      ),
-      hr(),
-      tags$div(
-        class = "mb-1",
-        title = tip_fit_priors,
-        style = "cursor: help;",
-        tags$strong("Priors")
-      ),
-      selectInput(
-        inputId = "prior_p_trans_dist",
-        label = "Distribution",
-        choices = prior_dist_names,
-        selected = "Beta"
-      ),
-      uiOutput("prior_p_trans_args_ui"),
-      hr(),
-      tags$div(
-        class = "mb-1",
-        title = tip_fit_settings,
-        style = "cursor: help;",
-        tags$strong("Settings")
-      ),
-      fit_settings_ui,
-      hr(),
-      actionButton(
-        inputId = "run_fit",
-        label = "Run fit",
-        width = "100%",
-        class = "btn-primary",
-        title = tip_fit_run
-      ),
-      ## Indeterminate progress while fit_simex / post-fit sim run (no caption text).
-      tags$div(
-        id = "fit_progress_container",
-        style = "display: none; margin-top: 10px;",
-        tags$div(
-          class = "progress rounded-pill",
-          style = "height: 5px; background-color: #e9ecef;",
+      navset_card_underline(
+        id = "calib_tabs",
+        selected = calib_tab_order[[1L]],
+        footer = tags$div(
+          class = paste0(
+            "d-flex align-items-center justify-content-between ",
+            "gap-2 flex-wrap px-2 pb-2 pt-1"
+          ),
+          actionButton(
+            inputId = "calib_prev",
+            label = "Back",
+            class = "btn-outline-secondary"
+          ),
           tags$div(
-            class = paste0(
-              "progress-bar progress-bar-striped progress-bar-animated ",
-              "bg-primary"
+            id = "calib_next_wrap",
+            actionButton(
+              inputId = "calib_next",
+              label = "Next",
+              class = "btn-primary"
+            )
+          )
+        ),
+        nav_panel(
+          title = "Parameters",
+          value = calib_tab_order[[1L]],
+          div(
+            style = paste0(
+              "margin-left: 10px; margin-right: 10px; cursor: help;"
             ),
-            style = "width: 100%;",
-            role = "progressbar",
-            `aria-valuenow` = 100,
-            `aria-valuemin` = 0,
-            `aria-valuemax` = 100
+            title = tip_fit_params,
+            tagList(simex_to_shiny(simex_defaults, "fit"))
+          )
+        ),
+        nav_panel(
+          title = "Priors",
+          value = calib_tab_order[[2L]],
+          div(
+            style = "cursor: help;",
+            title = tip_fit_priors,
+            selectInput(
+              inputId = "prior_p_trans_dist",
+              label = "Distribution",
+              choices = prior_dist_names,
+              selected = "Beta"
+            ),
+            uiOutput("prior_p_trans_args_ui")
+          )
+        ),
+        nav_panel(
+          title = "Settings",
+          value = calib_tab_order[[3L]],
+          div(
+            style = "cursor: help;",
+            title = tip_fit_settings,
+            fit_settings_ui
+          )
+        ),
+        nav_panel(
+          title = "Run",
+          value = calib_tab_order[[4L]],
+          actionButton(
+            inputId = "run_fit",
+            label = "Run fit",
+            width = "100%",
+            class = "btn-primary",
+            title = tip_fit_run
+          ),
+          ## Shown after flush while fit_simex / post-fit sim run (not a modal).
+          tags$div(
+            id = "fit_progress_container",
+            style = "display: none; margin-top: 10px;",
+            tags$div(
+              class = "progress rounded-pill",
+              style = "height: 5px; background-color: #e9ecef;",
+              tags$div(
+                id = "fit_progress_bar",
+                class = paste0(
+                  "progress-bar progress-bar-striped progress-bar-animated ",
+                  "bg-primary"
+                ),
+                style = "width: 100%;",
+                role = "progressbar",
+                `aria-valuenow` = 0,
+                `aria-valuemin` = 0,
+                `aria-valuemax` = 100
+              )
+            )
           )
         )
       )
@@ -598,38 +639,45 @@ run_shiny <- function() {
       ## Empty-state only; controls stay in static HTML so they are not rebuilt
       ## when Calibration inputs change (that was resetting the dropdown/fields).
       uiOutput("fitting_scenarios_status"),
-      tags$label(
-        `for` = "fitting_scenario_select",
-        class = "control-label",
-        title = tip_fit_scenario,
-        style = "cursor: help;",
-        "Scenario"
+      selectizeInput(
+        inputId = "fitting_scenario_select",
+        label = tags$span(
+          class = "control-label",
+          style = "cursor: help;",
+          title = tip_fit_scenario,
+          "Scenario"
+        ),
+        choices = character(0),
+        selected = NULL,
+        width = "100%",
+        options = list(placeholder = "Select scenario")
       ),
       div(
-        style = paste0(
-          "display: flex; flex-direction: row; align-items: center; gap: 10px;"
-        ),
-        div(
-          style = "flex: 1; min-width: 0;",
-          selectizeInput(
-            inputId = "fitting_scenario_select",
-            label = NULL,
-            choices = character(0),
-            selected = "Default",
-            options = list(
-              placeholder = "Name this run",
-              create = TRUE,
-              createOnBlur = TRUE
-            )
-          )
+        class = "d-flex flex-row gap-2 align-items-stretch simex-scenario-actions",
+        style = "margin-top: 0.35rem;",
+        actionButton(
+          inputId = "fit_add_scenario",
+          label = shiny::tagList(shiny::icon("plus"), " Add"),
+          title = "Name a new scenario, then save steps and run.",
+          class = "btn-secondary flex-fill",
+          style = "min-width: 0;"
         ),
         actionButton(
           inputId = "fitting_remove_saved_scenario",
-          label = NULL,
-          icon = icon("times"),
-          title = "Drop the selected saved run from this session.",
-          class = "btn-danger",
-          style = "padding: 6px 12px; flex-shrink: 0;"
+          label = shiny::tagList(shiny::icon("minus"), " Remove"),
+          title = "Remove the selected scenario (saved or not yet saved).",
+          class = "btn-secondary flex-fill",
+          style = "min-width: 0;"
+        ),
+        actionButton(
+          inputId = "scen_run",
+          label = shiny::tagList(shiny::icon("save"), " Save"),
+          title = paste0(
+            "Run the scenario from posterior samples and store under the ",
+            "selected name (same as Exploration Save)."
+          ),
+          class = "btn-secondary flex-fill",
+          style = "min-width: 0;"
         )
       ),
       hr(),
@@ -646,13 +694,6 @@ run_shiny <- function() {
         label = "Save scenario",
         width = "100%",
         class = "btn-secondary"
-      ),
-      hr(),
-      actionButton(
-        inputId = "scen_run",
-        label = "Run scenario",
-        width = "100%",
-        class = "btn-primary"
       )
     )
     navset_card_underline(
@@ -662,27 +703,188 @@ run_shiny <- function() {
     )
   }
 
+  ## Compact modal: scenario name, Enter submits, top-right close (no Cancel row).
+  ## Shiny applies `modalDialog(..., class=)` to `.modal-body` only; header is a
+  ## sibling, so rules use `#shiny-modal` (this app has no other modals).
+  scenario_add_modal <- function() {
+    shiny::modalDialog(
+      title = shiny::tags$button(
+        type = "button",
+        class = "btn-close simex-scenario-add-modal-close",
+        `data-bs-dismiss` = "modal",
+        `aria-label` = "Close"
+      ),
+      size = "s",
+      class = "simex-scenario-add-modal",
+      footer = NULL,
+      shiny::tagList(
+        shiny::textInput(
+          inputId = "scenario_modal_new_name",
+          label = shiny::tags$strong("Scenario name"),
+          value = "",
+          width = "100%"
+        ),
+        shiny::tags$div(
+          class = "simex-scenario-add-modal-actions text-center",
+          shiny::actionButton(
+            inputId = "scenario_modal_confirm",
+            label = "Add",
+            class = "btn-primary"
+          )
+        ),
+        shiny::tags$script(shiny::HTML(paste0(
+          "(function(){",
+          "var i=document.getElementById('scenario_modal_new_name');",
+          "var b=document.getElementById('scenario_modal_confirm');",
+          "if(!i||!b){return;}",
+          "if(i._simexScenarioKd){i.removeEventListener('keydown',i._simexScenarioKd);}",
+          "i._simexScenarioKd=function(e){",
+          "if(e.key!=='Enter'&&e.keyCode!==13){return;}",
+          "e.preventDefault();",
+          "b.click();",
+          "};",
+          "i.addEventListener('keydown',i._simexScenarioKd);",
+          "})();"
+        )))
+      ),
+      easyClose = TRUE
+    )
+  }
+
+  ## Favicon (tab icon); `simex/` maps to `inst/assets/` (see `zzz.R`).
+  simex_favicon_head <- shiny::tags$head(
+    shiny::tags$link(
+      rel = "icon",
+      href = "simex/img/simex_icon.png",
+      type = "image/png"
+    )
+  )
+
   ## Main model UI (served at /app via brochure; top-level page_sidebar).
   main_simex_ui <- page_sidebar(
     useShinyjs(),
+    simex_favicon_head,
     setBackgroundColor(background_col),
     tags$head(tags$style(HTML(paste(
       paste0("#sidebar{background-color:", sidebar_col, "}"),
       paste0(
-        "#run_scenario,#add_period,#remove_period,#reset{",
+        "#explore_add_scenario,#remove_saved_scenario,",
+        "#fit_add_scenario,#fitting_remove_saved_scenario,",
+        "#scen_run,#run_scenario,#reset{",
         "background-color:#fff!important;color:#212529!important;",
         "border:1px solid #808080!important;",
         "min-height:2.65rem!important;padding:0.5rem 0.75rem!important;}",
+        "#explore_add_scenario:hover,#explore_add_scenario:active,",
+        "#explore_add_scenario:focus-visible,",
+        "#remove_saved_scenario:hover,#remove_saved_scenario:active,",
+        "#remove_saved_scenario:focus-visible,",
+        "#fit_add_scenario:hover,#fit_add_scenario:active,#fit_add_scenario:focus-visible,",
+        "#fitting_remove_saved_scenario:hover,#fitting_remove_saved_scenario:active,",
+        "#fitting_remove_saved_scenario:focus-visible,",
+        "#scen_run:hover,#scen_run:active,#scen_run:focus-visible,",
         "#run_scenario:hover,#run_scenario:active,#run_scenario:focus-visible,",
-        "#add_period:hover,#add_period:active,#add_period:focus-visible,",
-        "#remove_period:hover,#remove_period:active,#remove_period:focus-visible,",
         "#reset:hover,#reset:active,#reset:focus-visible{",
         "background-color:#e9ecef!important;color:#000!important;",
-        "border-color:#808080!important;}"
+        "border-color:#808080!important;}",
+        ".simex-scenario-actions .btn{display:inline-flex!important;",
+        "align-items:center!important;justify-content:center!important;",
+        "gap:0.35rem!important;min-height:2.65rem!important;padding:0.5rem 0.5rem!important;}",
+        ".simex-period-tab-close:hover{opacity:1!important;",
+        "background-color:rgba(0,0,0,0.06);border-radius:2px;}",
+        "#shiny-modal .modal-content{padding:10px 12px 6px 12px!important;}",
+        "#shiny-modal .modal-header{border-bottom:none!important;",
+        "padding:0.2rem 0.45rem 0.15rem 0.25rem!important;margin:0!important;",
+        "display:flex!important;justify-content:flex-end!important;",
+        "align-items:flex-start!important;}",
+        "#shiny-modal .modal-title{width:100%!important;margin:0!important;",
+        "padding:0!important;border:none!important;font-size:inherit!important;",
+        "line-height:1!important;display:flex!important;",
+        "justify-content:flex-end!important;align-items:flex-start!important;}",
+        "#shiny-modal .btn-close.simex-scenario-add-modal-close{",
+        "transform:scale(0.55)!important;transform-origin:100% 0!important;",
+        "margin:0!important;padding:0.2rem!important;opacity:0.75!important;}",
+        "#shiny-modal .modal-body.simex-scenario-add-modal{padding:6px 8px 14px 8px!important;",
+        "margin:0!important;}",
+        "#shiny-modal .modal-body.simex-scenario-add-modal .shiny-input-container{",
+        "margin:0 0 6px 0!important;padding-top:0!important;margin-top:0!important;}",
+        "#shiny-modal .modal-body.simex-scenario-add-modal .form-group{",
+        "margin:0!important;padding:0!important;}",
+        "#shiny-modal .modal-body.simex-scenario-add-modal .form-label,",
+        "#shiny-modal .modal-body.simex-scenario-add-modal label{",
+        "margin:0 0 8px 0!important;padding-top:0!important;font-weight:700!important;}",
+        "#shiny-modal .simex-scenario-add-modal-actions{margin:0!important;",
+        "padding-top:10px!important;padding-bottom:2px!important;}",
+        "#shiny-modal .simex-scenario-add-modal-actions .btn{",
+        "min-width:7.5rem!important;min-height:2.35rem!important;}"
       ),
+      ## Plot toggles: under BS5, `radioGroupButtons` uses `input.btn-check` + `label`
+      ## (not `button`); `status='default'` becomes `outline-primary` in shinyWidgets.
       paste0(
-        "#main_plots_nav .radio-group-buttons button.radiobtn:not(.active){",
-        "background-color:#fff!important;}"
+        ".simex-period-plus-panel{min-height:0!important;padding:0!important;",
+        "margin:0!important;}",
+        "#ehd_timeline_outcome label.radiobtn,",
+        "#ehd_timeline_what label.radiobtn,",
+        "#summary_what label.radiobtn{",
+        "background-color:#fff!important;color:#212529!important;",
+        "border-color:#adb5bd!important;",
+        "box-shadow:none!important;",
+        "--bs-btn-color:#212529!important;--bs-btn-bg:#fff!important;",
+        "--bs-btn-border-color:#adb5bd!important;",
+        "--bs-btn-hover-bg:#f8f9fa!important;",
+        "--bs-btn-hover-border-color:#adb5bd!important;",
+        "--bs-btn-active-bg:#e9ecef!important;",
+        "--bs-btn-active-border-color:#6c757d!important;",
+        "--bs-btn-active-color:#212529!important;}",
+        "#ehd_timeline_outcome .btn-check:checked+label.radiobtn,",
+        "#ehd_timeline_what .btn-check:checked+label.radiobtn,",
+        "#summary_what .btn-check:checked+label.radiobtn{",
+        "background-color:#e9ecef!important;color:#212529!important;",
+        "border-color:#6c757d!important;",
+        "--bs-btn-active-bg:#e9ecef!important;",
+        "--bs-btn-active-border-color:#6c757d!important;",
+        "--bs-btn-active-color:#212529!important;}",
+        "#ehd_timeline_outcome .btn-check:not(:checked)+label.radiobtn:hover,",
+        "#ehd_timeline_what .btn-check:not(:checked)+label.radiobtn:hover,",
+        "#summary_what .btn-check:not(:checked)+label.radiobtn:hover{",
+        "background-color:#f8f9fa!important;}",
+        "#ehd_timeline_outcome .btn-check:checked+label.radiobtn:hover,",
+        "#ehd_timeline_what .btn-check:checked+label.radiobtn:hover,",
+        "#summary_what .btn-check:checked+label.radiobtn:hover{",
+        "background-color:#dee2e6!important;color:#000!important;}",
+        "#ehd_timeline_outcome button.radiobtn,",
+        "#ehd_timeline_what button.radiobtn,",
+        "#summary_what button.radiobtn{",
+        "background-color:#fff!important;color:#212529!important;",
+        "border:1px solid #adb5bd!important;",
+        "box-shadow:none!important;}",
+        "#ehd_timeline_outcome button.radiobtn.active,",
+        "#ehd_timeline_outcome button.radiobtn.active.focus,",
+        "#ehd_timeline_what button.radiobtn.active,",
+        "#ehd_timeline_what button.radiobtn.active.focus,",
+        "#summary_what button.radiobtn.active,",
+        "#summary_what button.radiobtn.active.focus{",
+        "background-color:#e9ecef!important;color:#212529!important;",
+        "border-color:#6c757d!important;",
+        "box-shadow:none!important;}",
+        "#ehd_timeline_outcome button.radiobtn:hover:not(.active),",
+        "#ehd_timeline_what button.radiobtn:hover:not(.active),",
+        "#summary_what button.radiobtn:hover:not(.active){",
+        "background-color:#f8f9fa!important;}",
+        "#ehd_timeline_outcome button.radiobtn.active:hover,",
+        "#ehd_timeline_what button.radiobtn.active:hover,",
+        "#summary_what button.radiobtn.active:hover{",
+        "background-color:#dee2e6!important;color:#000!important;}",
+        "#ehd_stratify_age + label.switch::before{",
+        "background:#ced4da!important;",
+        "box-shadow:inset 0 0 6px rgba(0,0,0,0.06)!important;",
+        "opacity:1!important;}",
+        "#ehd_stratify_age + label.switch::after{",
+        "background:#fff!important;border:1px solid #adb5bd!important;",
+        "box-shadow:0 1px 2px rgba(0,0,0,0.1)!important;}",
+        "#ehd_stratify_age:checked + label.switch::before{",
+        "background:#868e96!important;opacity:1!important;}",
+        "#ehd_stratify_age:checked + label.switch::after{",
+        "background:#f8f9fa!important;border-color:#6c757d!important;}"
       ),
       "#main_plots_nav .nav { display: flex; width: 100%; }",
       "#main_plots_nav .nav-item { flex: 1; min-width: 0; }",
@@ -696,7 +898,63 @@ run_shiny <- function() {
       tags$style(
         type = "text/css",
         ".inline label{ display: table-cell; text-align: left; vertical-align: middle; } .inline .form-group { display: table-row;} p.indent {margin-right: 10px}"
-      )
+      ),
+      ## Monty simple runner: map MONTY-PROGRESS to #fit_progress_bar (no text).
+      tags$script(HTML(paste0(
+        "(function(){",
+        "if(window.simexFitMontyProgress){return;}",
+        "window.simexFitMontyProgress=1;",
+        "Shiny.addCustomMessageHandler('fit_monty_progress',function(msg){",
+        "var bar=document.getElementById('fit_progress_bar');",
+        "if(!bar){return;}",
+        "if(msg.reset){",
+        "bar.classList.add('progress-bar-striped','progress-bar-animated');",
+        "bar.style.width='100%';",
+        "return;",
+        "}",
+        "if(msg.phase==='sim'){",
+        "bar.classList.add('progress-bar-striped','progress-bar-animated');",
+        "bar.style.width='100%';",
+        "return;",
+        "}",
+        "bar.classList.remove('progress-bar-striped','progress-bar-animated');",
+        "var p=typeof msg.pct==='number'?msg.pct:0;",
+        "bar.style.width=Math.min(100,Math.max(0,p))+'%';",
+        "bar.setAttribute('aria-valuenow',String(Math.round(p)));",
+        "});",
+        "})();"
+      ))),
+      tags$script(HTML(paste0(
+        "(function(){",
+        "if(window.simexPeriodTabLabelsReg){return;}",
+        "window.simexPeriodTabLabelsReg=1;",
+        "Shiny.addCustomMessageHandler('simex_period_tab_labels',function(msg){",
+        "var labels=msg&&msg.labels;",
+        "if(!labels||typeof labels!=='object'){return;}",
+        "document.querySelectorAll('.simex-period-tab-close[data-tab-id]').forEach(",
+        "function(closeEl){",
+        "var id=closeEl.getAttribute('data-tab-id');",
+        "if(!id||labels[id]===undefined){return;}",
+        "var root=closeEl.parentElement;",
+        "if(!root){return;}",
+        "var lab=root.querySelector('.simex-period-tab-label');",
+        "if(lab){lab.textContent=labels[id];}",
+        "});",
+        "});",
+        "})();"
+      ))),
+      tags$script(HTML(paste0(
+        "document.addEventListener('click',function(ev){",
+        "var el=ev.target.closest('.simex-period-tab-close');",
+        "if(!el)return;",
+        "ev.preventDefault();ev.stopPropagation();",
+        "if(!window.Shiny)return;",
+        "var id=el.getAttribute('data-tab-id');",
+        "if(!id)return;",
+        "Shiny.setInputValue('period_tab_close_req',",
+        "{id:id,_:Date.now()},{priority:'event'});",
+        "},true);"
+      )))
     ),
     title = tags$div(
       style = paste0(
@@ -754,7 +1012,8 @@ run_shiny <- function() {
                 selected = "Cases",
                 label = NULL,
                 choices = c("Cases", "Hospitalisations", "Deaths"),
-                size = "sm"
+                size = "sm",
+                status = "outline-secondary"
               )
             ),
             div(
@@ -764,7 +1023,8 @@ run_shiny <- function() {
                 selected = "Incidence",
                 label = NULL,
                 choices = c("Incidence", "Prevalence"),
-                size = "sm"
+                size = "sm",
+                status = "outline-secondary"
               )
             ),
             div(
@@ -786,7 +1046,9 @@ run_shiny <- function() {
           inputId = "summary_what",
           selected = "Cases",
           label = NULL,
-          choices = c("Cases", "Hospitalisations", "Deaths")
+          choices = c("Cases", "Hospitalisations", "Deaths"),
+          size = "sm",
+          status = "outline-secondary"
         ),
         uiOutput("summary_plot_container")
       )
@@ -843,6 +1105,7 @@ run_shiny <- function() {
   ## Route `/`: pick Exploration vs Fitting, then redirect with a cache token.
   ## Logo is served from `inst/assets/` via `simex` resource path (see zzz.R).
   br_landing_ui <- page_fillable(
+    simex_favicon_head,
     padding = c("2.5rem", "1.25rem"),
     fillable = FALSE,
     setBackgroundColor(background_col),
@@ -1015,6 +1278,7 @@ run_shiny <- function() {
 
   ## Route `/fitting-data`: CSV upload for Fitting only, then continue to /app.
   br_upload_ui <- page_fillable(
+    simex_favicon_head,
     padding = c("2rem", "1.25rem"),
     fillable = FALSE,
     shinyjs::useShinyjs(),
@@ -1149,6 +1413,13 @@ run_shiny <- function() {
       if (!any(grepl("agestrat", names(input)))) {
         parlist <- get_parameters()
       } else {
+        ## Avoid shiny_to_simex() before every period tab has reached the client
+        ## (otherwise map over periods can see an empty par list for a new tab).
+        for (tid in active_par()) {
+          if (is.null(input[[rn("day", tid)]])) {
+            return(NULL)
+          }
+        }
         parlist <- shiny_to_simex(input, active_par())
         start_days <- as.numeric(colnames(parlist))
         if (!any(start_days == 1)) {
@@ -1174,19 +1445,200 @@ run_shiny <- function() {
       trimws(as.character(x[[1L]]))
     }
 
-    ## number and names of active parameters
+    ## selectize `choices` as a named list (named atomic vector triggers jsonlite's
+    ## keep_vec_names deprecation during Shiny JSON serialization).
+    simex_selectize_choices <- function(ch) {
+      if (length(ch) == 0L) {
+        return(character(0))
+      }
+      ch <- as.character(ch)
+      ch <- ch[vapply(ch, nzchar, logical(1L))]
+      if (length(ch) == 0L) {
+        return(character(0))
+      }
+      stats::setNames(as.list(ch), ch)
+    }
+
+    ## Which sidebar opened the add-scenario modal ("exploration" | "fitting").
+    scenario_modal_context <- reactiveVal("exploration")
+
+    ## Not-yet-saved scenario name from Add dialog (so Remove can drop it without
+    ## treating it like a stale orphan after deletion).
+    explore_scenario_pending <- reactiveVal(NULL)
+    fit_scenario_pending <- reactiveVal(NULL)
+
+    ## Merge one stored simex parameter column into the list shape simex_to_shiny()
+    ## expects (fractional percents, separate vax_* keys, etc.).
+    simex_col_to_simex_input <- function(col_obj) {
+      z <- utils::modifyList(as.list(simex_defaults), as.list(col_obj))
+      z[setdiff(names(z), names(simex_defaults))] <- NULL
+      z
+    }
+
+    ## Push args_to_simex_shiny_shape() output onto existing period / fit widgets.
+    apply_shaped_pars_to_tab <- function(tab_id, shaped) {
+      for (nm in names(shaped)) {
+        val <- shaped[[nm]]
+        wid_base <- rn(nm, tab_id)
+        if (identical(nm, "iso3")) {
+          shiny::updateSelectInput(session, wid_base, selected = as.character(val))
+        } else if (is.matrix(val)) {
+          shinyMatrix::updateMatrixInput(session, wid_base, value = val)
+        } else if (is.logical(val)) {
+          shiny::updateCheckboxInput(session, wid_base, value = isTRUE(val))
+        } else if (is.numeric(val)) {
+          if (length(val) == 1L && is.null(names(val))) {
+            shiny::updateNumericInput(session, wid_base, value = as.numeric(val))
+          } else {
+            for (subnm in names(val)) {
+              shiny::updateNumericInput(
+                session,
+                rn(subnm, tab_id),
+                value = as.numeric(val[[subnm]])
+              )
+            }
+          }
+        }
+      }
+    }
+
+    ## number and names of active parameters (used by exploration_load_simex etc.)
     n_par <- reactiveVal(0)
     active_par <- reactiveVal()
 
-    ## total number of parameters
-    total_par <- reactiveVal(0)
+    ## Update visible "Period n" labels after reordering (e.g. delete mid-period).
+    ## Called from `session$onFlushed()` — must isolate reactiveVals (no reactive ctx).
+    sync_exploration_period_tab_labels <- function() {
+      ap <- shiny::isolate(active_par())
+      if (length(ap) == 0L) {
+        return()
+      }
+      ## Named list of length-1 strings (not a named vector) for jsonlite / toJSON.
+      labs <- list()
+      for (i in seq_along(ap)) {
+        labs[[as.character(ap[[i]])]] <- paste("Period", i)
+      }
+      session$sendCustomMessage("simex_period_tab_labels", list(labels = labs))
+    }
 
-    ## After switching to Exploration, seed one period tab once `add_period`
-    ## exists (avoids onFlushed racing the renderUI sidebar).
-    exploration_periods_seeded <- reactiveVal(FALSE)
+    ## Align Exploration period tabs and inputs with a saved simex object.
+    exploration_load_simex <- function(sx) {
+      req(is_exploration())
+      pm <- sx$pars
+      if (is.null(pm) || !is.matrix(pm) || ncol(pm) < 1L) {
+        return()
+      }
+      ord <- order(as.numeric(colnames(pm)))
+      pm <- pm[, ord, drop = FALSE]
+      days <- as.numeric(colnames(pm))
+      nneed <- ncol(pm)
+      while (n_par() > nneed) {
+        tid <- dplyr::last(active_par())
+        active_par(utils::head(active_par(), -1L))
+        n_par(n_par() - 1L)
+        nav_remove(id = "parameters_panel", target = tid)
+      }
+      while (n_par() < nneed) {
+        new_id <- paste0(sample(letters, 10, TRUE), collapse = "")
+        active_par(c(active_par(), new_id))
+        n_par(n_par() + 1L)
+        k <- n_par()
+        nav_insert(
+          id = "parameters_panel",
+          nav = nav_panel(
+            title = period_nav_title(exploration_period_label(k), new_id),
+            value = new_id,
+            div(
+              style = "margin-left: 10px; margin-right: 10px",
+              headerPanel(""),
+              numericInput(rn("day", new_id), "Start day", days[[k]]),
+              tagList(
+                simex_to_shiny(simex_col_to_simex_input(pm[[1L, k]]), tab_id = new_id)
+              )
+            )
+          ),
+          target = period_plus_value,
+          position = "before",
+          session = session
+        )
+      }
+      for (i in seq_len(nneed)) {
+        tid <- active_par()[[i]]
+        shaped <- args_to_simex_shiny_shape(as.list(pm[[1L, i]]))
+        shiny::updateNumericInput(session, rn("day", tid), value = days[[i]])
+        apply_shaped_pars_to_tab(tid, shaped)
+      }
+      nav_select(
+        id = "parameters_panel",
+        select = active_par()[[1L]],
+        session = session
+      )
+      session$onFlushed(
+        function() {
+          sync_exploration_period_tab_labels()
+        },
+        once = TRUE
+      )
+    }
 
     ## After defaults are on-screen, run once so Timeline/Summary are warm.
     exploration_default_run_done <- reactiveVal(FALSE)
+
+    ## After any period insert, `input$parameters_panel` can briefly stay on the
+    ## + tab while `n_par() >= 1`, which would spuriously add a second period.
+    ## Suppress the + handler until the next flush.
+    exploration_suppress_plus_add <- reactiveVal(FALSE)
+    ## Last selected panel value that is not the trailing + (user must move from
+    ## a real period to + to add another period).
+    last_exploration_non_plus_panel <- reactiveVal(NULL)
+
+    ## Insert a new Exploration period tab immediately before the trailing + tab.
+    insert_new_period_tab <- function() {
+      req(is_exploration())
+      exploration_suppress_plus_add(TRUE)
+      session$onFlushed(
+        function() {
+          exploration_suppress_plus_add(FALSE)
+        },
+        once = TRUE
+      )
+      new_id <- paste0(sample(letters, 10, TRUE), collapse = "")
+      active_par(c(active_par(), new_id))
+      n_par(n_par() + 1L)
+      days <- extract_active_par(input, "day", active_par)
+      start_day <- if (length(days) == 0) 1 else max(days) + 50
+      nav_insert(
+        id = "parameters_panel",
+        nav = nav_panel(
+          title = period_nav_title(exploration_period_label(n_par()), new_id),
+          value = new_id,
+          do.call(
+            div,
+            list(
+              style = "margin-left: 10px; margin-right: 10px",
+              headerPanel(""),
+              numericInput(rn("day", new_id), "Start day", start_day),
+              simex_to_shiny(
+                if (length(days) == 0) {
+                  simex_defaults
+                } else {
+                  last_period_pars(shiny_to_simex(input, head(active_par(), -1)))
+                },
+                tab_id = new_id
+              )
+            )
+          )
+        ),
+        target = period_plus_value,
+        position = "before",
+        session = session
+      )
+      nav_select(
+        id = "parameters_panel",
+        select = new_id,
+        session = session
+      )
+    }
 
     ## Exploration vs Fitting: default Exploration when app_mode is briefly NULL.
     is_exploration <- reactive({
@@ -1268,10 +1720,11 @@ run_shiny <- function() {
         if (identical(cur, "Exploration") && identical(prev, "Fitting")) {
           n_par(0L)
           active_par(character())
-          total_par(0L)
-          exploration_periods_seeded(FALSE)
           exploration_default_run_done(FALSE)
+          exploration_suppress_plus_add(FALSE)
+          last_exploration_non_plus_panel(NULL)
           cache_app_mode("Exploration")
+          fit_scenario_pending(NULL)
           ## Drop calibration-only outputs from the shared scenario list.
           sc <- scenarios()
           if ("Fitted" %in% names(sc)) {
@@ -1279,6 +1732,20 @@ run_shiny <- function() {
             scenarios(sc)
           }
           scenario_patches_rv(list())
+        }
+        ## Return to Fitting: first calibration tab (after sidebar flush).
+        if (identical(cur, "Fitting") && identical(prev, "Exploration")) {
+          explore_scenario_pending(NULL)
+          session$onFlushed(
+            function() {
+              nav_select(
+                id = "calib_tabs",
+                select = calib_tab_order[[1L]],
+                session = session
+              )
+            },
+            once = TRUE
+          )
         }
         app_mode_prev(cur)
       },
@@ -1295,16 +1762,110 @@ run_shiny <- function() {
       }
     })
 
-    ## First period tab: runs when Exploration UI is up and `add_period` exists.
-    observe({
-      req(is_exploration())
-      req(!is.null(input$add_period))
-      if (isTRUE(exploration_periods_seeded())) {
+    observeEvent(input$calib_next, {
+      req(is_fitting())
+      cur <- input$calib_tabs
+      if (is.null(cur) || !nzchar(cur)) {
         return()
       }
-      req(n_par() == 0L)
-      exploration_periods_seeded(TRUE)
-      click("add_period")
+      idx <- match(cur, calib_tab_order, nomatch = 0L)
+      if (idx < 1L || idx >= length(calib_tab_order)) {
+        return()
+      }
+      nav_select(
+        id = "calib_tabs",
+        select = calib_tab_order[[idx + 1L]],
+        session = session
+      )
+    })
+
+    observeEvent(input$calib_prev, {
+      req(is_fitting())
+      cur <- input$calib_tabs
+      if (is.null(cur) || !nzchar(cur)) {
+        return()
+      }
+      idx <- match(cur, calib_tab_order, nomatch = 0L)
+      if (idx <= 1L) {
+        return()
+      }
+      nav_select(
+        id = "calib_tabs",
+        select = calib_tab_order[[idx - 1L]],
+        session = session
+      )
+    })
+
+    ## Back / Next mirror tab position (user can also click tab headers).
+    observe({
+      req(is_fitting())
+      cur <- input$calib_tabs
+      if (is.null(cur) || !nzchar(cur)) {
+        return()
+      }
+      idx <- match(cur, calib_tab_order, nomatch = 0L)
+      if (idx < 1L) {
+        return()
+      }
+      if (idx <= 1L) {
+        shinyjs::disable("calib_prev")
+      } else {
+        shinyjs::enable("calib_prev")
+      }
+      if (idx >= length(calib_tab_order)) {
+        shinyjs::hide("calib_next_wrap", anim = FALSE)
+      } else {
+        shinyjs::show("calib_next_wrap", anim = FALSE)
+      }
+    })
+
+    ## First period: only the + placeholder tab exists until we insert Period A.
+    observe(
+      {
+        req(is_exploration())
+        req(!is.null(input$parameters_panel))
+        if (n_par() > 0L) {
+          return()
+        }
+        insert_new_period_tab()
+      },
+      priority = 10L
+    )
+
+    ## Further periods: user moved from a real period tab to the trailing + tab.
+    observeEvent(input$parameters_panel,
+      {
+        req(is_exploration())
+        if (!identical(input$parameters_panel, period_plus_value)) {
+          return()
+        }
+        if (n_par() < 1L) {
+          return()
+        }
+        if (isTRUE(exploration_suppress_plus_add())) {
+          return()
+        }
+        prev_np <- last_exploration_non_plus_panel()
+        if (is.null(prev_np) || identical(prev_np, period_plus_value)) {
+          return()
+        }
+        insert_new_period_tab()
+      },
+      ignoreNULL = TRUE,
+      priority = 0L
+    )
+
+    ## Remember the last non-+ panel so we only add a period on deliberate + selection.
+    observe({
+      req(is_exploration())
+      cur <- input$parameters_panel
+      if (is.null(cur) || !nzchar(as.character(cur[[1L]]))) {
+        return()
+      }
+      cur <- as.character(cur[[1L]])
+      if (!identical(cur, period_plus_value)) {
+        last_exploration_non_plus_panel(cur)
+      }
     })
 
     ## One automatic Default scenario from packaged defaults (Exploration only).
@@ -1333,205 +1894,357 @@ run_shiny <- function() {
       priority = -10L
     )
 
-    observeEvent(
-      input$add_period,
+    ## Remove a period via the x on the tab (JS sets `period_tab_close_req`).
+    observeEvent(input$period_tab_close_req,
       {
         req(is_exploration())
-        ## add new id and update number of parameters
-        active_par(c(active_par(), paste0(sample(letters, 10, TRUE), collapse = "")))
-        n_par(n_par() + 1)
-        total_par(total_par() + 1)
-
-        ## define active max day for default new day value
-        days <- extract_active_par(input, "day", active_par)
-        start_day <- if (length(days) == 0) 1 else max(days) + 50
-
-        ## insert new parameters tab
-        nav_insert(
-          id = "parameters_panel",
-          nav_panel(
-            title = get_tabname(total_par()),
-            value = last(active_par()),
-            do.call(
-              div,
-              list(
-                style = "margin-left: 10px; margin-right: 10px",
-                headerPanel(""),
-                numericInput(rn("day", last(active_par())), "Start day", start_day),
-                simex_to_shiny(
-                  if (length(days) == 0) {
-                    simex_defaults
-                  } else {
-                    last_period_pars(shiny_to_simex(input, head(active_par(), -1)))
-                  },
-                  tab_id = last(active_par())
-                )
-              )
-            )
-          )
-        )
-
+        ev <- input$period_tab_close_req
+        if (is.null(ev) || is.null(ev$id)) {
+          return()
+        }
+        tid <- as.character(ev$id)[[1L]]
+        if (!nzchar(tid) || identical(tid, period_plus_value)) {
+          return()
+        }
+        if (!tid %in% active_par()) {
+          return()
+        }
+        if (n_par() <= 1L) {
+          showNotification("Keep at least one period.", type = "warning")
+          return()
+        }
+        active_par(setdiff(active_par(), tid))
+        n_par(n_par() - 1L)
+        nav_remove(id = "parameters_panel", target = tid)
         nav_select(
           id = "parameters_panel",
-          select = last(active_par()),
+          select = dplyr::last(active_par()),
           session = session
         )
-      }
+        session$onFlushed(
+          function() {
+            sync_exploration_period_tab_labels()
+          },
+          once = TRUE
+        )
+      },
+      ignoreNULL = TRUE
     )
-
-    ## remove a tab
-    observeEvent(input$remove_period, {
-      req(is_exploration())
-      if (n_par() != 1) {
-        ## remove parameter set
-        active_par(setdiff(active_par(), input$parameters_panel))
-        n_par(n_par() - 1)
-        nav_remove(id = "parameters_panel", target = input$parameters_panel)
-        nav_select(
-          id = "parameters_panel",
-          select = last(active_par()),
-          session = session
-        )
-      }
-    })
 
     ## Run scenario: fresh run_simex; store under selected name (overwrites same name)
     observeEvent(input$run_scenario, {
       req(is_exploration())
+      nm <- scenario_sel_str(input$scenario_select)
+      if (!nzchar(nm)) {
+        showNotification(
+          "Add or select a scenario name before running.",
+          type = "warning"
+        )
+        return()
+      }
       out <- run_model_from_inputs()
       if (is.null(out)) {
         return()
       }
-      nm <- scenario_sel_str(input$scenario_select)
-      if (!nzchar(nm)) {
-        nm <- if (length(scenarios()) == 0L) {
-          "Default"
-        } else {
-          paste0("Saved_", length(scenarios()) + 1L)
-        }
-      }
       cur <- scenarios()
       cur[[nm]] <- out
       scenarios(cur)
+      nav_select(
+        id = "main_plots_nav",
+        select = "Timeline",
+        session = session
+      )
     })
 
-    ## Drop selected scenario from the saved list
+    ## Remove selected scenario: drop saved runs from `scenarios()` and/or clear a
+    ## not-yet-saved pending name; dropdown + selection refresh in `observe()`.
     observeEvent(input$remove_saved_scenario, {
       req(is_exploration())
       nm <- scenario_sel_str(input$scenario_select)
       if (!nzchar(nm)) {
-        showNotification("Pick a saved run to remove.", type = "warning")
+        showNotification("Pick a scenario to remove.", type = "warning")
         return()
       }
       cur <- scenarios()
-      if (!nm %in% names(cur)) {
-        return()
+      if (nm %in% names(cur)) {
+        cur[[nm]] <- NULL
+        scenarios(cur)
       }
-      cur[[nm]] <- NULL
-      scenarios(cur)
+      pend <- explore_scenario_pending()
+      if (!is.null(pend) && identical(nm, pend)) {
+        explore_scenario_pending(NULL)
+      }
     })
 
-    ## Scenario select: saved names plus optional typed (not-yet-saved) name
-    observe({
+    observeEvent(input$explore_add_scenario, {
       req(is_exploration())
-      nms <- names(scenarios())
-      sel <- scenario_sel_str(isolate(input$scenario_select))
-      if (length(nms) == 0L) {
-        updateSelectizeInput(
-          session,
-          "scenario_select",
-          choices = character(0),
-          selected = "Default",
-          server = TRUE
-        )
+      scenario_modal_context("exploration")
+      shiny::showModal(scenario_add_modal())
+    })
+
+    observeEvent(input$fit_add_scenario, {
+      req(is_fitting())
+      scenario_modal_context("fitting")
+      shiny::showModal(scenario_add_modal())
+    })
+
+    observeEvent(input$scenario_modal_confirm, {
+      ctx <- scenario_modal_context()
+      raw_nm <- input$scenario_modal_new_name
+      nm <- if (is.null(raw_nm) || length(raw_nm) == 0L) {
+        ""
       } else {
-        new_sel <- if (nzchar(sel) && sel %in% nms) {
-          sel
-        } else if (nzchar(sel) && !sel %in% nms) {
-          sel
-        } else {
-          nms[[length(nms)]]
+        trimws(as.character(raw_nm[[1L]]))
+      }
+      if (!nzchar(nm)) {
+        showNotification("Enter a scenario name.", type = "warning")
+        return()
+      }
+      if (nm %in% names(scenarios())) {
+        showNotification(
+          paste0(
+            "The name \"", nm, "\" is already used. ",
+            "Choose another name or select that scenario to edit it."
+          ),
+          type = "warning"
+        )
+        return()
+      }
+      if (identical(ctx, "exploration")) {
+        po <- explore_scenario_pending()
+        if (!is.null(po) && identical(nm, po)) {
+          showNotification(
+            paste0(
+              "The name \"", nm, "\" is already the pending scenario. ",
+              "Select it in the list or choose another name."
+            ),
+            type = "warning"
+          )
+          return()
         }
-        ch <- unique(c(nms, if (nzchar(new_sel) && !new_sel %in% nms) new_sel))
-        ch <- ch[vapply(ch, nzchar, logical(1))]
-        updateSelectizeInput(
+      } else {
+        po <- fit_scenario_pending()
+        if (!is.null(po) && identical(nm, po)) {
+          showNotification(
+            paste0(
+              "The name \"", nm, "\" is already the pending scenario. ",
+              "Select it in the list or choose another name."
+            ),
+            type = "warning"
+          )
+          return()
+        }
+      }
+      nms <- names(scenarios())
+      ch <- unique(c(nms, nm))
+      ch <- ch[vapply(ch, nzchar, logical(1))]
+      shiny::removeModal()
+      if (identical(ctx, "exploration")) {
+        explore_scenario_pending(nm)
+        shiny::updateSelectizeInput(
           session,
           "scenario_select",
           choices = stats::setNames(ch, ch),
-          selected = new_sel,
+          selected = nm,
+          server = TRUE
+        )
+      } else {
+        fit_scenario_pending(nm)
+        shiny::updateSelectizeInput(
+          session,
+          "fitting_scenario_select",
+          choices = simex_selectize_choices(ch),
+          selected = nm,
           server = TRUE
         )
       }
     })
 
-    ## Remove only when the current value is a saved scenario name
+    ## Exploration: clear pending when switching to another saved name; load saved
+    ## scenario periods when the selection is a stored run.
+    observeEvent(input$scenario_select, {
+      req(is_exploration())
+      nm <- scenario_sel_str(input$scenario_select)
+      pend <- explore_scenario_pending()
+      nms <- names(scenarios())
+      if (nzchar(nm) && nm %in% nms && !is.null(pend) && !identical(nm, pend)) {
+        explore_scenario_pending(NULL)
+      }
+      if (!nzchar(nm)) {
+        return()
+      }
+      sx <- scenarios()[[nm]]
+      if (is.null(sx)) {
+        return()
+      }
+      exploration_load_simex(sx)
+    }, ignoreNULL = TRUE)
+
+    ## Scenario dropdown: saved names plus one not-yet-saved name from Add
+    ## (`explore_scenario_pending`), without re-adding a name after Remove.
+    observe({
+      req(is_exploration())
+      nms <- names(scenarios())
+      pend <- explore_scenario_pending()
+      if (!is.null(pend) && pend %in% nms) {
+        explore_scenario_pending(NULL)
+        pend <- explore_scenario_pending()
+      }
+      sel <- scenario_sel_str(isolate(input$scenario_select))
+      ch <- unique(c(
+        nms,
+        if (!is.null(pend) && nzchar(pend) && !pend %in% nms) pend
+      ))
+      ch <- ch[vapply(ch, nzchar, logical(1))]
+      if (length(ch) == 0L) {
+        shiny::updateSelectizeInput(
+          session,
+          "scenario_select",
+          choices = character(0),
+          selected = NULL,
+          server = TRUE
+        )
+        return()
+      }
+      ## Prefer pending (not-yet-saved) over `isolate(input)` — after Add, input
+      ## can still be the previous value for one flush, which would revert choice.
+      new_sel <- if (
+        !is.null(pend) &&
+        nzchar(pend) &&
+        pend %in% ch &&
+        !pend %in% nms
+      ) {
+        pend
+      } else if (nzchar(sel) && sel %in% ch) {
+        sel
+      } else {
+        ch[[length(ch)]]
+      }
+      shiny::updateSelectizeInput(
+        session,
+        "scenario_select",
+        choices = simex_selectize_choices(ch),
+        selected = new_sel,
+        server = TRUE
+      )
+    })
+
+    ## Enable Remove when selection is saved or matches pending (not-yet-saved).
     observe({
       req(is_exploration())
       nms <- names(scenarios())
       nm <- scenario_sel_str(input$scenario_select)
-      if (length(nms) == 0L || !nzchar(nm) || !nm %in% nms) {
-        disable("remove_saved_scenario")
+      pend <- explore_scenario_pending()
+      can_remove <- nzchar(nm) &&
+        (nm %in% nms || (!is.null(pend) && nzchar(pend) && identical(nm, pend)))
+      if (can_remove) {
+        shinyjs::enable("remove_saved_scenario")
       } else {
-        enable("remove_saved_scenario")
+        shinyjs::disable("remove_saved_scenario")
       }
     })
 
-    ## Fitting / Scenarios tab: same selectize + delete pattern as Exploration.
+    ## Fitting: clear pending when switching to another saved name; load Calibration
+    ## from earliest period when the selection is a stored scenario.
+    observeEvent(input$fitting_scenario_select, {
+      req(is_fitting())
+      nm <- scenario_sel_str(input$fitting_scenario_select)
+      pend <- fit_scenario_pending()
+      nms <- names(scenarios())
+      if (nzchar(nm) && nm %in% nms && !is.null(pend) && !identical(nm, pend)) {
+        fit_scenario_pending(NULL)
+      }
+      if (!nzchar(nm)) {
+        return()
+      }
+      sx <- scenarios()[[nm]]
+      if (is.null(sx)) {
+        return()
+      }
+      pm <- sx$pars
+      if (is.null(pm) || !is.matrix(pm) || ncol(pm) < 1L) {
+        return()
+      }
+      j <- which.min(as.numeric(colnames(pm)))
+      shaped <- args_to_simex_shiny_shape(as.list(pm[[1L, j]]))
+      apply_shaped_pars_to_tab("fit", shaped)
+    }, ignoreNULL = TRUE)
+
+    ## Fitting / Scenarios tab: same selectize + pending + delete as Exploration.
     observe({
       req(is_fitting())
       nms <- names(scenarios())
+      pend <- fit_scenario_pending()
+      if (!is.null(pend) && pend %in% nms) {
+        fit_scenario_pending(NULL)
+        pend <- fit_scenario_pending()
+      }
       sel <- scenario_sel_str(isolate(input$fitting_scenario_select))
-      if (length(nms) == 0L) {
-        updateSelectizeInput(
+      ch <- unique(c(
+        nms,
+        if (!is.null(pend) && nzchar(pend) && !pend %in% nms) pend
+      ))
+      ch <- ch[vapply(ch, nzchar, logical(1))]
+      if (length(ch) == 0L) {
+        shiny::updateSelectizeInput(
           session,
           "fitting_scenario_select",
           choices = character(0),
-          selected = "Default",
+          selected = NULL,
           server = TRUE
         )
-      } else {
-        new_sel <- if (nzchar(sel) && sel %in% nms) {
-          sel
-        } else if (nzchar(sel) && !sel %in% nms) {
-          sel
-        } else {
-          nms[[length(nms)]]
-        }
-        ch <- unique(c(nms, if (nzchar(new_sel) && !new_sel %in% nms) new_sel))
-        ch <- ch[vapply(ch, nzchar, logical(1))]
-        updateSelectizeInput(
-          session,
-          "fitting_scenario_select",
-          choices = stats::setNames(ch, ch),
-          selected = new_sel,
-          server = TRUE
-        )
+        return()
       }
+      new_sel <- if (
+        !is.null(pend) &&
+        nzchar(pend) &&
+        pend %in% ch &&
+        !pend %in% nms
+      ) {
+        pend
+      } else if (nzchar(sel) && sel %in% ch) {
+        sel
+      } else {
+        ch[[length(ch)]]
+      }
+      shiny::updateSelectizeInput(
+        session,
+        "fitting_scenario_select",
+        choices = simex_selectize_choices(ch),
+        selected = new_sel,
+        server = TRUE
+      )
     })
 
     observeEvent(input$fitting_remove_saved_scenario, {
       req(is_fitting())
       nm <- scenario_sel_str(input$fitting_scenario_select)
       if (!nzchar(nm)) {
-        showNotification("Pick a saved run to remove.", type = "warning")
+        showNotification("Pick a scenario to remove.", type = "warning")
         return()
       }
       cur <- scenarios()
-      if (!nm %in% names(cur)) {
-        return()
+      if (nm %in% names(cur)) {
+        cur[[nm]] <- NULL
+        scenarios(cur)
       }
-      cur[[nm]] <- NULL
-      scenarios(cur)
+      pend <- fit_scenario_pending()
+      if (!is.null(pend) && identical(nm, pend)) {
+        fit_scenario_pending(NULL)
+      }
     })
 
     observe({
       req(is_fitting())
       nms <- names(scenarios())
       nm <- scenario_sel_str(input$fitting_scenario_select)
-      if (length(nms) == 0L || !nzchar(nm) || !nm %in% nms) {
-        disable("fitting_remove_saved_scenario")
+      pend <- fit_scenario_pending()
+      can_remove <- nzchar(nm) &&
+        (nm %in% nms || (!is.null(pend) && nzchar(pend) && identical(nm, pend)))
+      if (can_remove) {
+        shinyjs::enable("fitting_remove_saved_scenario")
       } else {
-        enable("fitting_remove_saved_scenario")
+        shinyjs::disable("fitting_remove_saved_scenario")
       }
     })
 
@@ -1708,40 +2421,96 @@ run_shiny <- function() {
         )
         fitting_time_seq_rv(tseq)
 
+        ## Show progress only after the client flushes; otherwise the long
+        ## fit_simex() call blocks before the browser can paint (busy overlay).
+        shinyjs::disable("run_fit")
         shinyjs::show("fit_progress_container", anim = FALSE)
-        on.exit(shinyjs::hide("fit_progress_container", anim = FALSE), add = TRUE)
 
-        samples <- tryCatch(
-          fit_simex(fit_df, parameters, priors, settings),
-          error = function(e) {
-            showNotification(conditionMessage(e), type = "error")
-            NULL
-          }
-        )
-        if (is.null(samples)) {
-          return()
-        }
+        ## Positional callback: some session proxies reject `fun =` (unused arg).
+        session$onFlushed(
+          function() {
+            on.exit(
+              {
+                shinyjs::hide("fit_progress_container", anim = FALSE)
+                shinyjs::enable("run_fit")
+              },
+              add = TRUE
+            )
 
-        sx <- tryCatch(
-          run_simex_from_samples(samples, time = tseq, modification = NULL),
-          error = function(e) {
-            showNotification(conditionMessage(e), type = "error")
-            NULL
-          }
-        )
-        if (is.null(sx)) {
-          return()
-        }
+            n_steps_total <- as.integer(settings$n_steps + settings$burnin)
+            n_chains_fit <- as.integer(settings$n_chains)
+            if (n_chains_fit < 1L) {
+              n_chains_fit <- 1L
+            }
+            total_sampler_steps <- n_chains_fit * n_steps_total
+            session$sendCustomMessage("fit_monty_progress", list(reset = TRUE))
 
-        fitted_samples_rv(samples)
-        fitted_simex_rv(sx)
-        sc <- scenarios()
-        sc[["Fitted"]] <- sx
-        scenarios(sc)
-        nav_select(
-          id = "main_plots_nav",
-          select = "Timeline",
-          session = session
+            samples <- tryCatch(
+              withCallingHandlers(
+                fit_simex(fit_df, parameters, priors, settings),
+                message = function(cond) {
+                  txt <- conditionMessage(cond)
+                  re_txt <- paste0(
+                    "^MONTY-PROGRESS: chain: ([0-9]+), step: ([0-9]+)\\s*$"
+                  )
+                  m <- stringr::str_match(txt, re_txt)
+                  if (isTRUE(is.na(m[1L, 1L]))) {
+                    return()
+                  }
+                  ch <- as.integer(m[1L, 2L])
+                  st <- as.integer(m[1L, 3L])
+                  if (anyNA(c(ch, st))) {
+                    return()
+                  }
+                  ## Serial chains: overall fraction across all chains × steps.
+                  done_steps <- (ch - 1L) * n_steps_total + st
+                  pct <- if (total_sampler_steps > 0L) {
+                    100 * done_steps / total_sampler_steps
+                  } else {
+                    0
+                  }
+                  session$sendCustomMessage(
+                    "fit_monty_progress",
+                    list(pct = max(0, min(100, pct)))
+                  )
+                  invokeRestart("muffleMessage")
+                }
+              ),
+              error = function(e) {
+                showNotification(conditionMessage(e), type = "error")
+                NULL
+              }
+            )
+            if (is.null(samples)) {
+              return()
+            }
+
+            session$sendCustomMessage("fit_monty_progress", list(phase = "sim"))
+
+            sx <- tryCatch(
+              run_simex_from_samples(samples, time = tseq, modification = NULL),
+              error = function(e) {
+                showNotification(conditionMessage(e), type = "error")
+                NULL
+              }
+            )
+            if (is.null(sx)) {
+              return()
+            }
+
+            fitted_samples_rv(samples)
+            fitted_simex_rv(sx)
+            ## onFlushed runs outside a reactive consumer; read reactives with isolate().
+            sc <- isolate(scenarios())
+            sc[["Fitted"]] <- sx
+            scenarios(sc)
+            nav_select(
+              id = "main_plots_nav",
+              select = "Timeline",
+              session = session
+            )
+          },
+          once = TRUE
         )
       }
     )
@@ -1860,11 +2629,11 @@ run_shiny <- function() {
       }
       nm <- scenario_sel_str(input$fitting_scenario_select)
       if (!nzchar(nm)) {
-        nm <- if (length(scenarios()) == 0L) {
-          "Default"
-        } else {
-          paste0("Saved_", length(scenarios()) + 1L)
-        }
+        showNotification(
+          "Add or select a scenario name before running.",
+          type = "warning"
+        )
+        return()
       }
       sc <- scenarios()
       sc[[nm]] <- sx

@@ -87,7 +87,14 @@ fit_simex <- function(data,
     monty::monty_sampler_random_walk(get_vcv(priors$parameters, settings, samples))
   }
 
-  # get samples
+  # get samples: serial + simple progress when single worker (callr + "simple"
+  # breaks with n_chains > 1); callr + fancy when n_workers > 1.
+  n_workers <- settings$n_workers
+  runner <- if (is.null(n_workers) || (length(n_workers) == 1L && n_workers == 1L)) {
+    monty::monty_runner_serial(progress = "simple")
+  } else {
+    monty::monty_runner_callr(as.integer(n_workers), "fancy")
+  }
   samples <- monty::monty_sample(
     model = posterior,
     sampler = sampler,
@@ -95,7 +102,7 @@ fit_simex <- function(data,
     n_steps = settings$n_steps + settings$burnin,
     n_chains = settings$n_chains,
     thinning_factor = settings$thinning_factor,
-    runner = monty::monty_runner_callr(settings$n_workers, "fancy"),
+    runner = runner,
     burnin = settings$burnin
   )
 
